@@ -1,0 +1,5 @@
+add_executable(overload_demo 01-overload-template/overload_demo.cpp)
+add_executable(max_template 01-overload-template/max_template.cpp)
+add_executable(ambiguous EXCLUDE_FROM_ALL 01-overload-template/exercises/ambiguous.cpp)
+add_executable(ambiguous_answer 01-overload-template/solutions/ambiguous_answer.cpp)
+add_executable(ch11_quiz_max quiz/exercises/quiz_max.cpp)

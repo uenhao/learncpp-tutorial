@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10.1 类型转换与推导 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter10/01-conversions.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 10 章</a> / 类型转换与推导</div>
+<article>
+<h1>10.1 类型转换与推导</h1>
+
+<p>第 4 章埋的"类型转换地图"在这里补全成册。先回顾地基（4.12 课）：<strong>隐式转换</strong>（编译器自动做）、<strong>static_cast</strong>（显式声明）、窄化危险。</p>
+
+<h2>数值提升（promotion）：安全的小→大</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：数值提升（numeric promotions）</div>
+  <p><strong>窄类型 → 宽类型</strong>的无损转换，编译器自动做：</p>
+  <ul>
+    <li>浮点提升：<code>float → double</code>（值不变）</li>
+    <li>整型提升：<code>unsigned char/short → int</code>（值不变——int 至少能装下它们）</li>
+  </ul>
+  <p>安全的原因：目标类型的范围<strong>完全覆盖</strong>源类型，无信息损失。</p>
+</div>
+
+<h2>数值转换（conversion）：有损的语义变化</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：数值转换（numeric conversions）</div>
+  <p>非提升的类型转换——<strong>可能丢失数据</strong>：宽→窄（int→short）、浮点↔整数（3.9→3）、有符号↔无符号。五大类：</p>
+  <ol>
+    <li>整型 ↔ 整型（范围可能丢失）</li>
+    <li>浮点 ↔ 浮点（精度可能丢失）</li>
+    <li>浮点 → 整型（小数部分丢弃）</li>
+    <li>整型 → 浮点（大整数可能损失精度）</li>
+    <li>指针/bool 相关（后续章节）</li>
+  </ol>
+</div>
+
+<pre class="code">int n{ 300 };
+short s{ n };       // 300 放不进 short(最大 32767？不——short 够)。
+                    // 换个大数试试：
+int big{ 40000 };
+short s2{ static_cast&lt;short&gt;(big) }; // 需显式：窄化被 {} 拒绝
+
+double d{ 0.1 };    // 二进制近似存储（4.3 课）</pre>
+
+<h2>算术转换（arithmetic conversions）：二元运算的类型协商</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：usual arithmetic conversions</div>
+  <p><code>+ - * / %</code>、比较、位运算等二元运算符<strong>要求两个操作数同类型</strong>。类型不同时，编译器按"等级表"协商出<strong>公共类型</strong>（common type）：</p>
+  <pre class="plain">long double &gt; double &gt; float &gt; long long &gt; long &gt; int</pre>
+  <p>规则简化：① 整型遇浮点 → 整型方转成浮点方；② 都是整型 → 低等级转成高等级。</p>
+</div>
+
+<pre class="code">int x{ 2 };
+double y{ 3.5 };
+std::cout &lt;&lt; x + y &lt;&lt; '\n'; // x 提升为 double：5.5（浮点除法同理）
+
+short a{ 2 };
+short b{ 3 };
+std::cout &lt;&lt; a + b &lt;&lt; '\n'; // short 提升为 int 再算——结果也是 int！</pre>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 意外收获：short + short 得 int</div>
+  <p>整型提升让 short/unsigned char 参与运算时先变 int——所以 <code>short + short</code> 的<strong>结果类型是 int</strong>。想存回 short 需要显式转换（或赋值时的隐式窄化）。这也是 4.5 课"别为省内存用 short"的又一理由。</p>
+</div>
+
+<h2>auto：让编译器替你写类型（10.8）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：auto 类型推导</div>
+  <p><code>auto</code>：从<strong>初始化式</strong>推导变量类型。规则：<strong>推导自初始化表达式的类型</strong>（字面量后缀、函数返回值都参与）。</p>
+  <pre class="code">auto d{ 5.0 };   // 5.0 是 double → d 是 double
+auto i{ 1 + 2 }; // int → i 是 int
+auto s{ add(5, 6) }; // add 返回 int → s 是 int
+auto f{ 1.23f }; // f 后缀 → float
+const auto b{ 5 };  // const auto 组合合法</pre>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ auto 的两条纪律</div>
+  <ul>
+    <li><strong>必须有可推导的初始化式</strong>：<code>auto x;</code>（无初始化）编译错误；</li>
+    <li><strong>别滥用</strong>：初始化式含义明确时才用（函数返回值、长类型名）。<code>auto x{ 5 }</code> 比 <code>int x{ 5 }</code> 省不了事还牺牲了自解释性——原文建议<strong>类型不明显时才用 auto</strong>。</li>
+  </ul>
+</div>
+
+<h2>类型别名（10.7）：using 起别名</h2>
+
+<pre class="code">using Distance = double; // Distance 是 double 的别名
+
+Distance miles{ 3.4 };   // 实际就是 double
+// 编译期替换，无运行时开销；typedef 是老写法，现代 C++ 用 using</pre>
+
+<p>别名不产生新类型——<code>Distance</code> 与 <code>double</code> 完全可互换。价值在<strong>语义</strong>：<code>Distance</code> 说明了这个 double 是什么。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>输出什么？</p>
+  <pre class="code">short a{ 2 };
+short b{ 3 };
+std::cout &lt;&lt; a + b &lt;&lt; ' ' &lt;&lt; sizeof(a + b);</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="整型提升：short 参与运算先变 int，结果 5 的类型是 int（4 字节）。short+short 得 int——本课的'意外收获'。" >5 2</button>
+    <button data-k="b" data-ok="1" data-why="正确！值是 5；sizeof(a+b) 是 4——a、b 都提升为 int 再相加，结果类型 int 占 4 字节。这就是 4.5 课说 short 省不出价值的机制：运算时反正要变 int。" >
+      5 4</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"auto 定义的变量没有类型，是'动态类型'。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="错！auto 只是让编译器从初始化式推导类型——推导完成后类型固定不变（C++ 是静态类型语言）。auto d{5.0} 的 d 永远是 double，不能装别的类型。" >对 —— auto 是动态类型</button>
+    <button data-k="b" data-ok="1" data-why="正确！auto 是'编译器代写类型'，不是'没有类型'。推导出的类型与手写完全一致，静态检查照样全开。这澄清了从 Python 等动态语言过来的常见误解。" >
+      不对 —— 推导出的类型固定，仍是静态类型</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：转换地图成册，auto 是"便利贴"</div>
+  <p>现在你拥有完整的转换地图：<strong>提升（安全）→ 转换（可能丢）→ 窄化（{} 拦截 / static_cast 声明故意）→ 算术协商（公共类型）</strong>。auto 则是类型系统的便利贴——<strong>类型由初始化式决定</strong>这条铁律不变，只是书写方式变了。用 auto 的判断标准回归 1.5 课的老原则：读者能不能一眼看懂？能，auto 是福利；不能，老老实实写类型。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter10/01-conversions/</code> 的 <code>promotion_demo.cpp</code>（short+short 的 sizeof 实测）、<code>common_type.cpp</code>（int+double 协商）和 <code>auto_demo.cpp</code>（推导 + 后缀 + const auto）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 10 章</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 10 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/implicit-type-conversion/">LearnCpp 10.1–10.8</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

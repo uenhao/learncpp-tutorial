@@ -1,0 +1,6 @@
+add_executable(promotion_demo 01-conversions/promotion_demo.cpp)
+add_executable(common_type 01-conversions/common_type.cpp)
+add_executable(auto_demo 01-conversions/auto_demo.cpp)
+add_executable(type_alias 01-conversions/exercises/type_alias.cpp)
+add_executable(type_alias_answer 01-conversions/solutions/type_alias_answer.cpp)
+add_executable(ch10_quiz_promote quiz/exercises/quiz_promote.cpp)

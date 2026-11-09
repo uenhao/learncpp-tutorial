@@ -1,0 +1,5 @@
+add_executable(get_double_robust get_double_robust.cpp)
+add_executable(assert_demo assert_demo.cpp)
+add_executable(ndebug_demo ndebug_demo.cpp)
+add_executable(validate_age exercises/validate_age.cpp)
+add_executable(validate_age_answer solutions/validate_age_answer.cpp)

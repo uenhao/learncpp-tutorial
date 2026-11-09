@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11.1 函数重载与模板 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter11/01-overload-template.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 11 章</a> / 函数重载与模板</div>
+<article>
+<h1>11.1 函数重载与模板</h1>
+
+<p>同一个 <code>max</code>，int 版、double 版、long 版……复制粘贴三份？C++ 的答案是<strong>重载</strong>；而"所有类型都要一份"的终极答案是<strong>模板</strong>。本章两把钥匙解锁泛型编程之门。</p>
+
+<h2>函数重载：同名不同参</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：函数重载（function overloading）</div>
+  <p><strong>同一作用域内、名字相同、参数类型可区分</strong>的多个函数。编译器把它们当独立函数对待——名字冲突的担心是多余的（参数类型不同即可区分）。</p>
+</div>
+
+<pre class="code">int add(int x, int y)       // int 版
+{
+    return x + y;
+}
+
+double add(double x, double y) // double 版——合法重载
+{
+    return x + y;
+}
+
+int main()
+{
+    std::cout &lt;&lt; add(1, 2) &lt;&lt; '\n';     // 调 int 版：3
+    std::cout &lt;&lt; add(1.5, 2.5) &lt;&lt; '\n'; // 调 double 版：4
+    return 0;
+}</pre>
+
+<h2>重载区分规则：什么算"不同"</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：可区分 = 编译器能选出一个唯一的</div>
+  <ul>
+    <li>✅ <strong>参数类型不同</strong>：int 版 vs double 版</li>
+    <li>✅ <strong>参数个数不同</strong>：add(int,int) vs add(int,int,int)</li>
+    <li>❌ <strong>只返回类型不同</strong>：int f() vs double f()——编译错误！</li>
+    <li>❌ <strong>只有形参名不同</strong>：f(int x) vs f(int y)——重复定义</li>
+  </ul>
+</div>
+
+<h2>重载解析与歧义</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：重载解析（overload resolution）</div>
+  <p>调用时编译器按实参类型挑最匹配的重载。<strong>找不到唯一最优 → 歧义 → 编译错误</strong>：</p>
+</div>
+
+<pre class="code">void print(int x) {}
+void print(double x) {}
+
+print(5);    // → int 版
+print(5.0);  // → double 版
+print('a');  // 'a' 是 char：既可提升为 int 也可转 double → 两边都"行"→ 歧义错误！
+print(5L);   // long：到 int 和 double 都需转换 → 视实现可能歧义</pre>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 最常见的歧义：字面量 0 与指针</div>
+  <p>重载 f(int) 和 f(int*) 时调用 <code>f(0)</code>——0 既是 int 又能当空指针 → 歧义。这也是 C++11 引入 <code>nullptr</code>（专用空指针类型，不产生歧义）的原因之一。</p>
+</div>
+
+<h2>默认参数：给参数一个"保底值"</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：默认参数（default arguments）</div>
+  <pre class="code">int rollDie(int sides = 6);        // 不传就掷 6 面骰
+
+rollDie();    // sides = 6
+rollDie(20);  // sides = 20（覆盖默认）</pre>
+  <p>规则：<strong>默认参数只能从右往左连续给</strong>——<code>f(int a, int b = 2)</code> 合法；<code>f(int a = 1, int b)</code> 非法（b 没默认却排在 a 后面，调用 f(5) 时不知道给谁）。</p>
+  <p>声明与定义分离时（2.11 课）：<strong>默认参数写在声明（头文件）里，定义里不重复写</strong>。</p>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 何时用默认参数（原文）</div>
+  <ul>
+    <li>参数有合理默认值，且想允许调用者覆盖——"骰子默认 6 面"；</li>
+    <li><strong>给已有函数加新参数</strong>：带默认值的新参数不破坏任何现有调用（否则所有调用点都得改）。</li>
+  </ul>
+</div>
+
+<h2>函数模板：一份代码，所有类型</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：函数模板（function template）</div>
+  <p>重载的尽头是复制粘贴——int 版、double 版、long 版的 max 本体一模一样。<strong>模板</strong>用占位类型（<code>T</code>）写一份，让编译器按需生成各版本：</p>
+  <pre class="code">template &lt;typename T&gt;   // T 是类型模板参数（占位）
+T max(T x, T y)
+{
+    return (x &lt; y) ? y : x;
+}</pre>
+  <p>关键认知：<strong>模板不是函数</strong>——它不直接编译执行，唯一职责是<strong>生成</strong>函数。模板 → 函数的过程叫<strong>实例化（instantiation）</strong>。</p>
+</div>
+
+<h3>实例化：显式与隐式</h3>
+
+<pre class="code">std::cout &lt;&lt; max&lt;int&gt;(1, 2) &lt;&lt; '\n';    // 显式：实例化 max&lt;int&gt;
+std::cout &lt;&lt; max&lt;double&gt;(1.5, 2.5);     // 显式：max&lt;double&gt;
+std::cout &lt;&lt; max(3, 4) &lt;&lt; '\n';         // 隐式：从实参推导 T=int</pre>
+
+<p>实例化的函数是"真实函数"——编译一次、按类型各司其职。每个用到的类型实例化一份；没用的类型不生成（不膨胀可执行文件）。</p>
+
+<h3>模板的坑：类型不一致</h3>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 反例：T 推导冲突</div>
+  <pre class="code">max(3, 4.5);  // ❌ 编译错误！
+// 3 推 T=int，4.5 推 T=double——一个 T 不能同时是两种</pre>
+  <p>解法三选一：显式指定 <code>max&lt;double&gt;(3, 4.5)</code>（3 转 double）；用两个模板参数 <code>template &lt;typename T, typename U&gt;</code>；或调用前统一类型。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>以下哪组<strong>不能</strong>构成合法重载？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="参数类型不同（int vs double）——标准重载。" >int f(int); 与 double f(double);</button>
+    <button data-k="b" data-ok="1" data-why="正确！只有返回类型不同、参数完全一样——编译器无法从调用处区分（返回值可以被丢弃），直接编译错误。重载的区分依据永远在参数列表。" >
+      int f(int); 与 double f(int);</button>
+    <button data-k="c" data-why="参数个数不同——合法重载。" >int f(int); 与 int f(int, int);</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"模板就是函数——写好后可以直接调用执行。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="模板不直接编译执行——它是'生成函数的配方'。调用时编译器按类型实例化出真实函数，执行的从来是实例化产物。'模板不是函数，模板生成函数'是本课 Key insight。" >对 —— 模板即函数</button>
+    <button data-k="b" data-ok="1" data-why="正确！primary template 是配方，instantiated function 是菜。max(3,4) 之所以能跑，是因为编译器先隐式实例化了 max&lt;int&gt;。" >
+      不对 —— 模板生成函数，执行的是实例化产物</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="4" data-hint="max(3, 4)：T 被隐式推导为 int，返回较大者。" data-explain="输出 4。编译器从实参隐式推导 T=int，实例化 max&lt;int&gt;(3,4)；(3&lt;4) 为 true，返回 y 即 4。注意若写 max(3, 4.5) 会编译错误——一个 T 不能同时是 int 和 double（本课反例）。">
+  <p class="quiz-q">⑩ <code>std::cout &lt;&lt; max(3, 4);</code>（max 为模板，返回较大者）</p>
+  <div class="prow"><input type="text" placeholder="程序输出"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：重载是"接口统一"，模板是"接口的接口"</div>
+  <p>重载让调用者用<strong>同一个名字</strong>表达同一语义的不同实现——接口统一了。模板更进一步：连"不同实现"都只用写一次——<strong>把类型也参数化</strong>。回顾你的工具链进化史：字面量硬编码（1.6）→ 变量参数化（2.4）→ 函数复用（2.6）→ 模板参数化类型（本章）。每一步都是"把变化的部分抽出来交给参数"。第 16 章的 vector&lt;int&gt;、vector&lt;string&gt; 全是模板——学完本章，容器的尖括号不再是天书。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter11/01-overload-template/</code> 的 <code>overload_demo.cpp</code>（int/double 双版 add）、<code>exercises/ambiguous.cpp</code>（亲历 print('a') 歧义并修复）和 <code>max_template.cpp</code>（模板实例化 + 冲突实验 max(3, 4.5)）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 11 章</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 11 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-function-overloading/">LearnCpp 11.1–11.8</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

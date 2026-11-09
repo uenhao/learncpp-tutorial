@@ -1,6 +1,6 @@
-# LearnCpp 交互式学习教程（第 0–8 章）
+# LearnCpp 交互式学习教程（第 0–11 章）
 
-基于 [LearnCpp.com](https://www.learncpp.com/) 第 0–8 章，提供两种学习载体：
+基于 [LearnCpp.com](https://www.learncpp.com/) 第 0–11 章，提供两种学习载体：
 
 ## 🖥️ 交互式网站（推荐）
 
@@ -24,6 +24,9 @@ cd site && python3 -m http.server 8765
 | `chapter6/` | 运算符：优先级、取余、++/--、逻辑运算（3 课 + quiz） |
 | `chapter7/` | 作用域/生命周期/链接：全局变量、影子、static、inline（4 课 + quiz） |
 | `chapter8/` | 控制流：switch、fallthrough、循环三型、break/continue（2 课 + quiz） |
+| `chapter9/` | 错误处理：测试、错误策略、cin 恢复、assert（1 课 + quiz） |
+| `chapter10/` | 类型转换与推导：提升/转换/协商、auto、别名（1 课 + quiz） |
+| `chapter11/` | 函数重载与模板：重载解析、默认参数、模板实例化（1 课 + quiz） |
 
 每节含示例代码 + `exercises/`（带 TODO）+ `solutions/`（参考答案）。
 第 3 章练习须在 **Debug 构建 + VS Code 调试器**（F5/F10/F11/断点/监视）下完成。

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 9 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter9/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 9 章</a> / 综合测验</div>
+<article>
+<h1>第 9 章综合测验</h1>
+
+<p>8 题：测试思想、错误策略、cin 恢复、断言。先预测再作答。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "语句覆盖率 100% 意味着程序没有 bug。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="每条语句都执行过 ≠ 每种分支组合都验证过。例如测试了 add(2,2) 和 add(-1,1)，每条语句都覆盖，但 add(-1,-1) 的路径没验证。原文建议用'已知有 bug 的代码'校准对覆盖率的信任。" >对 —— 全覆盖 = 无 bug</button>
+    <button data-k="b" data-ok="1" data-why="正确！覆盖率是必要非充分指标：语句覆盖只保证'都跑到'，不保证'都对'。分支组合、边界值都需要专门设计用例。" >
+      不对 —— 覆盖率是必要非充分条件</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>② 函数无法在本地处理某个错误，也不该终止程序——第 3 种合理策略是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="静默忽略让调用者完全无从知晓错误——原文明确批评过的做法（能打印错误提示至少要有）。" >静默忽略并返回默认值</button>
+    <button data-k="b" data-ok="1" data-why="正确！策略 2：把错误传回调用者——函数最了解'发生了什么'，调用者最了解'该怎么办'。常见形式：返回 false/-1/空值/状态码。" >
+      把错误信息传回调用者处理</button>
+    <button data-k="c" data-why="终止程序是第 3 种策略——适用于错误致命且不可恢复时，'不该终止'排除了它。" >assert 并终止程序</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>③ "cin 提取失败后，被提取的变量会被置 0（C++11 起）。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！这是 1.4 课'int age{} 零初始化兜底'的另一半：提取失败时标准保证变量被赋 0（C++11 起）。所以'输入前定义即初始化'的习惯加上这条，变量的值永远确定。" >
+      对 —— 失败时变量置 0</button>
+    <button data-k="b" data-why="早期标准确实未定义，但 C++11 起明确规定了置 0 行为。" >不对 —— 值不确定</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ cin 提取失败后，恢复的第一步是？</p>
+  <div class="quiz-opts">
+    <button data-k="b" data-why="失败状态下 ignore 也是静默失败的——顺序反了整套恢复就空转。" >先 ignoreLine() 清输入</button>
+    <button data-k="a" data-ok="1" data-why="正确！失败状态未解除前，一切提取与 ignore 都静默失败。clear() 解除失败状态是第一步，然后 ignoreLine() 才能真正清掉坏输入。" >
+      std::cin.clear() 解除失败状态</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "assert 失败时会打印表达式文本、文件名和行号，然后抛异常。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="前半句对，后半句错：assert 失败调用 std::abort 直接终止程序——不是抛异常（异常是第 27 章的另一套机制）。" >对 —— 打印后抛异常</button>
+    <button data-k="b" data-ok="1" data-why="正确！assert 失败 → 打印诊断信息（表达式/文件/行号）→ std::abort() 立即终止。这种'当场死亡'正是它的设计意图：让 bug 在离案发现场最近的地方爆炸。" >
+      不对 —— 打印后 std::abort 终止，不抛异常</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑥ 发布版（Release）中 assert 通常会怎样？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="构建系统在 Release 配置自动定义 NDEBUG 宏，assert 整体失效——这也是'assert 只管程序员的 bug、不管用户问题'的另一层原因。" >照常检查并可能终止</button>
+    <button data-k="b" data-ok="1" data-why="正确！NDEBUG 定义后 assert 宏被禁用，检查连编译都不进。这也是为什么用户输入校验绝不能依赖 assert——发布版它不存在。" >
+      被 NDEBUG 禁用，不参与编译</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑦ "static_assert 可以检查运行时才知道的值。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="static_assert 在编译期检查，对象必须是常量表达式——运行时值请用 assert 或 if。" >对 —— 也能查运行时值</button>
+    <button data-k="b" data-ok="1" data-why="正确！static_assert = 编译期断言，只认常量表达式（sizeof 结果、constexpr 值、类型属性等）。它失败是编译错误，程序根本不会诞生。" >
+      不对 —— 只能检查编译期可求值的表达式</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑧ 函数参数校验"gravity 必须为正"（调用者传错属于程序员 bug），原文用什么？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="这正是 assert 的教科书场景：'除非程序有 bug 否则必真'。失败即终止+现场信息，程序员立刻能查。发布版由 NDEBUG 关闭（届时假设代码已测好）。" >assert(gravity &gt; 0.0);</button>
+    <button data-k="b" data-why="if 返回 0 是'处理用户错误'的策略——程序员传错参数应该当场炸出来，而不是静默吞掉。" >if (gravity &lt;= 0) return 0;</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="0 0 3" data-hint="失败时 x 被置 0——每次失败打印的 x 是多少？" data-explain="输出 0 0 3。输入 a → 提取失败 → x 置 0 → 打印 0 → clear+ignoreLine 重试；输入 b → 同样打印 0；输入 3 → 成功打印 3 并返回。C++11 的失败置 0 保证让每个环节的值都确定——这正是 1.4 课零初始化兜底的意义。实测仓库 quiz_robust 程序。">
+  <p class="quiz-q">⑨ 配合重试循环（每次失败打印当前 x），用户依次输入 a、b、3，程序输出序列？</p>
+  <pre class="code">double getDouble()
+{
+    while (true)
+    {
+        std::cout &lt;&lt; "Enter: ";
+        double x{};
+        std::cin &gt;&gt; x;
+        if (!std::cin)
+        {
+            std::cin.clear();
+            ignoreLine();
+            std::cout &lt;&lt; x &lt;&lt; ' '; // 打印失败后的 x
+            continue;
+        }
+        ignoreLine();
+        std::cout &lt;&lt; x;
+        return x;
+    }
+}
+// 输入: a  b  3</pre>
+  <div class="prow"><input type="text" placeholder="如: 0 1 2 3"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 9 章全部通过！错误处理体系建成——下一章：类型转换与推导（static_cast 深入 + auto）。</div>
+
+<div class="pager">
+  <a class="prev" href="01-error-handling.html"><span class="dir">← 上一节</span>9.1 错误检测与处理</a>
+  <a class="next" href="../chapter10/index.html"><span class="dir">下一章 →</span>第 10 章 · 类型转换与推导</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-9-summary-and-quiz/">LearnCpp Chapter 9 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

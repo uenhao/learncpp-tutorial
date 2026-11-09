@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>9.1 错误检测与处理：测试、cerr、assert · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter9/01-error-handling.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 9 章</a> / 错误检测与处理</div>
+<article>
+<h1>9.1 错误检测与处理：测试、cerr、assert</h1>
+
+<p>本章把第 3 章（调试）、3.10 课（防患于未然）、5.4 课（cin 失败）散落的"错误处理"线索收拢成体系。<strong>鲁棒（robust）</strong>的程序 = 预见了误用并优雅处理。</p>
+
+<h2>测试你的代码（9.1–9.2）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：单元测试（unit testing）</div>
+  <p>3.10 课的 <code>testadd()</code> 就是单元测试雏形。测试的价值回顾：<strong>① 输入是精心挑选的已知答案；② 错误当场暴露；③ 可永久保留防回归</strong>。</p>
+  <p><strong>代码覆盖率（code coverage）</strong>：测试执行了代码的百分之多少。语句覆盖 100% ≠ 没问题——<strong>每条语句都跑到过，不代表每个分支组合都验证过</strong>。原文建议：追求高覆盖率，但用已知 bug 的代码校准你对覆盖率的信任。</p>
+</div>
+
+<h2>常见语义错误清单（9.3）</h2>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 原文的"高频语义错误"清单（对照自查）</div>
+  <ul>
+    <li><strong>if 内执行了无限循环</strong>——条件变量忘了迭代；</li>
+    <li><strong>无符号溢出</strong>——4.5 课的"避免无符号"再论证；</li>
+    <li><strong>运算符优先级误解</strong>——6.1 课"拿不准加括号"；</li>
+    <li><strong>短路求值的误依赖</strong>——右操作数被跳过时遗漏了它应有的副作用；</li>
+    <li><strong> switch 跌落</strong>——8.1 课的忘 break；</li>
+    <li><strong>调用未初始化的变量</strong>——1.4 课口诀"定义即初始化"；</li>
+    <li><strong>切片与窄化</strong>——4.12 课 static_cast 的纪律。</li>
+  </ul>
+</div>
+
+<h2>错误处理的四种策略（9.4）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：函数失败时的四个选项</div>
+  <ol>
+    <li><strong>函数内自行处理</strong>（最好）：重试直到成功，或取消当前操作；</li>
+    <li><strong>把错误传回调用者</strong>：返回值表达错误（如返回 false / -1 / 空串）——调用者决定怎么办；</li>
+    <li><strong>终止程序</strong>：error() / std::exit / assert——错误致命且不可恢复时；</li>
+    <li><strong>抛异常</strong>：错误无法在本地合理处理时——第 27 章展开。</li>
+  </ol>
+  <p>"静默忽略"是第 1 种的劣化版——调用者完全无从知晓出了错，能加错误提示就加（std::cerr）。</p>
+</div>
+
+<h2>std::cin 的失败处理（9.5）——5.4 课伏笔的完整解</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：提取失败机制与恢复三步</div>
+  <p>1.4 课的 "tom abc" 案例完整机制：<strong>提取失败 → 变量置 0（C++11）→ cin 进入失败状态 → 后续提取全部静默跳过</strong>。恢复三步：</p>
+  <pre class="code">#include &lt;limits&gt;
+
+void ignoreLine()
+{
+    std::cin.ignore(std::numeric_limits&lt;std::streamsize&gt;::max(), '\n');
+}
+
+double getDouble()
+{
+    while (true) // 循环直到拿到合法输入
+    {
+        std::cout &lt;&lt; "Enter a decimal number: ";
+        double x{};
+        std::cin &gt;&gt; x;
+
+        if (!std::cin)           // ① 判断失败（bool 转换）
+        {
+            std::cin.clear();    // ② 清除失败状态
+            ignoreLine();        // ③ 丢掉坏输入行
+            continue;            // 重试
+        }
+
+        ignoreLine();            // 成功也清掉行尾残留
+        return x;
+    }
+}</pre>
+  <p><strong>Key insight（原文）</strong>：提取失败后，包括 ignore() 在内的一切提取都会静默失败——<strong>clear() 通常是恢复的第一步</strong>。ignoreLine 用 <code>numeric_limits&lt;streamsize&gt;::max()</code> 丢弃整行，比写死 100 个字符稳健。这就是 1.4 课"防御性输入"的完整答案，第 8 章 do-while 重试的实战化。</p>
+</div>
+
+<h2>assert 与 static_assert（9.6）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：运行时断言 assert（&lt;cassert&gt;）</div>
+  <p><strong>断言</strong>：除非程序有 bug，否则必为真的表达式。为真 → 什么都不做；为假 → 打印文件名/行号/表达式并 <strong>std::abort</strong> 终止程序——让你立刻用调试器检查现场（第 3 章武器库直接上线）。</p>
+</div>
+
+<pre class="code">#include &lt;cassert&gt;  // assert
+#include &lt;cmath&gt;
+
+double calculateTimeUntilObjectHitsGround(double initialHeight, double gravity)
+{
+  assert(gravity &gt; 0.0); // "除非程序有 bug，重力必为正" —— 参数校验
+
+  if (initialHeight &lt;= 0.0)
+    return 0.0;
+
+  return std::sqrt((2.0 * initialHeight) / gravity);
+}</pre>
+
+<pre class="plain">传 (100.0, -9.8) 时输出：
+dropsimulator: src/main.cpp:6: ...: Assertion 'gravity > 0.0' failed.</pre>
+
+<div class="box warn">
+  <div class="box-t">⚠️ NDEBUG：发布版关闭断言</div>
+  <p>断言每次检查有性能开销，且理想中发布版不该触发（上线前已测完）。定义宏 <strong>NDEBUG</strong> 即整体禁用 assert——多数构建系统在 Release 配置自动定义。手动开关：<code>#define NDEBUG</code>（禁用）或 <code>#undef NDEBUG</code>（启用），放在所有 include 之前、行尾无分号。这也再次呼应 0.2 课 Debug/Release 的分工。</p>
+</div>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：static_assert——编译期断言</div>
+  <p><strong>static_assert(常量表达式, "消息")</strong>：在<strong>编译期</strong>检查，失败即编译错误。检查对象必须是常量表达式（constexpr 变量、字面量运算）——运行时值无法用它检查。适合验证"类型大小""平台假设"等编译期事实。</p>
+</div>
+
+<h2>assert vs if：什么时候用哪个</h2>
+
+<table class="cmp">
+  <tr><th></th><th>assert</th><th>if 错误处理</th></tr>
+  <tr><td>针对</td><td><strong>程序员的 bug</strong>（不该发生的）</td><td><strong>用户/环境的问题</strong>（可能发生的）</td></tr>
+  <tr><td>失败后果</td><td>终止程序 + 现场信息</td><td>按策略恢复/重试/返回错误</td></tr>
+  <tr><td>发布版</td><td>NDEBUG 关闭</td><td>始终存在</td></tr>
+</table>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>用户输入年龄（应为正整数）的校验，该用哪种手段？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="assert 是抓程序员 bug 的，用户输错不是 bug 而是预期中的误用——发布版 assert 被关闭后这层校验直接消失，用户输错就静默出错。" >assert(age &gt; 0);</button>
+    <button data-k="b" data-ok="1" data-why="正确！用户输入属'可能发生的问题'，用 if + 重试循环处理（cin 失败时 clear+ignoreLine）。记忆锚：assert 管自己人的 bug，if 管用户的问题。" >
+      if + cin.clear() + ignoreLine() 的重试循环</button>
+    <button data-k="c" data-why="这是第 4 种策略（异常），本章点到为止第 27 章展开——对单个输入校验而言过重。" >throw 一个异常</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"cin 提取失败后，先调用 ignoreLine() 清掉坏输入，再 clear() 恢复状态。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="顺序反了！失败状态下一切提取（包括 ignore）都静默失败——ignoreLine 会什么都不做。原文 Key insight：clear() 通常是恢复的第一步。" >对 —— 先清理再恢复</button>
+    <button data-k="b" data-ok="1" data-why="正确！失败状态下 ignore 也是静默失败的——必须先 clear() 解除失败状态，ignoreLine() 才能真正工作。顺序错了整套恢复就是空转。" >
+      不对 —— 必须 clear() 在前，ignoreLine() 在后</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：错误的"责任分层"</div>
+  <p>四种策略不是平级的菜单，而是一条<strong>责任链</strong>：能在本地修复就本地修复（不惊动别人）；修不了就带着信息上交（返回错误）；错误致命就立即终止（assert/exit）；只有"无法本地处理、又不该终止"的复杂错误才值得异常。选择的关键问题是：<strong>这个错误的合理处理者是谁？</strong>——谁有足够的上下文谁负责。这个思路在第 12 章（引用传递改造参数）和第 27 章（异常）会持续深化。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter9/01-error-handling/</code> 的 <code>get_double_robust.cpp</code>（完整重试循环——故意输入 "abc" 和 "5*7" 测试）、<code>assert_demo.cpp</code>（触发断言看报错信息）和 <code>ndebug_demo.cpp</code>（NDEBUG 开关对比）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 9 章</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 9 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/detecting-and-handling-errors/">LearnCpp 9.1–9.6</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

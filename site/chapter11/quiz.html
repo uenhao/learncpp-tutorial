@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 11 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter11/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 11 章</a> / 综合测验</div>
+<article>
+<h1>第 11 章综合测验</h1>
+
+<p>9 题：重载、解析、默认参数、模板。先预测再作答。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "函数重载就是'同一个函数能有多个实现'，随便怎么写都行。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="重载有硬约束：每个版本必须能被编译器区分（参数类型/个数不同）。只改返回类型、只改形参名都不算——编译错误。" >对 —— 随便写</button>
+    <button data-k="b" data-ok="1" data-why="正确！可区分是硬门槛：参数类型不同或个数不同。返回类型和形参名不参与区分。" >
+      不对 —— 必须能被参数列表区分</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "int f() 和 double f() 能共存——因为返回类型不同。"</p>
+  <div class="quiz-opts">
+    <button data-k="b" data-why="调用方可以完全忽略返回值（f();），编译器无从得知你要哪个 → 无法区分 → 编译错误。" >对 —— 返回类型区分它们</button>
+    <button data-k="a" data-ok="1" data-why="正确！重载区分只看参数列表。返回值可以被调用者丢弃（2.2 课用法③），所以返回类型不能作为区分依据。" >
+      不对 —— 参数列表才是区分依据，返回类型不算</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>③ "print(5L)（long 实参）在 print(int) 和 print(double) 之间总能选出唯一最优。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="long 到 int 要收窄转换、到 double 要浮点转换——两条路径'差不多好'，编译器拒绝裁决 → ambiguous call 编译错误。char 'a' 同理（可提升为 int 也可转 double）。" >对 —— long 优先匹配 int</button>
+    <button data-k="b" data-ok="1" data-why="正确！两条转换路径难分优劣时编译器报 ambiguous（歧义）错误。修法：显式 cast 实参，或增加精确匹配的重载。" >
+      不对 —— 两条转换路径难分高下，报歧义错误</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>④ "默认参数写在声明（头文件）和定义（源文件）里都可以。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="只能写一处——惯例是声明里。两处都写是重复默认参数，编译错误。" >对 —— 两处都行</button>
+    <button data-k="b" data-ok="1" data-why="正确！默认参数只能指定一次；声明与定义分离时写在声明（头文件）里，让所有 include 它的消费者都看得到默认值。" >
+      不对 —— 只能写一次，惯例在声明中</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "给已有函数加新参数时，带默认值可以不破坏任何现有调用。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！这是默认参数的核心工程价值：新参数有了保底值，旧调用点一个都不用改（它们自动用默认）。原文专门强调的场景。" >
+      对 —— 新参数自动用默认值，旧调用点零修改</button>
+    <button data-k="b" data-why="不带默认值的新参数会让所有旧调用点编译失败——这正是默认参数的用武之地。" >不对 —— 旧调用点全要改</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑥ "模板不是函数——它不直接编译执行。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！本课 Key insight 原话：模板的唯一职责是生成函数。调用 max(3,4) 时编译器先隐式实例化 max&lt;int&gt;，执行的是实例化产物。" >
+      对 —— 模板生成函数，执行的是实例化产物</button>
+    <button data-k="b" data-why="若模板直接执行，类型 T 就没有意义了——正是'先生成再执行'才让泛型成为可能。" >不对 —— 模板直接执行</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑦ <code>max(3, 4.5)</code>（模板只有一个 T）会怎样？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！3 推 T=int，4.5 推 T=double——一个 T 不能同时是两种 → 编译错误。修法三选一：显式 max&lt;double&gt;(3,4.5) / 两个模板参数 / 统一实参类型。" >
+      编译错误：T 的推导冲突（int vs double）</button>
+    <button data-k="b" data-why="模板不做类型协商——协商是算术转换规则（10.5 课）的事，发生在实例化之后。T 的推导阶段就失败了。" >4.5（自动转成 double）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑧ "没被使用的模板实例不会生成——可执行文件不会膨胀。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！实例化是按需的：调用 max&lt;int&gt; 才生成 max&lt;int&gt;，max&lt;double&gt; 没被调用就不存在。这是模板设计的聪明之处——不为你不用的类型付费。" >
+      对 —— 实例化按需生成</button>
+    <button data-k="b" data-why="若全部类型都生成，一个 max 模板就能把二进制撑爆——显然不是这样。" >不对 —— 全部类型都生成</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑨ "骰子函数 rollDie，多数时候 6 面，偶尔要 20 面"，最简洁的声明是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="重载能做但啰嗦：两个函数体几乎一样，只是为了省一个实参。" >int rollDie6(); 与 int rollDie20(); 两个重载</button>
+    <button data-k="b" data-ok="1" data-why="正确！默认参数的教科书场景：int rollDie(int sides = 6)。rollDie() 掷 6 面，rollDie(20) 掷 20 面。原文示例几乎原话。" >
+      int rollDie(int sides = 6);</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="6" data-hint="模板实例化 max&lt;int&gt;。5 和 6 谁大？" data-explain="输出 6。隐式实例化 max&lt;int&gt;(5,6)：(5&lt;6) 为 true 返回 y=6。对比 max(5, 4.5) 会编译错误（T 冲突）——同一模板，合法调用与非法调用一线之隔。">
+  <p class="quiz-q">⑩ <code>std::cout &lt;&lt; max(5, 6);</code>（模板 max）</p>
+  <div class="prow"><input type="text" placeholder="程序输出"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 9–11 章全部通过！基础语言 + 泛型入门完成——下一站：第 12 章（引用与指针），C++ 真正的分水岭。</div>
+
+<div class="pager">
+  <a class="prev" href="01-overload-template.html"><span class="dir">← 上一节</span>11.1 函数重载与模板</a>
+  <a class="next" href="../index.html"><span class="dir">返回 →</span>目录</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-11-summary-and-quiz/">LearnCpp Chapter 11 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

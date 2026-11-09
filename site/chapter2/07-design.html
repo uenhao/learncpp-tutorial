@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2.7 设计你的程序 + 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter2/07-design.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 2 章</a> / 设计方法与章测验</div>
+<article>
+<h1>2.7 设计你的程序</h1>
+
+<p>第 1 章的"设计三问"在有了函数之后全面升级：现在你能把设计<strong>直接映射到代码结构</strong>上了。这一课先讲 learncpp 的完整设计方法（它其实是 7 步，不是 3 问），再用一个完整例子走完"从想法到能跑的代码"的全过程——这次有真代码、有参考答案。</p>
+
+<h2>完整的 7 步设计法（learncpp 2.13 原文）</h2>
+
+<p>原文把"设计"拆成 5 个设计步骤 + 3 个实现步骤。前 3 步对新手可以快进，但<strong>后 5 步是每天都在用的核心功</strong>：</p>
+
+<table class="cmp">
+  <tr><th>阶段</th><th>步骤</th><th>做什么</th></tr>
+  <tr><td rowspan="5">设计</td><td>① 定义目标</td><td>用一两句话说清程序做什么（用户视角的成果）</td></tr>
+  <tr><td>② 定义需求</td><td>列约束与能力清单——注意说"要什么"，不说"怎么做"</td></tr>
+  <tr><td>③ 工具/目标/备份</td><td>新手可快进：自己用、单人、本机开发。但要记得<strong>备份代码</strong>（用 git）</td></tr>
+  <tr><td>④ 拆解难题</td><td>把大任务拆成小任务，直到每块都不难（自顶向下）</td></tr>
+  <tr><td>⑤ 排出事件顺序</td><td>把子任务串成执行顺序——这就是 main 的雏形</td></tr>
+  <tr><td rowspan="3">实现</td><td>⑥ 写 main 骨架</td><td>把顺序写成一行行被注释的函数调用</td></tr>
+  <tr><td>⑦ 逐个实现函数</td><td>每写完一个函数就<strong>编译、测试</strong>，通过再写下一个</td></tr>
+  <tr><td>（收尾）</td><td>整体测试 → 保持简单 → 逐步加功能 → 定期重构</td></tr>
+</table>
+
+<div class="box concept">
+  <div class="box-t">📐 步骤④的关键：任务层级（原文的"打扫房子"例子）</div>
+  <p>"打扫房子"太大没法下手，拆：</p>
+  <pre class="plain">打扫房子
+├── 吸地毯
+├── 打扫浴室
+│   ├── 刷马桶
+│   └── 洗洗手池
+└── 打扫厨房
+    └── 倒垃圾</pre>
+  <p>拆到每一片叶子都"不难"为止。程序设计同理："写个温度转换器"不好下手，拆成"读输入 / 做换算 / 打印结果"，每一块才对应得上具体的函数。原文还提到自底向上的反方向：先列一堆会做的小事，再把它们归组——两种方向都能建立任务层级。</p>
+</div>
+
+<div class="box concept">
+  <div class="box-t">📐 步骤⑥⑦的关键：先骨架后填肉（原文的"计算器"例子）</div>
+  <p>把步骤⑤的事件顺序直接翻译成 main 的注释骨架：</p>
+  <pre class="code">int main()
+{
+    // 从用户获取第一个数
+    // getUserInput();
+
+    // 获取运算符
+    // getMathematicalOperation();
+
+    // 获取第二个数
+    // getUserInput();
+
+    // 计算结果
+    // calculateResult();
+
+    // 打印结果
+    // printResult();
+
+    return 0;
+}</pre>
+  <p>然后<strong>一次只实现一个函数</strong>：定原型（输入输出是什么）→ 写函数体 → 在 main 里加临时代码测试它 → 通过后删掉临时代码、解锁下一个调用。原文的原话值得记住：<strong>"不要一口气写完整个程序。一步一步来，每步都测试后再前进。"</strong></p>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 原文给新手的四条忠告</div>
+  <ul>
+    <li><strong>从最简单的版本开始</strong>："带图形音效随机地下城的 RPG"只会让你崩溃；先写"在屏幕上显示一个二维格子"</li>
+    <li><strong>随时间增加功能</strong>：格子 → 会走路的角色 → 墙 → 小镇 → 商人</li>
+    <li><strong>一次加一个功能</strong>，每个功能都是"先让它在现有基础上工作"</li>
+    <li><strong>随时重构</strong>：消除重复、拆长函数——可维护性优先于炫技</li>
+  </ul>
+</div>
+
+<hr>
+
+<h2>实战：温度转换器（完整走一遍 7 步）</h2>
+
+<p>下面把上面的方法原样套在一个小项目上。这个例子在仓库 <code>chapter2/13-design-first-programs/temperature/</code> 有完整可编译的代码，网页里的每一步都与仓库文件一一对应。</p>
+
+<h3>第①步：定义目标</h3>
+<p>一句话："允许用户输入一个温度和单位（F 或 C），程序输出换算成另一种单位后的温度。"</p>
+
+<h3>第②步：定义需求</h3>
+<ul>
+  <li>用户输入一个数字和一个单位字母（如 <code>100 C</code> 或 <code>32 F</code>）</li>
+  <li>程序按正确的公式换算并打印结果</li>
+  <li>输入了 F/f 或 C/c 之外的东西，要给出可理解的提示而不是乱输出</li>
+  <li>（说"要什么"不说"怎么做"——注意上面没有任何一句提到函数或文件）</li>
+</ul>
+
+<h3>第③步：工具/目标/备份</h3>
+<p>本机 g++ + VS Code，单人自用。备份：本项目就是 git 仓库（如果还没有，<code>git init</code> 一下，学编程第一天就该有这个习惯）。</p>
+
+<h3>第④步：拆解</h3>
+<pre class="plain">温度转换器
+├── 换算：华氏 → 摄氏
+├── 换算：摄氏 → 华氏
+├── 用户交互：读入温度与单位
+└── 用户交互：打印结果</pre>
+
+<h3>第⑤步：事件顺序</h3>
+<pre class="plain">读入温度和单位
+判断单位
+  若 F：调用华氏→摄氏，打印
+  若 C：调用摄氏→华氏，打印
+  否则：打印错误提示</pre>
+
+<h3>第⑥步：main 骨架</h3>
+<pre class="code">int main()
+{
+    // 读入温度与单位
+    // readInput();
+
+    // 判断单位并换算、打印
+    // convertAndPrint();
+
+    return 0;
+}</pre>
+
+<h3>第⑦步：逐个实现</h3>
+
+<p>先实现两个纯换算函数（它们不碰 cin/cout，最好测）。华氏转摄氏的公式是 <code>C = (F − 32) × 5 ⁄ 9</code>：</p>
+
+<pre class="code">// convert.h —— 先写"契约"
+#ifndef CONVERT_H
+#define CONVERT_H
+
+// Converts a Fahrenheit temperature to Celsius.
+double fahrenheitToCelsius(double fahrenheit);
+
+// Converts a Celsius temperature to Fahrenheit.
+double celsiusToFahrenheit(double celsius);
+
+#endif</pre>
+
+<pre class="code">// convert.cpp —— 再写"兑现"
+#include "convert.h"
+
+double fahrenheitToCelsius(double fahrenheit)
+{
+    return (fahrenheit - 32.0) * 5.0 / 9.0;
+}
+
+double celsiusToFahrenheit(double celsius)
+{
+    return celsius * 9.0 / 5.0 + 32.0;
+}</pre>
+
+<p><strong>立刻测试这两个函数</strong>（第⑦步要求每写完一个就测）：写个五行的临时代码调一下——</p>
+
+<pre class="code">// 临时测试代码（测完就删）
+#include &lt;iostream&gt;
+#include "convert.h"
+
+int main()
+{
+    std::cout << fahrenheitToCelsius(212.0) << '\n'; // 期待 100
+    std::cout << celsiusToFahrenheit(100.0) << '\n'; // 期待 212
+    std::cout << fahrenheitToCelsius(32.0)  << '\n'; // 期待 0
+    return 0;
+}</pre>
+
+<pre class="plain">g++ -std=c++20 -Wall -Wextra -I. -o t convert.cpp test.cpp && ./t
+100
+212
+0          ✅ 公式正确，可以进入下一步</pre>
+
+<p>换算层确认可靠后，再实现交互层：</p>
+
+<pre class="code">// main.cpp
+#include &lt;iostream&gt;
+#include "convert.h"
+
+int main()
+{
+    std::cout << "Enter temperature and unit (F or C), e.g. 100 C: ";
+
+    double temp{};
+    char unit{};
+    std::cin >> temp >> unit;
+
+    if (unit == 'F' || unit == 'f')
+        std::cout << temp << "F = " << fahrenheitToCelsius(temp) << "C\n";
+    else if (unit == 'C' || unit == 'c')
+        std::cout << temp << "C = " << celsiusToFahrenheit(temp) << "F\n";
+    else
+        std::cout << "Unknown unit: " << unit << '\n';
+
+    return 0;
+}</pre>
+
+<h3>第⑦步的收尾：整体测试</h3>
+
+<table class="cmp">
+  <tr><th>输入</th><th>期待输出</th><th>检验了什么</th></tr>
+  <tr><td><code>100 C</code></td><td>100C = 212F</td><td>常规换算</td></tr>
+  <tr><td><code>32 F</code></td><td>32F = 0C</td><td>冰点边界</td></tr>
+  <tr><td><code>-40 C</code></td><td>-40C = -40F</td><td>两标度相等的特殊点（负数处理）</td></tr>
+  <tr><td><code>50 X</code></td><td>Unknown unit: X</td><td>非法输入分支</td></tr>
+</table>
+
+<details class="reveal">
+  <summary>🧩 设计取舍：为什么换算逻辑单独放 convert.h/convert.cpp，而不直接写在 main 里？</summary>
+  <p>把"会变的东西"（交互方式）与"稳定的东西"（数学公式）分开。今天用 cin，明天换 GUI、后天做成库给别人用——convert.h 一个字都不用改。此外分离后换算函数可以<strong>不启动 UI 单独测试</strong>（上面那五行临时代码就是证明），也可以被别的程序 include 复用。对照仓库的 <code>temperature/</code> 三件套亲自编译跑一遍：</p>
+  <pre class="plain">cd chapter2/13-design-first-programs/temperature
+g++ -std=c++20 -Wall -Wextra -I. -o temp main.cpp convert.cpp
+./temp        # 试 100 C、32 F、-40 C、50 X 四个用例</pre>
+</details>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>把换算逻辑放进独立函数/独立文件，最大的收益是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="运行性能没有变化——函数调用甚至有一点点开销（可忽略）。结构化的收益从来不在快慢。">程序运行更快</button>
+    <button data-k="b" data-ok="1" data-why="正确！公式从此有了独立的生命：可以单独测试（不启动 UI 就能验证 32F=0C）、可以在交互方式改变时原封不动地保留、可以被别的程序复用。'隔离变化'是所有架构原则的总纲。">
+      逻辑可独立测试与复用，交互方式变化时无需改动它</button>
+    <button data-k="c" data-why="代码行数反而会变多（多了头文件和声明）。组织结构的花费买的是可维护性，不是行数。">代码总行数更少</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>第⑦步说"每实现一个函数就立刻测试"。如果不这么做，一口气写完全部五个函数才第一次编译运行，最可能的后果是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！这是原话的推论：五个函数一起出问题，你无法知道错误藏在哪一个——每个都'看起来没问题'。而逐个实现+测试时，一旦出问题必然出在刚写的那个函数里，定位成本几乎为零。这就是'小步前进'的价值。">
+      出错时难以定位是哪个函数的问题</button>
+    <button data-k="b" data-why="一次编译和分五次编译的总工作量差不多，CMake/编译器处理起来没有实质区别——问题不在编译慢，而在错误定位难。">编译时间大幅变长</button>
+    <button data-k="c" data-why="编译器不理解'程序意图'，只要语法和类型合法就放行。五个函数的逻辑错误（比如公式写反）只有运行测试才能暴露。">编译器会报错并阻止你运行</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：先设计后编码，伪代码是脚手架</div>
+  <p>注意整个实战里，<strong>真正敲 C++ 代码之前发生了什么</strong>：一句话目标 → 需求清单 → 任务树 → 事件顺序 → 注释骨架。这些中间产物看起来"很慢"，但它们把你从"面对空白文件不知道写什么"的瘫痪状态里解放出来——写 convert.h 时你只需要照着任务树上的"换算：华氏→摄氏"这一片叶子工作，其他什么都不用想。learncpp 作者的忠告：写程序最难的部分不是敲代码，而是<strong>在敲代码之前想清楚</strong>。等这套流程熟练之后，你会逐渐能"边写边设计"——但那是长在扎实流程上的自由，不是跳过流程的莽撞。</p>
+</div>
+<hr>
+
+<h1>第 2 章综合测验</h1>
+
+<p>7 题收尾。目标：全对。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① 函数的形参是实参的拷贝，因此函数永远无法影响调用者手中的变量。</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="就本章工具而言对，但'永远'太绝对：引用传递（第 12 章）正是为了打破这个限制。现在请按'按值传递'的心智模型思考。" >对 —— 永远无法影响</button>
+    <button data-k="b" data-ok="1" data-why="最佳答案！按值传递（本章所学）确实只操作拷贝；但语言提供了引用传递等手段，学完第 12 章你会回头修正这句话。区分'当前学到的规则'和'语言的最终真相'，是层次化学习的必备心态。" >
+      按本章的按值传递规则是这样，但语言有其他传参方式</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>② <code>int helper(int);</code> 出现在三个不同的 .cpp 文件中（内容相同）。违反 ODR 吗？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="声明不是定义——ODR 管的是定义（有函数体）。声明允许重复任意次，这正是头文件机制能工作的原因。" >违反 —— 声明也只能一次</button>
+    <button data-k="b" data-ok="1" data-why="正确！ODR 约束的是定义。同一个声明写三遍（或者它来自同一个头文件被 include 三次）完全合法。这也解释了为什么头文件里放声明、靠保护宏防重复——双保险之下一切安好。" >
+      不违反 —— ODR 只约束定义，声明可重复</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>③ <code>main.cpp</code> 调用 <code>add(1, 2)</code>，add 定义在 <code>add.cpp</code>。构建时报 <code>undefined reference to add(int, int)</code>。最可能的原因？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="声明缺失的话，报错发生在编译期（'add' was not declared），而且报错文件是 main.cpp。undefined reference 是链接期的错误，方向不同。" >main.cpp 里忘了写前向声明</button>
+    <button data-k="b" data-ok="1" data-why="正确！链接器在所有目标文件里找不到 add 的定义——十有八九是构建命令漏了 add.cpp（比如只写了 g++ main.cpp），或 CMake 目标没列出它。声明只影响编译，'找不到定义'永远是链接期、文件清单层面的问题。" >
+      add.cpp 没有参与编译链接（文件清单漏了它）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>④ 头文件保护（#ifndef/#define/#endif）防止的是"同一个 .cpp 的两次编译"。</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="一个 .cpp 只编译一次，不存在'两次编译'。保护针对的是同一次预处理中，同一头文件内容被粘贴多次（经由不同的 include 路径）。" >对</button>
+    <button data-k="b" data-ok="1" data-why="正确！场景是：main.cpp include 了 a.h 和 b.h，两者都 include config.h → 一次预处理中 config.h 粘贴两遍。保护宏让第二遍整体跳过。记住主角是'同一次预处理的重复粘贴'。" >
+      不对 —— 防的是同一次预处理中头文件被重复粘贴</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="5 5 5" data-hint="三次调用是三个独立的世界。counter 里的 n 每次从几开始？" data-explain="输出 5 5 5。每次调用 n 都是全新的局部变量（初值 5）；打印发生在 ++n 之前，所以打印的是 5（++n 到 6 后 n 随函数结束销毁，下次调用又是新的 5）。局部变量无记忆 + 语句顺序，两个知识点各占一半。">
+  <p class="quiz-q">⑤ 预测输出（三段，空格分隔）：</p>
+  <pre class="code">void counter()
+{
+    int n{ 5 };
+    std::cout &lt;&lt; n &lt;&lt; ' ';
+    ++n;
+}
+int main() { counter(); counter(); counter(); }</pre>
+  <div class="prow"><input type="text" placeholder="如: 1 2 3"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="predict" data-answer="inside: 100 outside: 7||inside:100 outside:7||100 7" data-hint="两次打印分别发生在函数内（改的是谁？）和函数外（b 变了吗？）。" data-explain="输出 inside: 100 outside: 7。x = 100 改的是拷贝；b 保持 7。注意输出里两个部分之间有空格：字符串字面量里的空格 + 数值之间由 &lt;&lt; ' ' 提供（如果代码是这样写的）。">
+  <p class="quiz-q">⑥ 预测输出：</p>
+  <pre class="code">void setTo(int x)
+{
+    x = 100;
+    std::cout &lt;&lt; "inside: " &lt;&lt; x &lt;&lt; '\n';
+}
+int main()
+{
+    int b{ 7 };
+    setTo(b);
+    std::cout &lt;&lt; "outside: " &lt;&lt; b &lt;&lt; '\n';
+}</pre>
+  <div class="prow"><input type="text" placeholder="两行输出"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑦ 复习性收尾：以下哪项<strong>不是</strong>把代码拆成 .h + .cpp 的理由？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="这是真实理由：声明集中一处，签名变更只需改头文件，include 它的所有源文件在下次编译时自动暴露不一致。" >声明只写一次，避免手抄出错</button>
+    <button data-k="b" data-why="真实理由：接口（.h）与实现（.cpp）分离，使用者只见契约不见细节。" >让接口与实现分离</button>
+    <button data-k="c" data-ok="1" data-why="正确——拆文件不会让程序更快。链接产物完全一样，运行时性能与文件结构无关。结构化的收益全部在'人的维度'：可读、可改、可协作。" >
+      让编译后的程序运行得更快</button>
+    <button data-k="d" data-why="真实理由：多个文件共享同一份声明，防止 ODR 式的重复定义与手抄不一致。" >支持多文件协作开发</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 2 章全部通过！你已完成 learncpp 0–2 章的旅程——下一站：调试（第 3 章）。</div>
+
+<div class="pager">
+  <a class="prev" href="06-preprocessor-guards.html"><span class="dir">← 上一节</span>2.6 预处理器与头文件保护</a>
+  <a class="next" href="../index.html"><span class="dir">返回 →</span>目录</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/how-to-design-your-first-programs/">LearnCpp 2.13 & Chapter 2 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

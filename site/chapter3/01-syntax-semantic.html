@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3.1 语法错误与语义错误 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter3/01-syntax-semantic.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 3 章</a> / 语法错误与语义错误</div>
+<article>
+<h1>3.1 语法错误与语义错误</h1>
+
+<p>软件错误遍地都是——犯错误很容易，找错误却很难。本章专门讲"如何找到并消灭 bug"，包括如何使用 IDE 里的集成调试器。调试工具虽然不属于 C++ 标准，但<strong>找 bug 的能力决定了你能不能成为合格的程序员</strong>：程序越写越复杂，诊断问题的能力必须同步升级。</p>
+
+<p>好消息是：错误虽然五花八门，但基本都落在两大类里。<strong>先把分类搞清楚，遇到 bug 才知道该用什么武器。</strong></p>
+
+<h2>语法错误（syntax errors）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>语法错误</strong>：写出的语句不符合 C++ 语言的语法规则。漏分号、括号不配对、花括号不配对，都属于这一类。</p>
+  <p>关键性质：语法错误<strong>百分之百会被编译器当场抓住</strong>——编译器就是语法的执法者。</p>
+</div>
+
+<p>一个"集大成"的语法错误示例（原文同款）：</p>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main( // 错 1：缺右括号
+{
+    int 1x; // 错 2：变量名不能以数字开头
+    std::cout &lt;&lt; "Hi there"; &lt;&lt; x +++ &lt;&lt; '\n'; // 错 3：多余的分号；错 4：operator+++ 不存在
+    return 0 // 错 5：语句末尾缺分号
+}</pre>
+
+<p>处理语法错误的流程简单到不需要思考：<strong>编译 → 读第一条报错 → 修复 → 再编译</strong>，循环直到零错误。你在第 0 章已经练过了。</p>
+
+<h2>语义错误（semantic errors）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>语义错误</strong>：语句在语法上完全合法，但<strong>含义</strong>错了——要么违反了语言的其他规则，要么没做程序员想让它做的事。</p>
+  <p>这是本章的主角，因为它<strong>不会都被编译器抓住</strong>。</p>
+</div>
+
+<p>语义错误按"谁抓得住"分三个层级：</p>
+
+<h3>层级 1：编译期能抓的语义错误</h3>
+
+<pre class="code">int main()
+{
+    5 = x;           // x 未声明；而且不能给字面量 5 赋值
+    return "hello";  // 字符串没法转成 int 返回
+}</pre>
+
+<p>类型不匹配、使用未声明的名字——编译器照样拦下你。这类错误虽然"语义"错了，但待遇和语法错误一样：读报错、修复、重编译。</p>
+
+<h3>层级 2：运行时崩溃的语义错误</h3>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{
+    int a { 10 };
+    int b { 0 };
+    std::cout &lt;&lt; a &lt;&lt; " / " &lt;&lt; b &lt;&lt; " = " &lt;&lt; a / b &lt;&lt; '\n'; // 除以 0！
+    return 0;
+}</pre>
+
+<p>程序能编译、能运行，然后<strong>当场崩溃</strong>。崩溃至少是个响亮的信号——它告诉你"这里有 bug"，虽然不告诉你在哪。</p>
+
+<h3>层级 3：不崩溃、只给出错误结果的语义错误（最危险）</h3>
+
+<pre class="code">int add(int x, int y) // 这个函数本该做加法
+{
+    return x - y;     // 却写成了减法
+}
+
+int main()
+{
+    std::cout &lt;&lt; "5 + 3 = " &lt;&lt; add(5, 3) &lt;&lt; '\n'; // 应输出 8，实际输出 2
+    return 0;
+}</pre>
+
+<p>再比如 return 之后还有语句（永远执行不到）、读取未初始化的变量……这类错误<strong>不喊不叫</strong>：程序平静地给出错误答案，你可能过了三天才发现。在小程序里靠肉眼还能看出来；在真实项目里，<strong>靠盯着代码看是找不全的</strong>——这正是本章后面要教调试技术的理由。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">分类</span>以下四个问题，哪个属于"运行时语义错误"？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="漏分号是纯语法错误——编译器第一条就报，程序根本不会诞生。">语句末尾漏了分号</button>
+    <button data-k="b" data-why="把 int 传给需要 double 的参数是编译期语义错误：编译器发现类型不匹配，会做隐式转换或（窄化时）报警告/报错，程序照样能诞生。">给需要 double 的函数传了 int</button>
+    <button data-k="c" data-ok="1" data-why="正确！读取未初始化的局部变量是运行时语义错误（而且属于未定义行为）：编译合法、运行不崩（多半），只是悄悄给出垃圾值。三个层级里它属于最危险的层级 3——不崩溃、只给错结果。在实际程序里这种 bug 可能潜伏很久。" >
+      读取了未初始化的局部变量</button>
+    <button data-k="d" data-why="函数名拼写不一致（声明 addNum 定义 add）是链接期错误——0.1 课的 undefined reference，既不是编译期也不是运行期语义错误。">声明与定义的函数名不一致</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：错误分三个"层级"，武器各不相同</div>
+  <p>编译期错误（语法 + 部分语义）→ 读报错就够了；链接期错误 → 检查名字与文件清单（0.1 课）；运行时语义错误 → 编译器帮不了你，需要本章剩下的全部内容：调试流程、定位策略、调试器。把"bug 属于哪一层"判断清楚，是高效解决 bug 的第一步——最怕的就是拿着"读报错"的武器去对付一个不报错的运行时 bug。</p>
+</div>
+
+<div class="predict" data-answer="5 + 3 = 2" data-hint="add 内部的运算符是什么？照实预测——不需要给出正确答案。" data-explain="程序输出 5 + 3 = 2，而不是 8——add 用减法冒充加法。注意这个程序编译、运行全都正常，只是结果错。这正是运行时语义错误（层级 3）的特征，也是第 3.2 课调试流程要解决的第一案。">
+  <p class="quiz-q">🎯 预测输出（整行，含前缀）：</p>
+  <pre class="code">int add(int x, int y)
+{
+    return x - y;   // 手滑
+}
+int main()
+{
+    std::cout &lt;&lt; "5 + 3 = " &lt;&lt; add(5, 3) &lt;&lt; '\n';
+}</pre>
+  <div class="prow"><input type="text" placeholder="如: 5 + 3 = 8"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="practice-note">💻 动手验证：把"集大成"的语法错误示例抄进 <code>chapter3/01-syntax-semantic/</code> 的新文件编译一次，数一数第一条报错之后还跟着几条（体会"连坐"）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 3 章</a>
+  <a class="next" href="02-debug-process.html"><span class="dir">下一节 →</span>3.2 调试流程</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/syntax-and-semantic-errors/">LearnCpp 3.1</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

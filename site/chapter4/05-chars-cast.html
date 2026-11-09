@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4.5 字符与类型转换 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter4/05-chars-cast.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 4 章</a> / 字符与类型转换</div>
+<article>
+<h1>4.5 字符与类型转换</h1>
+
+<h2>char：最小的大惊喜</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>char</strong>：设计用于存放单个字符，通常 1 字节。字面量用<strong>单引号</strong>：<code>'a'</code>、<code>'@'</code>、<code>'5'</code>。第 1.9 课你见过它，现在揭底牌：<strong>char 本质是个小整数</strong>，字符 'A' 存的是整数 65——它是 ASCII 编码表的查询结果。</p>
+</div>
+
+<pre class="code">char c1 { 'A' };  // 存的是 65
+char c2 { '5' };  // 注意：这是字符 5，存的是 53 —— 不是数字 5！
+char c3 { 65 };   // 合法，等价于 'A'（但别这么写，用字面量更清晰）</pre>
+
+<p>ASCII 表值得记住的锚点：<strong>'0' 是 48，'A' 是 65，'a' 是 97</strong>。由规律可推算：'7' = '0' + 7 = 55；'B' = 66；数字字符之间的差就是数值差（<code>'7' - '0'</code> == 7）。</p>
+
+<h3>打印 char：按字符解释，还是按整数解释？</h3>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{
+    char c { 'A' };
+    std::cout &lt;&lt; c &lt;&lt; '\n';          // A —— cout 默认按"字符"打印
+
+    int i { c };                     // 把 char 提升为 int
+    std::cout &lt;&lt; i &lt;&lt; '\n';          // 65 —— 按"整数"打印
+
+    std::cout &lt;&lt; static_cast&lt;int&gt;(c) &lt;&lt; '\n'; // 65 —— 显式转换（下文）
+    return 0;
+}</pre>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 反例：char 参与算术后打印成整数</div>
+  <pre class="code">char c { 'A' };
+std::cout &lt;&lt; c + 1 &lt;&lt; '\n';   // 打印 66，不是 'B'！</pre>
+  <p><code>c + 1</code> 把 char 提升为 int 再运算，结果是 int，cout 按 int 打印。想打印 'B' 得先存回 char：<code>char b = c + 1;</code>。理解"char 是整数，只是打印方式不同"，这类现象都能解释。</p>
+</div>
+
+<h3>输入 char 与第 3 章测验的"char 藏 bug"回收</h3>
+
+<p>第 3 章综合测验 Q4 里那个程序：用 <code>char x</code> 读数字 8，结果 x 是 56——现在你能解释了：<code>cin &gt;&gt; x</code> 读入的是<strong>字符 '8'</strong>，存成整数 56（ASCII），后续按 int 参与运算当然全错。<strong>读什么类型的数据，就声明什么类型的变量。</strong></p>
+
+<h2>类型转换与 static_cast</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：隐式转换（implicit conversion）</div>
+  <p>类型不匹配时编译器自动转换——比如把 int 传给需要 double 的参数，5 变成 5.0。方便，但<strong>看不见摸不着</strong>。</p>
+  <p><strong>static_cast&lt;目标类型&gt;(值)</strong>：显式告诉编译器"我要转换"。它是转换意图的<strong>说明书</strong>，让代码读者一眼看到"这里有转换发生"。</p>
+</div>
+
+<pre class="code">void print(double x)
+{
+    std::cout &lt;&lt; x &lt;&lt; '\n';
+}
+
+int main()
+{
+    print(5);                          // 隐式转换：5 → 5.0，打印 5
+    int y { 5 };
+    print(y);                          // 同上
+    print(static_cast&lt;double&gt;(y));     // 显式：意图清晰
+    return 0;
+}</pre>
+
+<h3>回收 1.6 课的欠条：整数除法</h3>
+
+<p>1.6 课埋的"7/2 == 3"之迷，现在有标准解法——<strong>除法前把操作数转成浮点</strong>：</p>
+
+<pre class="code">int a { 7 };
+int b { 2 };
+
+std::cout &lt;&lt; a / b &lt;&lt; '\n';                     // 3 —— int/int 整数除法
+std::cout &lt;&lt; static_cast&lt;double&gt;(a) / b &lt;&lt; '\n'; // 3.5 —— 先转再除
+std::cout &lt;&lt; a / static_cast&lt;double&gt;(b) &lt;&lt; '\n'; // 3.5 —— 转一边也行</pre>
+
+<p>规则：除法运算中<strong>只要有一个操作数是浮点，整个除法就是浮点除法</strong>。static_cast 只需转其中一个。</p>
+
+<div class="box best">
+  <div class="box-t">✅ 何时该写 static_cast</div>
+  <ul>
+    <li><strong>安全方向</strong>（宽→窄的反向：int→double）编译器自动做且无信息损失，写不写随项目风格；</li>
+    <li><strong>危险方向</strong>（窄化：double→int、大范围→小范围）隐式转换被 1.4 课的 <code>{}</code> 初始化拦住；如果确实要转（你确认丢弃小数是故意的），用 <code>static_cast&lt;int&gt;(3.9)</code> 表明"我明知故转"；</li>
+    <li>原则：<strong>每个 static_cast 都是签名</strong>——"这里我知道类型变了，且我审过它的安全性"。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>输出什么？</p>
+  <pre class="code">char c { 'D' };
+int  n { 4 };
+std::cout &lt;&lt; n + c &lt;&lt; '\n';</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="'D' 的 ASCII 是 68，n+c = 4+68 = 72——int 参与运算，cout 按 int 打印。想要 'H' 得把结果存回 char。" >H</button>
+    <button data-k="b" data-ok="1" data-why="正确！c（68）提升为 int 与 4 相加得 72，cout 按整数打印 72。char 参与算术即被提升为 int——这就是'char 是小整数'的直接体现。若想得到字符 'H'：char r = n + c; 再打印 r。" >
+      72</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>想计算 <code>total / count</code> 的平均值（total=17, count=2，都是 int），正确写法是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="先把 int 结果转 double 已经晚了：17/2 在整数除法阶段就变成 8，转换只是给 8 加个 .0。" >static_cast&lt;double&gt;(total / count)</button>
+    <button data-k="b" data-ok="1" data-why="正确！必须让除法本身成为浮点除法——在除之前转至少一个操作数。选项 a 的错误极具代表性：它'看起来'转了类型，但转换发生在整数除法之后，为时已晚。判断口诀：转换发生在运算求值之前——先转，再算。" >
+      static_cast&lt;double&gt;(total) / count</button>
+    <button data-k="c" data-why="double(total/count) 是 C 风格写法的变体，同样晚转；而且 C 风格转换本来就该避免。" >double(total / count)</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：一切类型转换都有"方向"和"代价"</div>
+  <p>本课把第 1 章的三张欠条全部兑付：整数除法（1.6）、char 打印整数（1.9 'A' 与 "A" 之辨的深化）、cin 提取失败的根源（1.4/第 3 章 Q4）。现在你有一张<strong>转换地图</strong>：char→int→double（宽化，安全，可能隐式发生）；double→int（窄化，丢小数，必须显式表明故意）。类型系统的世界观由此完整：<strong>类型 = 宽度 + 解释（4.1）；转换 = 改解释，可能有损</strong>。第 10 章还会回到转换与推导，届时地基已打好。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter4/05-chars-cast/</code> 的 <code>char_arith.cpp</code>（char 运算与打印）、<code>ascii_anchors.cpp</code>（打印 '0'/'A'/'a' 的整数值）和 <code>exercises/int_div_fix.cpp</code>（把 1.6 课的整数除法程序用 static_cast 修成浮点除法）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="04-if-statements.html"><span class="dir">← 上一节</span>4.4 if 语句</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 4 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chars/">LearnCpp 4.11–4.12</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

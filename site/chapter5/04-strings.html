@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5.4 std::string 与 string_view · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter5/04-strings.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 5 章</a> / std::string 与 string_view</div>
+<article>
+<h1>5.4 std::string 与 string_view</h1>
+
+<p>你从 1.4 课就开始用 <code>std::string</code> 存名字——当时"先记住用法"。现在类型观完整了，正式介绍它，并认识它的搭档 <strong>string_view</strong>。</p>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：std::string（&lt;string&gt;）</div>
+  <p><strong>std::string 不是基本类型</strong>——它是"类类型"（第 14 章展开）。要点：它会<strong>按需自动分配内存</strong>（动态内存分配），所以能装任意长度的文本——这正是它灵活的来源，也是它"与 constexpr 不兼容"（5.3 课）的原因。</p>
+</div>
+
+<pre class="code">#include &lt;string&gt;   // std::string 在这里
+
+int main()
+{
+    std::string name{ "Alex" };
+    name = "Jason";              // 变长！没问题
+    name = "Jay";                // 变短！也没问题
+    std::string id{ "45" };      // "45" 是文本不是数字——不能当 45 乘除
+}</pre>
+
+<h2>输入字符串的两种方式（重要陷阱）</h2>
+
+<div class="box warn">
+  <div class="box-t">⚠️ cin &gt;&gt; 遇到空格就停</div>
+  <pre class="code">std::string name{};
+std::cin &gt;&gt; name;    // 输入 "John Doe" → 只读到 "John"，" Doe" 留在流里！</pre>
+  <p>下一句 <code>cin &gt;&gt; color</code> 会把残留的 "Doe" 当成 color 的输入——程序"跳过"了第二个提问。1.4 课"cin 提取遇空白分隔"的规则在这里升级成大坑。</p>
+</div>
+
+<div class="box concept">
+  <div class="box-t">📐 解法：std::getline 读整行</div>
+  <pre class="code">std::string name{};
+std::getline(std::cin &gt;&gt; std::ws, name);  // 读一整行（含空格）</pre>
+  <p><strong>std::getline</strong>：把一整行（到换行为止，不含换行符）读进字符串。<code>std::ws</code> 负责先吞掉行首残留的空白——这让你能混用 <code>cin &gt;&gt;</code>（读数字）和 getline（读文本）而不出乱子。</p>
+</div>
+
+<h2>string_view：只读的"视图"（C++17）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：std::string_view（&lt;string_view&gt;）</div>
+  <p><strong>std::string_view</strong>：对已有字符串（C 字符串、std::string、另一个 view）的<strong>只读访问</strong>，<strong>不拷贝数据</strong>。它不是新的字符串，是"看已有字符串的一副眼镜"。</p>
+  <p>背景：拷贝 std::string 开销不小（要分配内存+复制内容）。如果只需要"读"，为什么要付拷贝的代价？</p>
+</div>
+
+<pre class="code">#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include &lt;string_view&gt;
+
+void printSV(std::string_view str) // 参数用 string_view：零拷贝
+{
+    std::cout &lt;&lt; str &lt;&lt; '\n';
+}
+
+int main()
+{
+    std::string_view s{ "Hello, world!" }; // 看着字面量，不拷贝
+    printSV(s);
+
+    std::string name{ "Alex" };
+    printSV(name);     // ✅ string/string_view/C字符串 都能传入
+    printSV("direct"); // ✅
+    return 0;
+}</pre>
+
+<div class="box best">
+  <div class="box-t">✅ 原文最佳实践</div>
+  <p><strong>需要只读字符串时（尤其函数参数），优先 std::string_view 而非 std::string</strong>。它兼容三种字符串来源，省去所有拷贝。</p>
+</div>
+
+<h2>string_view 的代价：视图不是主人</h2>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 被看的字符串必须活得比 view 久</div>
+  <pre class="code">std::string_view bad{};
+{
+    std::string s{ "temp" };
+    bad = s;   // bad 只是"看着" s，不拷贝
+}              // s 在这里销毁！
+std::cout &lt;&lt; bad &lt;&lt; '\n'; // ❌ 视图指向已销毁的内存——未定义行为</pre>
+  <p>"视图"不拥有数据。用眼镜看书，书被扔了，眼镜还架在原处——看的是空气。这条规则 2.2 课"形参是拷贝、返回即销毁"的机制可以完美解释：view 存的是"地址+长度"，地址所指的栈层弹掉，内容即蒸发。<strong>现在只需记住结论：别让 string_view 活得比它看的东西久</strong>；第 12 章指针会把它机制化。</p>
+</div>
+
+<h3>选型速查</h3>
+
+<table class="cmp">
+  <tr><th>场景</th><th>用哪个</th></tr>
+  <tr><td>需要保存/修改字符串</td><td><code>std::string</code>（它拥有数据）</td></tr>
+  <tr><td>只读：传参、临时看看</td><td><code>std::string_view</code>（零拷贝）</td></tr>
+  <tr><td>编译期已知的只读常量字符串</td><td><code>constexpr std::string_view</code>（5.3 课：string 与 constexpr 不兼容，view 可以！）</td></tr>
+</table>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>写一个"打印传入的名字"的函数，最优参数类型是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="能工作，但每次调用都发生一次字符串拷贝——纯读场景白白付出分配+复制成本。" >void print(std::string name)</button>
+    <button data-k="b" data-ok="1" data-why="正确！函数只读字符串，string_view 零拷贝，且调用者传字面量、string、view 都能接——原文最佳实践的原话场景。" >
+      void print(std::string_view name)</button>
+    <button data-k="c" data-why="char* 是 C 风格字符串，第 17 章才讲，且不如 string_view 安全灵活。" >void print(char* name)</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>用户输入 "John Doe" 后，程序输出什么？</p>
+  <pre class="code">std::string name{};
+std::cin &gt;&gt; name;
+std::string color{};
+std::cin &gt;&gt; color;
+std::cout &lt;&lt; name &lt;&lt; " / " &lt;&lt; color;</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="cin >> 遇空格即停：name 只拿到 John，" Doe" 留在缓冲区，被下一个 >> 直接吃掉——第二个提问被跳过。" >John / Doe（第二次提问正常）</button>
+    <button data-k="b" data-ok="1" data-why="正确！>> 的空白分隔规则使第一个提取只拿到 John；残留的 Doe 被第二个 cin >> 顺理成章地读走——用户只回答了一次提问，程序却好像全问完了。这就是 getline + std::ws 存在的理由。" >
+      John / Doe —— 第二个提问被残留输入"抢答"了</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：从"值"到"所有权"的第一步</div>
+  <p>string 与 string_view 的对比，本质是<strong>拥有数据 vs 引用数据</strong>的对比——这是 C++ 后半程（引用、指针、智能指针）的核心主题的第一次露脸。你可以先用 2.2 课的语言理解它：string 像按值传参（拿拷贝、自己管），view 像"只读地借用"。今天记住选型表（存数据用 string，读数据用 view），等第 12 章你回头再看，会发现自己早已在用所有权思维做决策了。另外注意 getline 的 std::ws 小技巧——混用输入方式时的标准姿势，会伴随你所有交互程序。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter5/04-strings/</code> 的 <code>string_demo.cpp</code>（变长与 getline）、<code>exercises/getline_trap.cpp</code>（复现 "John Doe" 抢答案并修复）和 <code>view_dangle.cpp</code>（亲眼观察悬空 view 的输出）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="03-constexpr.html"><span class="dir">← 上一节</span>5.3 编译期求值与 constexpr</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 5 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-stdstring/">LearnCpp 5.7–5.9</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

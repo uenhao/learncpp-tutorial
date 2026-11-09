@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 7 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter7/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 7 章</a> / 综合测验</div>
+<article>
+<h1>第 7 章综合测验</h1>
+
+<p>10 题：三属性、影子、链接性、inline、static 局部变量。先预测再作答。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "全局变量在 main 开始执行时创建。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="更早！全局变量具有静态生命周期：程序启动（main 执行之前）即创建，程序结束才销毁。这就是 4.1 课'全局变量零初始化'保证的时机基础。" >对 —— main 是起点</button>
+    <button data-k="b" data-ok="1" data-why="正确！静态生命周期 = 程序启动时创建（main 之前）、结束时销毁。所以全局变量'天生就有值'，无需 main 里初始化。" >
+      不对 —— 静态生命周期：main 之前创建，main 之后销毁</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>② const 全局变量的默认链接性是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="恰好相反：const 全局默认 internal——每个翻译单元一份独立副本。跨文件共享要用 inline constexpr（下一题）。" >external —— 可跨文件共享</button>
+    <button data-k="b" data-ok="1" data-why="正确！const/constexpr 全局默认 internal 链接：各自翻译单元私有。这也解释了'头文件里定义 const 全局不会 ODR 冲突'（2.12 课练习的机制根源）。" >
+      internal —— 各翻译单元私有</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>③ "非 const 全局变量默认内部链接。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="非 const 全局默认 external（跨文件可见，同名即同一对象）。想改成 internal 要显式加 static。" >对 —— 默认 internal</button>
+    <button data-k="b" data-ok="1" data-why="正确！三种情况三张表：非 const 全局 = external；const/constexpr 全局 = internal；static 修饰的非 const 全局 = internal。表格要分清'默认'与'强制'。" >
+      不对 —— 默认 external，static 才改成 internal</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>④ 输出什么？</p>
+  <pre class="code">int x{ 5 };
+int main()
+{
+    int x{ 10 };
+    std::cout &lt;&lt; x &lt;&lt; ' ' &lt;&lt; ::x;
+}</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="局部 x{10} 遮住全局 x{5}；裸名字取最近的（10），::x 显式取全局（5）。:: 是作用域解析符的'从最外层找'用法。" >10 10</button>
+    <button data-k="b" data-ok="1" data-why="正确！影子规则 + 作用域解析符的空命名空间用法：裸名 = 最近定义（局部 10）；::x = 全局（5）。能救急，但最佳实践是不制造影子。" >
+      10 5</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑤ 为什么原文称非 const 全局变量为 evil？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="这是原因之一（原文明说 biggest reason），但本题另有更准确的选项——看看 d。" >因为全局变量占用内存时间长</button>
+    <button data-k="b" data-why="性能不是理由——全局访问其实很快。真正的痛点在'不可追踪的状态修改'。" >因为访问速度慢</button>
+    <button data-k="c" data-ok="1" data-why="正确！任何函数都能改全局变量且无从知晓（原文 biggest reason）——程序状态不可预测，调试时包围圈被迫扩大到全程序（3.3 课）。修复方向：用参数显式传递数据。" >
+      任何函数都能改它且不可追踪，程序状态不可预测</button>
+    <button data-k="d" data-why="这个表述接近真相但不如 c 精确——c 是原文的'biggest reason'原话要点，且直接对应调试体验。" >因为它初始化顺序不确定</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑥ "static 局部变量的初始化只在第一次执行到时进行。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！这是它'有记忆'的机制根源：首次执行初始化，后续调用跳过该行直接用保留值。也因如此原文建议'总是初始化'——不初始化会零初始化（4.1 课的静态零初始化保证）。" >
+      对 —— 初始化仅首次执行</button>
+    <button data-k="b" data-why="若每次调用都重新初始化，static 就失去意义（退化成普通局部变量）。'只初始化一次'正是它和自动变量的本质差异。" >不对 —— 每次调用都初始化</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑦ 头文件里定义跨文件共享的常量，现代 C++ 的正确写法是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="非 const 全局定义放头文件 = 每个 include 它的 .cpp 一份外链接定义 → multiple definition（ODR 炸）。" >inline int maxPlayers{ 8 };  改成 int maxPlayers{ 8 };</button>
+    <button data-k="b" data-ok="1" data-why="正确！inline 允许多个翻译单元重复定义（链接器合并视为一份）+ constexpr 保持编译期已知——三合一：inline + constexpr + 命名空间。这是 2.12 课保护宏时代的终结方案。" >
+      inline constexpr int maxPlayers{ 8 };</button>
+    <button data-k="c" data-why="extern 声明可行但繁琐：还需要一个 .cpp 放定义。inline 变量一步到位（C++17）。" >extern int maxPlayers;（再配一个 .cpp 定义）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑧ "inline 关键字的作用是让函数运行更快。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="现代 C++ 里 inline 与'展开提速'脱钩：编译器自己决定展开（0.2 课优化），inline 的现代含义是 ODR 豁免——允许多重定义。原文最佳实践：别用 inline 请求展开。" >对 —— inline 即加速</button>
+    <button data-k="b" data-ok="1" data-why="正确！inline 现代含义 = '允许多翻译单元重复定义而不违反 ODR'。用它写在头文件里的函数/变量定义，才是它的正当用途。" >
+      不对 —— 现代含义是 ODR 豁免（允许多重定义）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="1 2 3 1 1" data-hint="两个函数，一个 static 一个自动。static 的值怎么变？自动的呢？" data-explain="输出 1 2 3 1 1。前三次调用 stat()：static 变量初始化一次后持续累加（1、2、3）；后两次调用 auto()：自动变量每次重建，++a 后都是 1。同一程序里两种生命周期的对照——static 有记忆，自动无记忆。">
+  <p class="quiz-q">⑨ 以下程序输出（五行）？</p>
+  <pre class="code">void stat()
+{
+    static int s{ 0 };
+    ++s;
+    std::cout &lt;&lt; s &lt;&lt; ' ';
+}
+void auto_()
+{
+    int a{ 0 };
+    ++a;
+    std::cout &lt;&lt; a &lt;&lt; ' ';
+}
+int main() { stat(); stat(); stat(); auto_(); auto_(); }</pre>
+  <div class="prow"><input type="text" placeholder="五个数字"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑩ 复习收官：局部变量 / 全局变量 / static 局部变量 的"生命周期"依次是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="顺序错了——全局和 static 局部都是静态生命周期（程序级），只有局部是自动的。" >自动 / 静态 / 自动</button>
+    <button data-k="b" data-ok="1" data-why="正确！局部=自动（块内创建销毁）；全局=静态（程序级）；static 局部=静态（程序级但作用域限块内）。这张表是本章的全部骨架——三属性档案填表即毕业。" >
+      自动 / 静态 / 静态</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 7 章全部通过！变量档案体系建成——下一章：控制流（循环终于来了！1.7 课的欠条即将兑付）。</div>
+
+<div class="pager">
+  <a class="prev" href="04-inline-static.html"><span class="dir">← 上一节</span>7.4 inline 与静态局部变量</a>
+  <a class="next" href="../chapter8/index.html"><span class="dir">下一章 →</span>第 8 章 · 控制流</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-7-summary-and-quiz/">LearnCpp Chapter 7 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3.10 防患于未然 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter3/10-prevention.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 3 章</a> / 防患于未然</div>
+<article>
+<h1>3.10 防患于未然</h1>
+
+<p>语义错误最阴险的地方：它可能<strong>潜伏很久</strong>才发作——某天新代码上线、或环境一变，它突然冒出来。潜伏越久，越难定位（调用它的代码越积越多、当初的上下文早就忘了）。所以最高明的调试是<strong>让错误少发生、发生了早发现</strong>。</p>
+
+<h2>第一道防线：少犯错</h2>
+
+<p>原文的清单，每一条都是实战经验：</p>
+<ul>
+  <li>遵循最佳实践（本教程反复出现的"✅ 最佳实践"框就是干这个的）；</li>
+  <li><strong>累/烦躁时别写代码</strong>——休息，回来再写。疲惫时写的代码第二天自己都看不懂；</li>
+  <li>熟悉语言的常见坑（教程里所有"⚠️ 反例"框警告的东西）；</li>
+  <li>别让函数太长；</li>
+  <li>能用标准库就不自己造轮子；</li>
+  <li>注释充分；</li>
+  <li>先做简单版本，再渐进加复杂度；</li>
+  <li>拒绝炫技式写法；</li>
+  <li><strong>为可读性和可维护性优化，而不是性能</strong>。原文引用了 Brian Kernighan 的名言：</li>
+</ul>
+
+<div class="box story">
+  <div class="box-t">❝ 名言</div>
+  <p>"人人都知道，调试的难度是写程序的两倍。所以写程序时用尽聪明才智的人，将来要怎么调试它呢？" —— Brian Kernighan《The Elements of Programming Style》</p>
+</div>
+
+<h2>重构（refactoring）：控制函数长度</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>重构</strong>：在不改变程序行为的前提下，调整代码的结构。目的：让程序更有条理、更模块化、更易读。</p>
+</div>
+
+<p>功能越加越多，函数不可避免变长——解法是<strong>把长函数拆成多个短函数</strong>（2.6 课的抽函数三个信号在这里全线适用）。多长算长？原文的标准：</p>
+<ul>
+  <li>一屏放不下 = 太长（要滚动才能读完整，理解力骤降）；</li>
+  <li>理想是 <strong>10 行以内</strong>，5 行以内更好；</li>
+  <li>但目标是<strong>理解力</strong>，不是行数——牺牲清晰度硬凑行数是本末倒置。</li>
+</ul>
+
+<div class="box best">
+  <div class="box-t">✅ 关键铁律：行为改动与结构改动不同时做</div>
+  <p>改代码时，要么<strong>只改行为</strong>（加功能/修 bug），要么<strong>只改结构</strong>（重构），改完立刻重新测试。两者同时做，出了问题你分不清是新功能错了还是重构改坏了——错误更难找（等于给自己埋了 hi-lo 观察点都分辨不了的混合炸弹）。</p>
+</div>
+
+<h2>第二道防线：快速发现</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：防御性编程（defensive programming）</div>
+  <p>程序员预先设想软件被误用的所有方式——用户输错、其他开发者（包括未来的你自己）用错——并提前检测、化解。例：提示用户输入整数，用户输入了字母怎么办？没防备的话程序会静默出错（1.4 课你亲手试过 "tom abc" 的提取失败）。</p>
+</div>
+
+<h3>测试函数（unit testing 入门）</h3>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int add(int x, int y)
+{
+	return x + y;
+}
+
+void testadd()
+{
+	std::cout &lt;&lt; "This function should print: 2 0 0 -2\n";
+	std::cout &lt;&lt; add(1, 1) &lt;&lt; ' ';    // 期待 2
+	std::cout &lt;&lt; add(-1, 1) &lt;&lt; ' ';  // 期待 0
+	std::cout &lt;&lt; add(1, -1) &lt;&lt; ' ';  // 期待 0
+	std::cout &lt;&lt; add(-1, -1) &lt;&lt; ' '; // 期待 -2
+}
+
+int main()
+{
+	testadd();
+	return 0;
+}</pre>
+
+<p><code>testadd()</code> 用一组已知答案的输入"拷问" add：输出与期待一致 → add 基本可靠；不一致 → 立刻暴露。妙处是<strong>可以留下来</strong>——以后每次改动 add，重跑一次 testadd 就知道有没有改坏。这是<strong>单元测试</strong>的雏形：用小单元的自动化测试保证代码正确。（正规单元测试框架以后再学，思想一致。）</p>
+
+<h3>约束检查（constraints）</h3>
+
+<p>函数可以检查"我的假设是否被违反"。比如计算阶乘的函数理应收到非负数——收到负数时立即报错退出，而不是悄悄给出荒谬结果。<code>assert</code> 与 <code>static_assert</code> 是实现它的标准工具（第 9 章正式讲）。</p>
+
+<h3>静态分析（static analysis）</h3>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>静态分析工具</strong>（俗称 linter）：不运行程序、只分析源码，找出常见语义问题的工具。</p>
+</div>
+
+<p>你已经有一个了——<strong>编译器</strong>！<code>-Wall -Wextra</code> 就是轻量静态分析：未初始化变量、类型窄化它都会警告。再往上有 cppcheck、clang-tidy 等专职工具，能查出几百类问题。原文最佳实践：<strong>给项目配一个静态分析工具</strong>（小程序可选，大项目强烈推荐）。</p>
+
+<h2>本章全景图</h2>
+
+<table class="cmp">
+  <tr><th>防线</th><th>手段</th><th>课程</th></tr>
+  <tr><td>少犯错</td><td>最佳实践、重构、防御性编程</td><td>本课 + 全书各"最佳实践"框</td></tr>
+  <tr><td>快速发现</td><td>小步编写+测试、测试函数、约束检查、静态分析</td><td>本课 + 第 9 章</td></tr>
+  <tr><td>高效定位</td><td>hi-lo 收敛 + 打印/注释 + 调试器四件套</td><td>3.3–3.9</td></tr>
+  <tr><td>有序修复</td><td>六步流程</td><td>3.2</td></tr>
+</table>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"给 add 写个 testadd 测试函数是浪费时间——反正最后会在 main 里真实使用，错了自然会暴露。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="三个误区：① main 里的使用未必覆盖边界（负数、边界值），testadd 专门选'已知答案'的输入；② '最后暴露'意味着潜伏——3.10 开头就说了潜伏越久越难找；③ testadd 可以留下来反复跑，每次改 add 都能立刻验证。测试的价值在'每次改动后的即时反馈'，不只是首次验证。" >对 —— main 用到了自然会暴露</button>
+    <button data-k="b" data-ok="1" data-why="正确！testadd 的价值：① 输入是精心挑选的已知答案（含负数边界），比真实使用更全面；② 错误当场暴露而非潜伏；③ 可永久保留，改一次 add 跑一次，防回归。这正是单元测试的思想——'写代码前先想好怎么验证它'。" >
+      不对 —— 测试函数提供已知答案的即时验证且可防回归</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>你正在给程序加新功能 X，顺手发现旁边的函数 setBalance 结构混乱，想重构它。正确做法是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="这是'行为改动与结构改动同时做'的典型事故现场：完成后如果出 bug，你分不清是 X 引入的还是重构改坏的。而且 X 依赖 setBalance 的话，重构也可能破坏 X。" >一起做完再统一测试</button>
+    <button data-k="b" data-ok="1" data-why="正确！铁律：行为改动或结构改动，二选一，改完立即重测。正确顺序：先完成 X 并测试通过 → 提交（git commit）→ 单独做重构 → 再次测试 → 再提交。中间的 commit 就是'回到没坏状态'的保险栓。第 2.7 课的设计方法论 + 本课的铁律 = 可持续的开发节奏。" >
+      先完成并测试 X，提交后再单独重构 setBalance</button>
+    <button data-k="c" data-why="重构的目的恰恰是让后续开发更容易——'永远不重构'会让代码越烂越难改。问题不在该不该重构，而在什么时候做、怎么隔离风险。" >功能开发期禁止一切重构</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：调试的最高境界是不调试</div>
+  <p>本章给你的其实是一条完整的"错误处理流水线"：<strong>预防</strong>（最佳实践/防御性编程）→ <strong>快速发现</strong>（小步测试/断言/静态分析）→ <strong>高效定位</strong>（hi-lo + 调试器）→ <strong>有序修复</strong>（六步）→ <strong>防回归</strong>（测试函数留下）。</p>
+  <p>注意箭头的经济性：越靠前的手段，单个错误的处理成本越低。一个被 -Wall 拦下的未初始化变量花你 10 秒；一个潜伏三个月才发作的它，可能花你一整天。所以"防患于未然"不是道德劝告，而是<strong>经济学</strong>：把成本投在最便宜的位置。从今天起，把"写完就测、测完就提交"当成呼吸一样的习惯。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：仓库 <code>chapter3/10-prevention/</code> 的 <code>exercises/test_factorial.cpp</code>——给一个藏着 bug 的阶乘函数编写测试函数（已知答案：1!=1, 5!=120, 0!=1），用失败输出定位 bug 并修复。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="09-debugger-callstack.html"><span class="dir">← 上一节</span>3.9 调试器：调用栈</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 3 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/finding-issues-before-they-become-problems/">LearnCpp 3.10</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

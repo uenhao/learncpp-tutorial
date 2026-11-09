@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnCpp 交互式教程 · 第 3 章：调试 C++ 程序</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter3/index.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / 第 3 章</div>
+<article>
+<h1>第 3 章 · 调试 C++ 程序</h1>
+
+<p>0–2 章你见过三层报错：编译错误有报错信息、链接错误有 undefined reference——<strong>但运行时语义错误什么都不说</strong>：程序安静地给出错误答案。本章的使命就是对付这类"沉默的 bug"。</p>
+
+<p>本章的知识主线：一条<strong>定位策略</strong>（hi-lo 收敛）→ 三组<strong>战术</strong>（注释/打印 → 条件编译/日志 → 调试器四件套）→ 一条<strong>预防流水线</strong>（少犯错 → 快发现 → 防回归）。所有演示都基于 VS Code（CMake Tools），配好即用。</p>
+
+<ul class="lesson-list">
+  <li><a data-page="/chapter3/01-syntax-semantic.html" href="01-syntax-semantic.html"><span>3.1 · 语法错误与语义错误</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter3/02-debug-process.html" href="02-debug-process.html"><span>3.2 · 调试流程：六步走</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter3/03-strategy.html" href="03-strategy.html"><span>3.3 · 定位策略：代码审查与 hi-lo 收敛</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter3/04-basic-tactics.html" href="04-basic-tactics.html"><span>3.4 · 基础调试战术：注释、流程验证、打印值</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter3/05-more-tactics.html" href="05-more-tactics.html"><span>3.5 · 进阶调试战术：条件编译与日志</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter3/06-debugger-stepping.html" href="06-debugger-stepping.html"><span>3.6 · 调试器：单步执行（into/over/out）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter3/07-debugger-breakpoints.html" href="07-debugger-breakpoints.html"><span>3.7 · 调试器：断点与运行控制</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter3/08-debugger-watch.html" href="08-debugger-watch.html"><span>3.8 · 调试器：监视变量</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter3/09-debugger-callstack.html" href="09-debugger-callstack.html"><span>3.9 · 调试器：调用栈</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter3/10-prevention.html" href="10-prevention.html"><span>3.10 · 防患于未然（重构/测试/防御）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter3/quiz.html" href="quiz.html"><span>3.x · 章综合测验（9 题 + 2 个调试实战）</span><span class="mark todo">未开始</span></a></li>
+</ul>
+
+<div class="box story">
+  <div class="box-t">🧰 本章需要你边读边动手</div>
+  <p>调试是肌肉记忆，不是阅读理解。3.6 起每课的练习都要求你真的按 F5、真的按 F10/F11、真的打断点——仓库 <code>chapter3/</code> 里每个 demo 和 exercise 都已配好调试环境。只读不做的话，这些知识一周内就会蒸发。</p>
+</div>
+
+<div class="pager">
+  <a class="prev" href="../chapter2/07-design.html"><span class="dir">← 上一章</span>第 2 章</a>
+  <a class="next" href="01-syntax-semantic.html"><span class="dir">本章开始 →</span>3.1 语法与语义错误</a>
+</div>
+</article>
+<footer class="site">基于 LearnCpp Chapter 3 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

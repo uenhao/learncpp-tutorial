@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0.1 编译与链接：你的代码经历了什么 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter0/01-compile-link.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 0 章</a> / 编译与链接</div>
+<article>
+<h1>0.1 编译与链接：你的代码经历了什么</h1>
+
+<p>在写出第一行 C++ 之前，有一个问题值得先想清楚：<strong>计算机真正执行的，并不是你写的那些文字。</strong>CPU 只认识机器码（一串数字），而你写下的是接近英语的文本。那么中间发生了什么？</p>
+
+<p>这一节我们就来跟踪一份源代码的"旅程"。理解了这段旅程，你以后遇到报错时，就能立刻判断：<strong>这个问题出在哪一站？</strong>——这是初学者最需要建立的直觉。</p>
+
+<h2>一段代码的五站旅程</h2>
+
+<div class="flow">
+  <div class="flow-step">① 编写 .cpp</div>
+  <div class="flow-step">② 预处理器</div>
+  <div class="flow-step">③ 编译器 → .o</div>
+  <div class="flow-step">④ 链接器 → 可执行文件</div>
+  <div class="flow-step">⑤ 运行</div>
+</div>
+
+<p>下面逐站展开。每站讲清楚三件事：<strong>它做什么、输入输出是什么、你在这一站会见到什么报错</strong>。</p>
+
+<h3>第 ① 站：编写源代码</h3>
+
+<p>你用编辑器写出 <code>.cpp</code> 文件——这是<strong>纯文本</strong>，任何人用记事本都能打开。此刻它还不是程序，只是一份"给编译器的说明书"。这一站没有报错，但有一个习惯值得立刻建立：<strong>每写完一个小功能就编译一次</strong>，不要写满 500 行才第一次按下编译键——那样一次会涌出几十个报错，而且后面的报错多半是前面的错误"连坐"出来的假错误。</p>
+
+<h3>第 ② 站：预处理器（preprocessor）</h3>
+
+<p><strong>做什么</strong>：对源码做<strong>纯文本级别</strong>的加工。它不懂 C++ 语法、不懂变量、不懂类型——它只认识以 <code>#</code> 开头的指令（如 <code>#include</code>、<code>#define</code>），逐条执行"查找替换、文件粘贴"这类机械操作。</p>
+<p><strong>输入输出</strong>：输入是你的 .cpp；输出是"展开完毕的翻译单元"——所有 <code>#include</code> 的文件内容已被原样粘贴进来。这才是<strong>编译器真正看到的东西</strong>。</p>
+<p><strong>典型问题</strong>：这一站几乎没有"报错"概念（它太机械了），但错误操作会让后面炸锅——比如 <code>#include</code> 了不存在的文件直接报 <code>file not found</code>。想亲眼看看它的产物？<code>g++ -E main.cpp</code> 会把预处理后的结果打印出来（第 2 章有专门的练习）。</p>
+
+<h3>第 ③ 站：编译器（compiler）</h3>
+
+<p><strong>做什么</strong>：把翻译单元<strong>逐个</strong>翻译成机器码，同时做严格的语法与类型检查。注意"逐个"——编译器每次只看一个翻译单元，对其他 .cpp 文件的存在一无所知（这就是"翻译单元"定义的由来，见下方概念框）。</p>
+<p><strong>输入输出</strong>：一个翻译单元进，一个<strong>目标文件</strong>（.o / .obj）出。目标文件里已经是机器码，但"调用了别处函数"的位置暂时是空着的占位符。</p>
+<p><strong>典型报错</strong>：你未来见到的绝大多数报错都在这一站——语法错误（少了分号）、类型错误（用 double 初始化 int）、名字未声明（<code>'add' was not declared</code>）。它们有个统一特征：<strong>报错时会给出文件名和行号</strong>，因为编译器精确知道自己在哪个文件的哪一行卡住了。</p>
+
+<h3>第 ④ 站：链接器（linker）</h3>
+
+<p><strong>做什么</strong>：把所有目标文件 + 库（比如标准库）拼装成一个可执行文件。核心工作是"对号入座"：每个目标文件里都有一些"我要调用 add"的占位承诺，链接器在<strong>所有</strong>目标文件里找到 add 的实际函数体，把真实地址填进去。</p>
+<p><strong>输入输出</strong>：所有 .o 文件 + 库 进，一个可执行文件出。</p>
+<p><strong>典型报错</strong>：<code>undefined reference to 'add(int, int)'</code>（承诺了但全程序没人定义）或 <code>multiple definition</code>（同一个函数定义了两份）。特征：<strong>没有行号</strong>——因为问题不在某个文件的某一行，而在"文件之间的关系"（名字对不上、文件清单漏了）。</p>
+
+<h3>第 ⑤ 站：运行</h3>
+
+<p><strong>做什么</strong>：操作系统把可执行文件加载进内存，从 <code>main</code> 开始执行。</p>
+<p><strong>这一站的问题最难查</strong>：程序能跑起来，说明编译链接都过了，但运行时的行为可能不对——输出错误、崩溃、甚至"看起来正常但结果是错的"。编译器和链接器都帮不了你了，需要调试器（第 3 章的主角）。另外还有一种特殊类别叫<strong>未定义行为</strong>：程序可能有 UB 但运行"一切正常"，换个编译器/换台机器就炸——第 1 章会第一次撞上它。</p>
+
+<table class="cmp">
+  <tr><th>站点</th><th>输入 → 输出</th><th>报错特征</th></tr>
+  <tr><td>② 预处理器</td><td>.cpp → 翻译单元</td><td>文件找不到（<code>file not found</code>）</td></tr>
+  <tr><td>③ 编译器</td><td>翻译单元 → .o</td><td><strong>有文件名和行号</strong>，语法/类型问题</td></tr>
+  <tr><td>④ 链接器</td><td>所有 .o + 库 → 可执行文件</td><td><strong>无行号</strong>，名字对不上/找不到定义</td></tr>
+  <tr><td>⑤ 运行</td><td>可执行文件 → 行为</td><td>无报错信息，需要调试器；警惕 UB</td></tr>
+</table>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>翻译单元（translation unit）</strong>：一个 .cpp 文件经过预处理后的整体。编译器每次只看<strong>一个</strong>翻译单元——它不知道其他 .cpp 文件的存在。</p>
+  <p><strong>目标文件（object file，.o / .obj）</strong>：单个翻译单元编译出来的机器码。它已经是"机器语言"了，但还不能独立运行——因为它可能引用了别处的函数。</p>
+  <p><strong>链接器（linker）</strong>：把所有目标文件和库"缝合"在一起，把每个"我要调用某函数"的承诺兑现成真实地址，产出最终可执行文件。</p>
+</div>
+
+<h2>一个关键的设计：编译和链接是分开的</h2>
+
+<p>为什么不像 Python 那样直接执行源码，而要拆成两步？看这个例子：</p>
+
+<pre class="code">int add(int x, int y);        // 只承诺："存在一个 add 函数"
+
+int main()
+{
+    return add(3, 4);         // 编译器：好的，你说过它存在，我信了
+}</pre>
+
+<p class="codecap">main.cpp —— 注意 add 只有声明，没有函数体</p>
+
+<p>编译 main.cpp 时，编译器看到 <code>add(3, 4)</code>。它<strong>并不需要知道 add 怎么实现</strong>——它只需要知道"有这么个函数、参数是什么类型、返回什么类型"，就能生成"跳转到 add"的机器码，至于 add 在哪，<strong>留给链接器去填</strong>。</p>
+
+<p>这就是分工的本质：</p>
+
+<table class="cmp">
+  <tr><th></th><th>编译器</th><th>链接器</th></tr>
+  <tr><td>视野</td><td>单个翻译单元</td><td>所有目标文件 + 库</td></tr>
+  <tr><td>职责</td><td>语法、类型检查，生成机器码</td><td>把"函数名"对接到"函数体"</td></tr>
+  <tr><td>典型报错</td><td><code>error: 'add' was not declared</code></td><td><code>undefined reference to add(int, int)</code></td></tr>
+</table>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>你写了两个文件：main.cpp 调用了 <code>int add(int, int)</code>，add.cpp 定义了它。编译时你不小心把 main.cpp 里的声明写成了 <code>int addNum(int, int)</code>（而调用处也写的是 addNum）。会发生什么？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="编译器只看 main.cpp 自己：有声明、调用与声明匹配，语法全对，它没有理由报错。问题要到链接那一步才暴露。">编译 main.cpp 时立刻报错</button>
+    <button data-k="b" data-ok="1" data-why="编译器逐文件工作，两份文件各自都能通过编译。但链接器在所有目标文件里都找不到 addNum 的定义，报 undefined reference —— 这就是'编译通过、链接失败'的经典案例。">编译能通过，链接时报 undefined reference</button>
+    <button data-k="c" data-why="恰恰相反：链接器根本不做语法检查，它只找名字。所以链接器能发现'找不到定义'，却不能发现'拼写错了'。">链接时报错，但错误信息是"语法错误"</button>
+    <button data-k="d" data-why="链接器找不到 addNum 的定义，所以无法生成可执行文件，程序根本没有机会运行。">能编译能链接，但运行时崩溃</button>
+    <button data-k="e" data-why="add.cpp 里定义的 add 从未被声明引用（main 用的是 addNum），它安静地躺在自己的目标文件里，不会引发任何报错——报错只围绕'被承诺但未兑现'的 addNum。">报错信息会同时提到 add 和 addNum</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>从反例中理解：两种报错，两种修法</h2>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 反例 1：编译错误（编译器拦下你）</div>
+  <pre class="code">int main()
+{
+    retrun 0;   // 拼写错误
+}</pre>
+  <p>编译器当场报错：<code>'retrun' was not declared in this scope</code>。<strong>程序根本不会诞生</strong>——这是好事，错误被拦在了最早的一站。</p>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 反例 2：链接错误（链接器拦下你）</div>
+  <pre class="code">// main.cpp
+int add(int x, int y);   // 声明了……
+
+int main()
+{
+    return add(1, 2);    // ……但整个程序里没人定义它
+}</pre>
+  <p>编译通过！因为编译器"信了"你的声明。但链接器翻遍所有目标文件，找不到 add 的函数体：<code>undefined reference to 'add(int, int)'</code>。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"看到 <code>undefined reference</code> 就说明我的函数名拼错了。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="对！undefined reference 有三大常见原因：① 函数名/参数签名拼写与定义不一致；② 定义所在的 .cpp 忘了参与编译链接；③ 声明与定义的参数类型不匹配。注意：参数类型也算'名字'的一部分（这叫函数签名），int add(int,int) 和 double add(double,double) 是两个不同的名字。">对 —— 名字（含签名）对不上，或定义的文件没参与链接</button>
+    <button data-k="b" data-why="不对。漏了分号是典型的编译错误（syntax error），链接器看到的是已经编译好的目标文件，那时早就没有分号这回事了。">不对 —— undefined reference 一般是漏了分号</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>库：别人写好的目标文件的集合</h2>
+
+<p>你从没写过"往屏幕上打印字符"的代码，但 <code>std::cout</code> 却能用——因为<strong>标准库</strong>里已经有人写好了，链接时自动接上。库本质上就是"打包好的目标文件 + 声明清单"。</p>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变</div>
+  <p>初学者把报错当失败；有经验的人把报错当<strong>导航</strong>。看到编译错误，你知道去检查当前文件的语法类型；看到链接错误，你知道去检查名字一致性和文件列表。报错的"站点"信息本身就是调试线索——第 3 章调试会大量用到这一点。</p>
+</div>
+
+<h2>本节小结</h2>
+<ul>
+  <li>源代码 → 预处理 → <strong>编译</strong>（逐翻译单元）→ <strong>链接</strong>（跨文件拼装）→ 运行</li>
+  <li>编译器只需要<strong>声明</strong>就能放行调用；定义可以后给、别处给</li>
+  <li>undefined reference = 链接器找不到定义 → 检查名字/签名/文件列表</li>
+</ul>
+
+<div class="predict" data-answer="7" data-hint="提示：add 的实参是 3 和 4。" data-explain="main.cpp 的声明让编译器放行了 add(3, 4)；链接时链接器把 main.o 的 add 调用接到 add.o 里 add 的定义上。程序输出 7。">
+  <p class="quiz-q">🎯 预测输出：main.cpp 声明并调用 <code>add(3, 4)</code>，add.cpp 定义 <code>return x + y;</code>，两文件编译链接后运行，输出什么？</p>
+  <div class="prow"><input type="text" placeholder="输入程序输出，如 42"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="practice-note">💻 动手验证：在终端进入 <code>chapter0/01-cpp-development/</code>，依次执行 <code>g++ -std=c++20 -c main.cpp</code> 和 <code>g++ -std=c++20 -c add.cpp</code>，再 <code>g++ main.o add.o -o demo</code>，运行 <code>./demo</code>。然后故意 <code>g++ main.o -o demo2</code>（漏掉 add.o），亲眼看一次链接错误。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！点击右上角返回目录，或继续下一节。</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 0 章</a>
+  <a class="next" href="02-build-config.html"><span class="dir">下一节 →</span>0.2 构建配置与语言标准</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-the-compiler-linker-and-libraries/">LearnCpp 0.4–0.5</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

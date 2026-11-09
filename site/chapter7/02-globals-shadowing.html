@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7.2 全局变量与影子 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter7/02-globals-shadowing.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 7 章</a> / 全局变量与影子</div>
+<article>
+<h1>7.2 全局变量与影子</h1>
+
+<h2>全局变量：程序级的"公共黑板"</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：全局变量（global variable）</div>
+  <p>定义在任何函数/块<strong>之外</strong>的变量。三件套档案：<strong>全局作用域</strong>（从定义点到文件尾处处可见）+ <strong>静态生命周期（static duration）</strong>（程序启动时创建——<strong>早于 main</strong>，程序结束时销毁）+ 默认外链接（7.3 课）。</p>
+</div>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int g_x{}; // 全局变量：零初始化（4.1 课的全局零初始化保证在这里生效）
+
+void doSomething()
+{
+    g_x = 3;   // 任何函数都能读写它
+    std::cout &lt;&lt; g_x &lt;&lt; '\n';
+}
+
+int main()
+{
+    g_x = 5;
+    doSomething();
+    std::cout &lt;&lt; g_x &lt;&lt; '\n'; // 3 —— doSomething 的修改持久生效！
+    return 0;
+}</pre>
+
+<p>两条命名/组织惯例（原文）：<strong>前缀 g_ 或 g</strong> 标识全局（防冲突、防影子、提醒"改动会持久"）；<strong>尽量放进命名空间</strong>——命名空间里的全局变量仍是全局变量，但避免了全局命名空间污染（2.9 课的冲突规则）。</p>
+
+<h2>影子（shadowing）：2.5 课现象的完整分析</h2>
+
+<p>内层块定义与外层<strong>同名</strong>的变量 → 内层名字"遮住"外层：</p>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{ // 外层块
+    int apples{ 5 };
+
+    { // 内层块
+        std::cout &lt;&lt; apples &lt;&lt; '\n'; // 此时 apples 还是外层的：5
+
+        int apples{ 0 };             // 内层新对象！从这行起遮住外层
+
+        apples = 10;                 // 改的是内层的
+        std::cout &lt;&lt; apples &lt;&lt; '\n'; // 10
+    }                                // 内层 apples 销毁
+
+    std::cout &lt;&lt; apples &lt;&lt; '\n';     // 5 —— 外层安然无恙
+    return 0;
+}</pre>
+
+<p>输出 <code>5 10 5</code>。2.5 课的结论"每个定义都是独立对象"没变，新增的是<strong>精确规则</strong>：从内层定义那一行起，到内层块结束，名字 apples 解析到内层对象。</p>
+
+<h3>影子 + 全局变量：最危险的组合</h3>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int g_x{ 5 };
+
+int main()
+{
+    int g_x{ 7 };        // 局部变量遮住全局 g_x —— 名字一模一样！
+    std::cout &lt;&lt; g_x &lt;&lt; '\n'; // 7（局部）
+    std::cout &lt;&lt; ::g_x &lt;&lt; '\n'; // 5 —— :: 强制用全局作用域（2.9 课的作用域解析符）
+    return 0;
+}</pre>
+
+<p><code>::g_x</code> 的"空命名空间前缀"明确指全局。能救急，但**正解是不制造影子**。</p>
+
+<div class="box best">
+  <div class="box-t">✅ 原文最佳实践</div>
+  <ul>
+    <li><strong>避免定义与更外层变量同名的变量</strong>（影子是 bug 温床）；</li>
+    <li>全局变量加 g_ 前缀进一步防误碰；</li>
+    <li>编译器开关 <code>-Wshadow</code> 让编译器替你抓影子。</li>
+  </ul>
+</div>
+
+<h2>先尝一口"恶魔"的滋味</h2>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int g_mode{}; // 全局
+
+void doSomething()
+{
+    g_mode = 2; // 任何函数都能改它
+}
+
+int main()
+{
+    g_mode = 1;
+    doSomething();
+    // 程序员以为还是 1……
+    if (g_mode == 1)
+        std::cout &lt;&lt; "safe\n";
+    else
+        std::cout &lt;&lt; "boom\n"; // 实际输出：doSomething 改成了 2！
+    return 0;
+}</pre>
+
+<p>下一课专门讲为什么原文把非 const 全局变量称为 <strong>evil</strong>，以及替代方案。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>输出什么（三行）？</p>
+  <pre class="code">int value{ 100 };
+
+void printAndSet(int value) // 形参也叫 value！
+{
+    std::cout &lt;&lt; value &lt;&lt; '\n';
+    value = 42;
+}
+
+int main()
+{
+    printAndSet(7);
+    std::cout &lt;&lt; value &lt;&lt; '\n';
+}</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="形参 value 遮住了全局 value：函数内打印 7、把 42 赋给形参（拷贝），全局的 100 从未被碰。函数返回后全局依旧 100。" >7 42 42</button>
+    <button data-k="b" data-ok="1" data-why="正确！影子规则：函数体内 value 解析到形参（最近定义优先）；value = 42 改的是形参拷贝（2.2 课按值传递），全局 100 安然无恙。这道题同时考了影子和按值传递——两课知识的合流点。" >
+      7 / 100</button>
+    <button data-k="c" data-why="把 42 赋给形参不会影响全局——形参是拷贝。若想让函数改全局，得直接写 value = 42 且不遮蔽（这正是全局变量危险的地方：3.9 课的恶魔案例）。" >7 42 42（全局被改成 42）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：名字解析是"由内向外找最近的"</div>
+  <p>编译器解析名字的规则一句话：<strong>从当前作用域由内向外找最近的定义，找到即停</strong>。这条规则同时解释了影子的发生、::g_x 的救场、以及"为什么函数里用全局不用写前缀"。理解"找最近"之后，2.9 课命名空间的 <code>Foo::g_x</code>（指定在哪一层找）和本章 <code>::g_x</code>（从最外层找）就统一成了一件事：<strong>名字解析的搜索路径可以被你手动指定</strong>。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter7/02-globals-shadowing/</code> 的 <code>shadow_demo.cpp</code>（原文 apples 案例）和 <code>exercises/shadow_hunt.cpp</code>（用 -Wshadow 找出三处影子并消除）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="01-scope-duration.html"><span class="dir">← 上一节</span>7.1 三个属性</a>
+  <a class="next" href="03-linkage.html"><span class="dir">下一节 →</span>7.3 链接性</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/variable-shadowing-name-hiding/">LearnCpp 7.4–7.5</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4.2 整数类型与溢出 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter4/02-integers.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 4 章</a> / 整数类型与溢出</div>
+<article>
+<h1>4.2 整数类型与溢出</h1>
+
+<p>你从第一课就一直在用 <code>int</code>。现在把它讲透：C++ 其实有四种整数类型，它们各有溢出的脾气。</p>
+
+<h2>四种整数类型与有符号性</h2>
+
+<table class="cmp">
+  <tr><th>类型</th><th>最小尺寸</th><th>现代典型</th></tr>
+  <tr><td><code>short</code></td><td>16 位</td><td>16 位</td></tr>
+  <tr><td><code>int</code></td><td>16 位</td><td><strong>32 位</strong></td></tr>
+  <tr><td><code>long</code></td><td>32 位</td><td>Linux 64 位 / Windows 32 位</td></tr>
+  <tr><td><code>long long</code></td><td>64 位</td><td>64 位</td></tr>
+</table>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：符号（sign）</div>
+  <p><strong>有符号（signed）整数</strong>：值的正负号本身编码在比特里，可正可负可为零。C++ 的整数<strong>默认就是有符号的</strong>——所以你写的 <code>int</code> 全名其实是 <code>signed int</code>。</p>
+  <p><strong>无符号（unsigned）整数</strong>：只表示非负数（下一节细讲，以及为什么尽量别用）。</p>
+</div>
+
+<pre class="code">short s;        // 推荐短名，不写 short int
+int i;
+long l;         // 推荐 long，不写 long int
+long long ll;   // 推荐 long long
+
+signed int si;  // 合法但冗余——默认就有符号，别写 signed</pre>
+
+<h2>有符号整数的范围</h2>
+
+<p>n 位有符号整数能表示 <code>2^n</code> 个值，范围是 <code>−(2^(n−1)) 到 +(2^(n−1))−1</code>（现代机器统一用"二进制补码"表示，C++20 已强制要求）：</p>
+
+<table class="cmp">
+  <tr><th>宽度</th><th>范围</th></tr>
+  <tr><td>8 位有符号</td><td>−128 到 127</td></tr>
+  <tr><td>16 位有符号</td><td>−32,768 到 32,767</td></tr>
+  <tr><td>32 位有符号</td><td>−2,147,483,648 到 2,147,483,647</td></tr>
+  <tr><td>64 位有符号</td><td>−9,223,372,036,854,775,808 到 9,223,372,036,854,775,807</td></tr>
+</table>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>8 位有符号整数的范围是 −128 到 127，而不是对称的 −127 到 127。多出来的"负一格"去哪了？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="0 只有一个，不需要额外占位。真正的原因在补码的编码方式：负数比正数多一个可表示的值。" >因为有 +0 和 −0 两个零占了一个位置</button>
+    <button data-k="b" data-ok="1" data-why="正确！8 位能表示 2^8 = 256 个值。补码表示下负数共 128 个（−128 到 −1），正数连同 0 共 128 个（0 到 127）。数学上正负天然不对称：n 位有符号范围 = −2^(n−1) 到 2^(n−1)−1。不必背公式——记住'负端比正端多一格'这个特征即可（4.5 课无符号整数会再次用到这个 2^n 思路）。" >
+      补码下负数占 2^(n−1) 个编码，正数含 0 占 2^(n−1) 个，天然不对称</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>溢出（overflow）：越界的代价</h2>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 有符号整数溢出 = 未定义行为</div>
+  <p>C++20 标准原话：表达式的结果"若在数学上无定义，或不在该类型的可表示范围内，则行为未定义"。把 140 塞进 8 位有符号整数？<strong>UB</strong>。</p>
+</div>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{
+    // 假设 int 是 4 字节
+    int x { 2'147'483'647 }; // int 的最大值（注意 ' 是 C++14 的数字分隔符，纯为可读）
+    std::cout &lt;&lt; x &lt;&lt; '\n';
+
+    x = x + 1; // 整数溢出 —— 未定义行为！
+    std::cout &lt;&lt; x &lt;&lt; '\n';
+
+    return 0;
+}</pre>
+
+<p>原文作者的机器上输出：</p>
+
+<pre class="plain">2147483647
+-2147483648</pre>
+
+<p>注意：这里"溢出后变成最小值"只是<strong>那台机器上 UB 的具体表现</strong>——补码回绕恰好如此。别把它当定律依赖：换编译器、开优化，UB 可以是任何行为（0.2 课 Debug/Release 崩溃差异的又一个来源）。</p>
+
+<div class="box best">
+  <div class="box-t">✅ 防溢出的两个习惯</div>
+  <ul>
+    <li><strong>预判范围</strong>：乘法、累加是最容易溢出的运算。10 亿 × 10 早超 int；用 <code>long long</code> 或先想清楚数量级。</li>
+    <li><strong>别拿 UB 开玩笑</strong>：任何依赖溢出回绕的逻辑（游戏里"分数到顶变负"之类）都是埋雷。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"<code>int</code> 溢出后会绕回到最小值，所以可以用它实现循环计数。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="这个'规律'只是补码回绕在特定实现下的表现，标准层面它是未定义行为——编译器有权做任何事（在优化下甚至可能把你的循环判定整个删掉）。依赖 UB 的代码在换编译器/开优化时就会碎。" >对 —— 溢出总是回绕</button>
+    <button data-k="b" data-ok="1" data-why="正确！有符号整数溢出在标准里是 UB，没有任何保证。想要可控的回绕行为是合法需求，但实现要靠无符号整数的定义良好的模运算（下一节）——即便如此原文仍建议慎用无符号。总之：别设计依赖溢出的逻辑，范围不够就换更宽的类型。" >
+      不对 —— 溢出是 UB，'回绕'只是某种实现的巧合表现</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>定宽整数：需要精确宽度时</h2>
+
+<p>int 的尺寸随平台漂移，需要<strong>保证宽度</strong>的场景（文件格式、网络协议、跨平台数据）用定宽整数——它们在 <code>&lt;cstdint&gt;</code> 头文件里：</p>
+
+<table class="cmp">
+  <tr><th>类型</th><th>含义</th><th>常用场景</th></tr>
+  <tr><td><code>std::int32_t</code></td><td>恰好 32 位有符号</td><td>跨平台固定宽度</td></tr>
+  <tr><td><code>std::int64_t</code></td><td>恰好 64 位有符号</td><td>大数、时间戳</td></tr>
+  <tr><td><code>std::uint32_t</code> 等</td><td>无符号版本</td><td>按位操作、协议字段</td></tr>
+  <tr><td><code>std::size_t</code></td><td>对象尺寸/下标的类型</td><td>sizeof 的返回值、容器大小（第 17 章）</td></tr>
+</table>
+
+<pre class="code">#include &lt;cstdint&gt; // 定宽整数都在这里
+
+std::int32_t w { 100 };      // 保证 32 位
+std::int64_t big { 900'000'000'000 };
+std::size_t  n { sizeof(int) }; // 4</pre>
+
+<p>两处细节：① 定宽类型其实是现有整数的<strong>别名</strong>——如果平台上 int 恰好 32 位，<code>std::int32_t</code> 就是 int 的马甲（所以 sizeof(int32_t) == sizeof(int)）；② <strong>8 位定宽整数常被当作 char 处理</strong>（打印它输出的可能是字符不是数字，4.11 课细讲），要谨慎。</p>
+
+<div class="box best">
+  <div class="box-t">✅ 选型速查（原文建议）</div>
+  <ul>
+    <li>日常整数：<code>int</code>（现代平台够用且最快）</li>
+    <li>可能超 20 亿：直接 <code>std::int64_t</code> / <code>long long</code></li>
+    <li>需要固定宽度（协议/文件/跨平台）：定宽整数</li>
+    <li>表示"数量/尺寸/下标"：尊重接口给什么用什么（如 size_t），别乱转</li>
+    <li>永远别为了"省内存"用 short/8 位类型——现代机器上省不出价值，还惹 char 的麻烦</li>
+  </ul>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：数字类型的边界是真实的物理墙</div>
+  <p>数学里的整数无限延伸；计算机里的整数是<strong>固定宽度的比特容器</strong>，墙就在那。写 <code>int</code> 时想一句"这个量最大会到多少"——秒级时间戳 47 年（int 秒数在 2038 年溢出，著名的 2038 问题）、人口、字节数……范围思维从此成为你选类型的本能。而"溢出=UB"则再次呼应本章主旋律：C++ 把"检测边界"的责任交给你，把"越界的后果"也交给你。</p>
+</div>
+
+<div class="predict" data-answer="-2147483648||-2147483647" data-hint="在作者的机器上（int 4 字节，补码回绕）。标准层面它其实是 UB——这正是考点。" data-explain="作者机器输出 -2147483648（补码回绕），但记住：有符号溢出是未定义行为，这个输出只是特定实现的表现，不可依赖。int 最大值 2147483647 + 1 → UB。规范做法：预判范围，必要时换 int64_t。">
+  <p class="quiz-q">🎯 原文同款（作者机器上）：<code>x = 2147483647; x = x + 1;</code> 后打印 x 输出什么？</p>
+  <div class="prow"><input type="text" placeholder="程序输出"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter4/02-integers/</code> 的 <code>overflow_demo.cpp</code>（溢出演示）和 <code>fixed_width_demo.cpp</code>（打印各种定宽类型的 sizeof）。试试用 3.8 课的监视窗口盯着 x 从最大值加 1 的瞬间。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="01-fundamental-types.html"><span class="dir">← 上一节</span>4.1 数据类型基础</a>
+  <a class="next" href="03-float-bool.html"><span class="dir">下一节 →</span>4.3 浮点数与布尔</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/signed-integers/">LearnCpp 4.4–4.6</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

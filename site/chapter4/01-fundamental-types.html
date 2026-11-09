@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4.1 数据类型基础：比特、字节与 sizeof · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter4/01-fundamental-types.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 4 章</a> / 数据类型基础</div>
+<article>
+<h1>4.1 数据类型基础：比特、字节与 sizeof</h1>
+
+<p>1.2 课说"对象是一块能存值的内存"。这块内存到底长什么样？这一课下到最底层看一眼——然后你会明白<strong>为什么 C++ 需要"类型"这个东西</strong>。</p>
+
+<h2>比特与字节</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>比特（bit）</strong>：内存的最小单位，只能存 0 或 1（像电灯开关：关=0，开=1）。一段随机内存看起来就是 011010100101010…。</p>
+  <p><strong>内存地址（address）</strong>：内存按顺序划分成的编号单元——像街道地址定位房子。</p>
+  <p><strong>字节（byte）</strong>：作为一个整体操作的一组比特，现代标准是 <strong>1 字节 = 8 比特</strong>。关键事实：<strong>每个内存地址对应 1 个字节</strong>，而不是 1 个比特（地址数量有限，按比特编址太浪费）。</p>
+</div>
+
+<p>于是一个尴尬的问题出现了：假设你要存数字 65——它需要不止一个字节。内存只认识"一串比特"，<strong>它怎么知道这串比特是数字 65，而不是字符 'A'，也不是两个小数字？</strong></p>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：数据类型（data type）——回答"这段比特是什么意思"</div>
+  <p><strong>类型</strong>告诉编译器：如何解释这块内存的内容。声明 <code>int x;</code> 的含义是"这块内存按整数解释"。存入 65 时，编译器/CPU 把它编码成比特序列放进内存；读出时再按 int 规则还原成 65。类型就是<strong>比特 ↔ 值</strong>的翻译规则。</p>
+</div>
+
+<h2>基本数据类型族谱</h2>
+
+<p>C++ 的<strong>基本数据类型（fundamental types）</strong>分三大类，第 4 章逐一认识：</p>
+
+<table class="cmp">
+  <tr><th>类别</th><th>成员</th><th>本章课程</th></tr>
+  <tr><td>整型</td><td>int、short、long、long long、bool、char、各种定宽整数</td><td>4.2（void）、4.3（sizeof）、4.4–4.6（整数）、4.9（bool）、4.11（char）</td></tr>
+  <tr><td>浮点型</td><td>float、double、long double</td><td>4.7–4.8</td></tr>
+  <tr><td>无类型</td><td>void</td><td>4.2</td></tr>
+</table>
+
+<p>复合类型（引用、指针、数组、类……）从第 12 章开始登场。</p>
+
+<h2>sizeof：一个类型/对象占几个字节</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：sizeof 运算符</div>
+  <p><code>sizeof(type)</code> 或 <code>sizeof(object)</code>：返回该类型/对象占用的字节数。结果类型是 <code>std::size_t</code>（一种无符号整数，4.6 课细说）。它在<strong>编译期</strong>求值，零运行时开销。</p>
+</div>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{
+    std::cout &lt;&lt; "bool:\t"     &lt;&lt; sizeof(bool)     &lt;&lt; " bytes\n";
+    std::cout &lt;&lt; "short:\t"    &lt;&lt; sizeof(short)    &lt;&lt; " bytes\n";
+    std::cout &lt;&lt; "int:\t"      &lt;&lt; sizeof(int)      &lt;&lt; " bytes\n";
+    std::cout &lt;&lt; "long:\t"     &lt;&lt; sizeof(long)     &lt;&lt; " bytes\n";
+    std::cout &lt;&lt; "long long:\t" &lt;&lt; sizeof(long long) &lt;&lt; " bytes\n";
+    std::cout &lt;&lt; "float:\t"    &lt;&lt; sizeof(float)    &lt;&lt; " bytes\n";
+    std::cout &lt;&lt; "double:\t"   &lt;&lt; sizeof(double)   &lt;&lt; " bytes\n";
+    std::cout &lt;&lt; "char:\t"     &lt;&lt; sizeof(char)     &lt;&lt; " bytes\n";
+    return 0;
+}</pre>
+
+<p>典型输出（x86-64 Linux，g++）：</p>
+
+<pre class="plain">bool:   1 bytes
+short:  2 bytes
+int:    4 bytes
+long:   8 bytes
+long long: 8 bytes
+float:  4 bytes
+double: 8 bytes
+char:   1 bytes</pre>
+
+<div class="box warn">
+  <div class="box-t">⚠️ C++ 只保证"最小尺寸"，不保证精确尺寸</div>
+  <p>标准只说 <code>int</code> <strong>至少</strong> 16 位——具体多大由实现决定（现代 x86-64 上是 32 位，老系统可能是 16 位）。<code>long</code> 在 Windows 上是 4 字节、在 Linux 上是 8 字节。<strong>别把"我机器上 sizeof(int)==4"当成定律写进逻辑</strong>；需要精确宽度时用定宽整数（4.6 课）。这也是为什么查尺寸要用 sizeof 而不是背数字。</p>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ sizeof(object) vs sizeof(type)</div>
+  <p>两者都合法：<code>sizeof(int)</code> 查类型；<code>sizeof(x)</code> 直接查对象（不必写 <code>sizeof(int)</code>）。对变量用后者更简洁。注意 <code>sizeof</code> 是运算符不是函数——对类型名才需要括号。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>为什么内存按"字节"编址而不是按"比特"？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="方向反了：恰恰是因为地址数量有限、按比特编址太奢侈，才把 8 个比特打包成 1 字节共用一个地址。" >因为比特太小，单独编址会浪费内存空间</button>
+    <button data-k="b" data-ok="1" data-why="正确！原文的关键洞察：每个内存地址存 1 字节。地址是稀缺资源（地址总线的宽度有限），而按比特单独访问的需求又很少，于是 8 比特一组、共用一个地址——这也是'1 字节 = 8 比特'成为事实标准的原因。" >
+      内存地址数量有限，按比特编址需求又极少，故每地址对应 1 字节</button>
+    <button data-k="c" data-why="历史原因确实存在（早期机器字节宽度五花八门），但现代标准固定为 8 比特的直接原因是编址经济性，而不是历史惯性。" >纯粹是历史遗留习惯</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"内存里存着数字 65。读出时 CPU 能直接看出它是整数 65。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="内存里只有比特。同样这串比特按 char 解释就是字符 'A'，按 int 是 65，按别的规则又是别的值。没有类型信息，比特本身无意义。" >对 —— 值就写在内存里</button>
+    <button data-k="b" data-ok="1" data-why="正确！这就是类型存在的根本理由：比特是中性的，<strong>解释规则才赋予含义</strong>。同样的 01000001，int 语境下是 65，char 语境下是 'A'。你写 <code>char c{ 65 }</code> 时存进去的比特和 <code>int x{ 65 }</code> 存的不一样（宽度都不同）——类型规定了'多宽'和'怎么解释'两件事。" >
+      不对 —— 比特无意义，是类型规定了如何解释它们</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：类型 = 宽度 + 解释规则</div>
+  <p>学完这一课，你脑中的"类型"应该从"一种数据的名字"升级为"两个参数的组合"：<strong>占多少字节</strong>（决定能表示的范围）+ <strong>比特如何解读</strong>（整数/浮点/字符）。后面 4.4–4.8 每学一种类型，都问这两个问题：多宽？怎么解释？——整章知识自动成表。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：编译运行 <code>chapter4/01-fundamental-types/sizeof_demo.cpp</code>（上面的程序），并加上 <code>long double</code> 和 <code>unsigned int</code> 试试。在你的机器上有没有出乎意料的大小？</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 4 章</a>
+  <a class="next" href="02-integers.html"><span class="dir">下一节 →</span>4.2 整数类型与溢出</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-fundamental-data-types/">LearnCpp 4.1, 4.3</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

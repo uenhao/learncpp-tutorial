@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 8 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter8/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 8 章</a> / 综合测验</div>
+<article>
+<h1>第 8 章综合测验</h1>
+
+<p>12 题：悬挂 else、switch、循环三型、break/continue。先预测再作答。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "if/else 不写花括号，只要缩进对齐了，逻辑就不会错。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="缩进是给人看的，编译器只认结构：else 只管辖紧跟的一条语句。8.1 课的 'Too bad!' 案例（180 的人也看到 Too bad!）就是缩进骗人的实锤。还有更隐蔽的悬挂 else（匹配最近的 if）。" >对 —— 缩进即逻辑</button>
+    <button data-k="b" data-ok="1" data-why="正确！两条真实风险：① else 只管一条语句，第二句无条件执行；② 悬挂 else 匹配最近的 if。最佳实践：if/else 永远写花括号。" >
+      不对 —— 编译器只认花括号结构，缩进会骗人</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "switch 的条件可以是 std::string 或 double。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="switch 条件必须整型或枚举（跳转表机制要求离散值）。字符串用 if-else 链；浮点场景同样不适用。" >对 —— 任意类型都行</button>
+    <button data-k="b" data-ok="1" data-why="正确！限制源于机制：switch 用值直接跳转，只有整型/枚举可做。这又是'限制=机制的推论'的例子。" >
+      不对 —— 只能整型/枚举</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>③ "switch 里命中一个 case 后，执行完该 case 的语句就自动退出 switch。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="不会自动退！无跳转语句时执行跌落到下一个 case（fallthrough），直到 break/return 或 switch 结尾。忘记 break 是 C++ 经典 bug。" >对 —— 自动退出</button>
+    <button data-k="b" data-ok="1" data-why="正确！fallthrough 是默认行为：命中后一路向下执行。每个 case 写 break/return；故意跌落要标 [[fallthrough]]。" >
+      不对 —— 默认跌落，必须 break/return 才停</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>④ "goto 应该避免，因为它让执行路径乱成'面条'。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！Dijkstra 的名言论文《Go To Statement Considered Harmful》。唯一可接受场景：从嵌套循环里跳出（此时 goto 反而最清晰）。日常控制用 if/循环即可。" >
+      对 —— 任意跳转制造面条代码</button>
+    <button data-k="b" data-why="goto 确实灵活——太灵活了，灵活到路径不可跟踪。" >不对 —— goto 强大该多用</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>⑤ while 循环打印什么？</p>
+  <pre class="code">int count{ 0 };
+while (count &lt; 3)
+    std::cout &lt;&lt; count &lt;&lt; ' ';
+    ++count;   // 注意缩进！</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="缩进骗人：while 只管第一条打印语句——count 永远是 0，条件永远真，无限循环打印 0！++count 在循环外永远执行不到（程序卡死在前一句）。这就是'循环变量必须迭代'警告的实锤。" >0 1 2</button>
+    <button data-k="b" data-ok="1" data-why="正确！while 只管辖一条语句（打印），++count 游离在外——count 恒为 0，无限打印 0。修复：用花括号把两条语句都圈进去。'循环变量必须迭代'是无限循环的第一来源。" >
+      无限打印 0（++count 不在循环里）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑥ "先请用户输入，输入不合法就重新要"，应该用？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="while 先判断后执行——第一次判断时还没有合法值可依，逻辑别扭。" >while 循环</button>
+    <button data-k="b" data-ok="1" data-why="正确！'至少执行一次'的验证重试是 do-while 的教科书场景。选型速查：至少一次 → do-while；已知次数 → for；其余 → while。" >
+      do-while 循环</button>
+    <button data-k="c" data-why="不知道用户要输错几次，for 的计数结构用不上。" >for 循环</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="0 3 6 9||0,3,6,9||0369" data-hint="i 的步长是 3；i=9 之后加 3 得 12，不小于 10，循环停。" data-explain="输出 0 3 6 9。i 从 0 每轮 +3：0、3、6、9，下一轮 12 > 9 不满足 i<10，循环结束。for 的三段式让步长随意——++i 只是 i+=1 的特例。">
+  <p class="quiz-q">🎯 预测输出：</p>
+  <pre class="code">for (int i{ 0 }; i &lt; 10; i += 3)
+    std::cout &lt;&lt; i &lt;&lt; ' ';</pre>
+  <div class="prow"><input type="text" placeholder="数字序列"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑧ "for (int i{0}; i &lt; 10; ++i) 结束后，i 的值是 10，还可以继续用。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="i 具有循环作用域——循环结束即销毁（相当于包了一层块的自动变量）。循环外要用循环变量就把定义挪到 for 之前。" >对 —— i 活在循环外</button>
+    <button data-k="b" data-ok="1" data-why="正确！init-statement 定义的变量有循环作用域，循环结束销毁。这是 7.1 课'作用域≠生命周期'的又一个变体——这里两者同时结束。" >
+      不对 —— i 是循环作用域，循环结束即销毁</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑨ "break 和 continue 都能用于循环和 switch。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="分工不同：break 用于循环 + switch（终止整个结构）；continue 只用于循环（跳过本轮剩余，直接进入下一轮判断）。switch 里没有'下一轮'概念，用不了 continue。" >对 —— 都通用</button>
+    <button data-k="b" data-ok="1" data-why="正确！break：终止循环/switch 本体；continue：仅循环——跳过本轮剩余语句，回到条件判断（for 会先执行 end-expression）。两者都只影响最内层的结构。" >
+      不对 —— continue 只用于循环，且只作用于最内层</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="15" data-hint="sum 累加的是哪些数？" data-explain="输出 15。循环体：1+2+3+4+5 = 15，i 到 6 时条件 6<=5 为假退出。若把循环体写成 if (i % 2 == 0) continue; sum += i; 则跳过偶数，输出 9（1+3+5）——continue 跳过本轮剩余的练习值得一做。">
+  <p class="quiz-q">⑩ 循环结束后 sum 的值？</p>
+  <pre class="code">int sum{ 0 };
+for (int i{ 1 }; i &lt;= 5; ++i)
+    sum += i;
+std::cout &lt;&lt; sum;</pre>
+  <div class="prow"><input type="text" placeholder="如: 20"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 8 章全部通过！1.7 课的循环欠条正式还清——下一章：错误检测与处理（assert/异常）。</div>
+
+<div class="pager">
+  <a class="prev" href="02-loops.html"><span class="dir">← 上一节</span>8.2 循环三型</a>
+  <a class="next" href="../index.html"><span class="dir">返回 →</span>目录</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-8-summary-and-quiz/">LearnCpp Chapter 8 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

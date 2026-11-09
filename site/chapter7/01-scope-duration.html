@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7.1 作用域、生命周期与链接 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter7/01-scope-duration.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 7 章</a> / 作用域、生命周期与链接</div>
+<article>
+<h1>7.1 作用域、生命周期与链接</h1>
+
+<p>2.5 课你学过局部作用域，还留下过两个猜想："函数怎么记住东西？""static 是什么？"。本章一次性把"名字的属性"讲完整。先立好三个正名：</p>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：三个属性，一个都不能少</div>
+  <table class="cmp">
+    <tr><th>属性</th><th>管什么</th><th>速记</th></tr>
+    <tr><td><strong>作用域（scope）</strong></td><td>名字在哪里<strong>可见</strong>（能用）</td><td>"在哪能用"</td></tr>
+    <tr><td><strong>生命周期（duration）</strong></td><td>对象什么时候<strong>创建/销毁</strong>（lifetime = 存活的实际时间）</td><td>"活多久"</td></tr>
+    <tr><td><strong>链接性（linkage）</strong></td><td>多个文件里的同名声明<strong>是否指同一对象</strong></td><td>"跨文件吗"</td></tr>
+  </table>
+</div>
+
+<h2>回顾：块（compound statement）与局部变量</h2>
+
+<p><strong>块（block，复合语句）</strong>：一对花括号括起的语句组——函数体、if 分支、循环体、裸块都是块。<strong>块结束时，块内所有对象销毁</strong>。块可以嵌套。</p>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：局部变量（local variable）的默认三件套</div>
+  <ul>
+    <li><strong>块作用域</strong>：从定义点到所在块结束可见；</li>
+    <li><strong>自动生命周期（automatic duration）</strong>：定义点创建，块结束销毁；</li>
+    <li><strong>无链接性</strong>：只属于本翻译单元的本函数，别的文件看不见。</li>
+  </ul>
+  <p>1.2 课"盒子/标签/住客"的模型 + 3.9 课的调用栈（压栈登记入住、弹栈清房）= 这三件套的完整机制。本章会往这套机制里加入两个新住客：全局变量（活到程序结束）和静态局部变量（藏在栈外的"永久房客"）。</p>
+</div>
+
+<h2>本章路线图</h2>
+
+<div class="flow">
+  <div class="flow-step">全局变量</div>
+  <div class="flow-step">影子（遮蔽）</div>
+  <div class="flow-step">链接性：static 与 extern</div>
+  <div class="flow-step">inline 变量</div>
+  <div class="flow-step">static 局部变量</div>
+</div>
+
+<ol>
+  <li><strong>全局变量</strong>：定义在函数外的变量——生命周期 = 整个程序；为什么非 const 的全局变量是"恶魔"（原文原话）。</li>
+  <li><strong>影子（shadowing）</strong>：内层同名变量"遮住"外层——2.5 课见过的现象，正式分析 + 最佳实践。</li>
+  <li><strong>链接性</strong>：internal（static）/ external（extern）——多文件程序里同名变量的规则，回收 2.4 课 ODR 的深水区。</li>
+  <li><strong>inline 变量</strong>：头文件里定义全局常量的现代解法——兑现 2.12 课"头文件保护"的后续。</li>
+  <li><strong>静态局部变量</strong>：有记忆的局部变量——2.5 课 counter 之谜的答案。</li>
+</ol>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "作用域和生命周期是一回事——看不见了就是销毁了。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="对局部变量来说两者恰好重合（看不见=销毁），但全局变量立刻打破这个巧合：它一直在生命周期里（活到程序结束），却可能被影子遮住而'看不见'。7.3 静态局部变量更妙——出了作用域'看不见'但没销毁。两个属性独立，是本章的基石。" >对 —— 一回事</button>
+    <button data-k="b" data-ok="1" data-why="正确！作用域管'名字可见'，生命周期管'对象存活'，两者独立。反例俯拾皆是：全局变量被影子遮住时可见性没了但对象活着；static 局部变量出了作用域看不见但值还在。" >
+      不对 —— 两个独立属性，可能'看不见但活着'</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "局部变量有链接性 = 无链接，意思是'不能被链接器处理'。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why='表述方向对但概念要更精确：无链接的意思是"这个名字的其他声明不会指到同一个对象"——每个局部变量都是独立的，和别的文件、别的函数同名变量毫无关系。链接性管的是"跨声明的一致性"，不是"能否被链接器看见"这个技术细节。' >对 —— 就是链接器不处理它</button>
+    <button data-k="b" data-ok="1" data-why="正确且更精确！链接性回答的问题：同名声明是否指同一对象。局部变量无链接 → 每个都是独立对象（2.5 课'每次调用全新世界'的另一种表述）；全局变量默认外链接 → 跨文件同名=同一对象（本章细讲）。" >
+      不对 —— 无链接 = 同名声明互不指涉，各自独立</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：变量不再只有"值"，还有"档案"</div>
+  <p>从此每看到一个变量，脑中自动拉出三行档案：<strong>作用域？生命周期？链接性？</strong>这份档案决定它"在哪能用、活多久、跨不跨文件"。本章结束时你会给四种变量建档案：局部（块/自动/无）、全局（全局/静态/外）、静态局部（块/静态/无）、inline 全局常量（全局/静态/内）。档案思维是读别人代码、防命名冲突、设计多文件程序的底层能力。</p>
+</div>
+
+<div class="practice-note">💻 本课作业：为以下四个变量各写一行"档案"（作用域/生命周期/链接性）——<code>main</code> 里的局部变量、全局变量、static 局部变量、inline constexpr 常量。答案：块/自动/无、全局/静态/外、块/静态/无、全局/静态/内。做完再做下一节的动手练习。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 7 章</a>
+  <a class="next" href="02-globals-shadowing.html"><span class="dir">下一节 →</span>7.2 全局变量与影子</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/compound-statements-blocks/">LearnCpp 7.1–7.5</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

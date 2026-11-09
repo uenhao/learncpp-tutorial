@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnCpp 交互式教程 · 第 7 章：作用域、生命周期与链接</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter7/index.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / 第 7 章</div>
+<article>
+<h1>第 7 章 · 作用域、生命周期与链接</h1>
+
+<p>本章给所有"名字"建立完整档案：<strong>作用域（在哪能用）、生命周期（活多久）、链接性（跨文件吗）</strong>。学完后，变量对你而言不再只有类型和值——还有三行档案。</p>
+
+<p>本章同时兑付两大伏笔：2.5 课"counter 为什么记不住"（static 局部变量的答案）和 2.12 课"头文件常量怎么跨文件共享"（inline 变量的答案）。</p>
+
+<ul class="lesson-list">
+  <li><a data-page="/chapter7/01-scope-duration.html" href="01-scope-duration.html"><span>7.1 · 三个属性：作用域 / 生命周期 / 链接性（7.1–7.3）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter7/02-globals-shadowing.html" href="02-globals-shadowing.html"><span>7.2 · 全局变量与影子（7.4–7.5）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter7/03-linkage.html" href="03-linkage.html"><span>7.3 · 链接性：static、extern 与全局之恶（7.6–7.8）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter7/04-inline-static.html" href="04-inline-static.html"><span>7.4 · inline 与静态局部变量（7.9–7.11, 7.13）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter7/quiz.html" href="quiz.html"><span>7.x · 章综合测验（10 题）</span><span class="mark todo">未开始</span></a></li>
+</ul>
+
+<div class="box story">
+  <div class="box-t">🧭 本章战略地位</div>
+  <p>第 2 章把程序拆成了多文件，第 3 章给了调试武器，本章解决"多文件时代名字的秩序"：谁看得见谁、谁和谁其实是同一个、谁会悄悄遮住谁。第 12 章引用/指针、第 16 章 vector 的底层都会复用本章机制（栈、静态存储、链接）。另外本章预示了前方的路：7.8 课的"全局之恶"本质是所有权与可追踪性问题——第 12 章引用传递、第 14 章类都是它的终极解法。</p>
+</div>
+
+<div class="pager">
+  <a class="prev" href="../chapter6/quiz.html"><span class="dir">← 上一章</span>第 6 章</a>
+  <a class="next" href="01-scope-duration.html"><span class="dir">本章开始 →</span>7.1 三个属性</a>
+</div>
+</article>
+<footer class="site">基于 LearnCpp Chapter 7 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

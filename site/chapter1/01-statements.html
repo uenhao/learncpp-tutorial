@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1.1 语句与程序结构 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter1/01-statements.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 1 章</a> / 语句与程序结构</div>
+<article>
+<h1>1.1 语句与程序结构</h1>
+
+<p>在接触任何语法细节之前，先建立一个<strong>执行模型</strong>：程序到底是怎么"跑"起来的？这个模型会贯穿你整个 C++ 生涯。</p>
+
+<h2>心智模型：CPU 是一个只向下走的阅读者</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>语句（statement）</strong>：一条让计算机做某件事的指令。C++ 里大多数语句以分号 <code>;</code> 结尾——分号不是"行结束符"，而是"语句结束符"。</p>
+  <p><strong>顺序执行</strong>：没有特殊指令时，CPU 从上到下、一条一条执行语句，绝不跳步、绝不回头。</p>
+</div>
+
+<p>最小的 C++ 程序长这样：</p>
+
+<pre class="code">int main()
+{
+    return 0;
+}</pre>
+
+<p>别小看这几行，每一部分都有名字：</p>
+<ul>
+  <li><code>int main()</code> —— <strong>函数头</strong>：声明了一个叫 main 的函数。它是特殊函数：操作系统从这里开始执行你的程序。</li>
+  <li><code>{</code> 和 <code>}</code> —— <strong>花括号</strong>：圈出函数体（function body），即"这个函数要执行的语句清单"。</li>
+  <li><code>return 0;</code> —— <strong>返回语句</strong>：结束 main，把 0 交回操作系统。约定俗成：<strong>0 = 成功，非零 = 出了问题</strong>。</li>
+</ul>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"分号是 C++ 的换行符，一行末尾必须有分号。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="从'必须有'的角度说不成立：一条语句可以跨很多行（比如长表达式拆行），换行处并不需要分号。反例：int x = 5
+; 完全合法——分号在下一行开头。">对 —— 每行结束都要写分号</button>
+    <button data-k="b" data-ok="1" data-why="正确！分号标记的是'语句的结束'，与换行无关。所以你也能把多条语句挤在一行 int a=1; int b=2;（合法但丑）。理解这一点，以后读'为什么这行不加分号也行'的代码就不会懵。">不对 —— 分号属于语句，不属于行</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>语句是排队执行的：先来后到，不可跳越</h2>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{
+    std::cout &lt;&lt; "First" &lt;&lt; '\n';
+    std::cout &lt;&lt; "Second" &lt;&lt; '\n';
+    return 0;
+}</pre>
+
+<p class="codecap">输出永远是 First 换行 Second —— 语句顺序决定输出顺序</p>
+
+<p>现在做一个预测练习。注意 <code>&lt;&lt;</code> 是"把右边的东西送进输出流"的意思，链式书写时从左往右依次执行：</p>
+
+<div class="predict" data-answer="1 2 2||1,2,2||122" data-hint="提示：逐步模拟——a = b 之后 a 是几？b = c 之后 b 是几？c 变过吗？" data-explain="输出 1 2 2。① a = b 把 a 覆盖成 1（3 被丢弃）；② b = c 把 b 覆盖成 2；③ c 从未被改，仍是 2。顺序执行的核心：每条语句执行时，世界已经变了——a 的旧值 3 在第①步就消失了。">
+  <p class="quiz-q">🎯 预测输出：下面的程序输出什么（三行，用空格分隔）？</p>
+  <pre class="code">int a{ 3 };
+int b{ 1 };
+int c{ 2 };
+a = b;   // ①
+b = c;   // ②
+std::cout &lt;&lt; a &lt;&lt; ' ' &lt;&lt; b &lt;&lt; ' ' &lt;&lt; c;</pre>
+  <div class="prow"><input type="text" placeholder="如: 1 2 3"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 常见误区：变量交换</div>
+  <p>上面的题暴露了一个经典陷阱：想交换 a 和 b，写 <code>a = b; b = a;</code> 是错的——第一步就把 b 的旧值弄丢了。正确做法需要一个临时变量"记住"旧值：</p>
+  <pre class="code">int temp{ a };
+a = b;
+b = temp;</pre>
+  <p>这个"需要记住旧值"的需求非常常见，标准库直接提供了 <code>std::swap(a, b)</code>。本章最后一课的身高排序程序就用到了它。</p>
+</div>
+
+<h2>Hello world：每一行都是谁</h2>
+
+<pre class="code">#include &lt;iostream&gt;      // 预处理指令：把 iostream 库的声明拷进来
+
+int main()
+{
+    std::cout &lt;&lt; "Hello world!\n";   // 把字符串送进输出流
+    return 0;
+}</pre>
+
+<p>现在的你不需要理解每一处细节（<code>std::</code>、<code>&lt;&lt;</code> 的原理在第 1.5 课展开），只需要能把每一行归位：</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span><code>#include &lt;iostream&gt;</code> 这一行是由谁处理的？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="不是。到编译器工作时，#include 早已处理完毕——编译器看到的已经是'展开后'的完整文本。">#include 由编译器在编译时处理</button>
+    <button data-k="b" data-why="也不是。运行时程序已经是纯机器码，再也没有 # 这回事了。">#include 由操作系统在运行时处理</button>
+    <button data-k="c" data-ok="1" data-why="正确！# 开头的行由预处理器（第 0.1 节旅程的第二站）处理，它做的是纯文本拷贝：把 iostream 头文件的内容原样粘贴到这一行的位置。所以 #include 出现在文件顶部——它的展开结果要先就位，后面的代码才用得上 std::cout。" >#include 由预处理器在编译前处理</button>
+    <button data-k="d" data-why="链接器管的是'把函数调用对接到函数定义'，#include 早在链接之前就完成了。">#include 由链接器处理</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变</div>
+  <p>从这一课开始，请养成一个习惯：<strong>读代码时，在脑中维护一份"世界状态"</strong>——每个变量此刻的值是什么？执行到哪一行了？上面交换变量的题就是这个习惯的第一练。以后学循环、递归，这个习惯是唯一能救你的东西。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：进入 <code>chapter1/01-statements/</code>，编译运行 <code>hello.cpp</code>；再做 <code>exercises/first_touch.cpp</code> 里的三个 TODO（第三题会让你用 <code>echo $?</code> 观察退出码）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 1 章</a>
+  <a class="next" href="02-objects-variables.html"><span class="dir">下一节 →</span>1.2 对象与变量</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/statements-and-the-structure-of-a-program/">LearnCpp 1.1</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

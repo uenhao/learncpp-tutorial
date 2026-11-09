@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 3 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter3/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 3 章</a> / 综合测验</div>
+<article>
+<h1>第 3 章综合测验</h1>
+
+<p>概念题 + 两个真实调试任务（用调试器完成）。全部答对计入完成。</p>
+
+<h2>Part A · 概念</h2>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "语义错误都会被编译器抓住。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="恰恰是语义错误中最危险的那类——运行时语义错误（除零、未初始化读取、运算符写错）编译器不会报错，程序带病出生。编译器只能抓语法错误和一部分语义错误（类型不匹配、未声明等）。">对 —— 编译器是语义的执法者</button>
+    <button data-k="b" data-ok="1" data-why="正确！语义错误三层级：编译期可抓（类型不匹配）/ 运行时崩溃（除零）/ 运行时不崩只给错结果（最危险）。第三层级只有靠调试技术和测试才能发现——这正是本章存在的理由。">不对 —— 运行时语义错误编译器抓不住</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>② 调试六步流程中，通常最耗时的是哪一步？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="修复几乎总是最快的——尤其当根因已明确时往往是一行改动。真正的大头在前面。" >修复（第 4 步）</button>
+    <button data-k="b" data-ok="1" data-why="正确！原文：'大多数情况下，你的绝大部分时间会花在寻找错误实际上在哪'。找到根因后修复和验证往往轻而易举。所以本章 3.3–3.9 七节课全在讲'怎么找'。" >
+      找到根因（第 1 步）</button>
+    <button data-k="c" data-why="复测很重要但成本低——跑一遍程序即可。" >复测（第 5、6 步）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>③ hi-lo 收敛策略中，"在程序某处能证明问题还没发生"意味着什么？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="方向反了——'问题尚未发生'说明你站在 bug 的上游，根因在更靠后的代码里。" >bug 在这段代码更早的位置</button>
+    <button data-k="b" data-ok="1" data-why="正确！两种观察结果对应两个方向：证明'还没发生'→ 往后找（太小）；观察到'已经错了'→ 往前找（太大）。每次观察排除一段代码，包围圈逐步收敛到一行。" >
+      bug 必然在这段观察点之后的代码里</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ 调试输出用 <code>std::cerr</code> 而非 <code>std::cout</code> 的根本原因是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="恰恰相反：cout 的缓冲是性能优化，cerr 为即时性放弃了缓冲。选 cerr 的理由就在放弃缓冲这一点上。" >cerr 输出性能更好</button>
+    <button data-k="b" data-ok="1" data-why="正确！cout 的缓冲可能在程序崩溃时丢失未输出的内容——你看到的'最后一条输出'会误导崩溃位置判断。cerr 无缓冲立即显示，观察永不迟到、永不骗你。" >
+      cerr 无缓冲：崩溃时不会丢失未显示的调试信息，观察不会误导你</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "断点和 run to cursor 效果一样，随便用哪个。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="关键差异：断点是持久标记，每次经过都停；run to cursor 是一次性命令，只停第一次。循环体和频繁调用的函数必须用断点——原文的 printValue 三连调用演示就是明证。" >对 —— 可以互换</button>
+    <button data-k="b" data-ok="1" data-why="正确！断点：每次经过都触发 + 持久保留；run to cursor：单次跳跃。场景分工：循环/多次调用用断点；一次性的'跳到这行看'用 run to cursor。" >
+      不对 —— 断点每次经过都停且持久，run to cursor 只停一次</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑥ 调试暂停在函数 a 内部，调用栈显示（顶→底）：<code>a() → b() → main()</code>。谁调用了 a？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="栈顶是当前函数。调用者永远在栈顶的紧邻下一层。" >栈顶没有调用者，a 是被操作系统直接调用的</button>
+    <button data-k="b" data-ok="1" data-why="正确！从下往上读是调用顺序：main → b → a。a 的直接调用者是紧邻它下方那一层 b。间接发起者是 main，但'谁调用了 a'问的是直接调用。" >
+      b（紧邻栈顶的下一层）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑦ "重构就是改代码——和加功能一起做，反正都要重新编译测试。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="本课铁律正相反：行为改动与结构改动不同时做。一起做出问题时分不清是谁引入的，错误更难定位。分开做、各自测、分别提交。" >对 —— 一起做效率高</button>
+    <button data-k="b" data-ok="1" data-why="正确！两者混合会让新 bug 与重构引入的问题纠缠，定位难度倍增。正确节奏：完成功能→测试→提交→单独重构→再测→再提交。" >
+      不对 —— 行为与结构改动分开做，各自测试</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>Part B · 真实调试任务（原文 Quiz Q1/Q2）</h2>
+
+<p>以下两个程序都要<strong>真的用调试器跑</strong>：打断点 → 单步 → 看变量 → 修复。仓库 <code>chapter3/quiz/exercises/</code> 里有可直接调试的工程。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">调试</span>⑧ 程序应把两个数相加，但结果不对。用调试器找出 bug：</p>
+  <pre class="code">#include &lt;iostream&gt;
+
+int readNumber(int x)
+{
+	std::cout &lt;&lt; "Please enter a number: ";
+	std::cin &gt;&gt; x;
+	return x;
+}
+
+void writeAnswer(int x)
+{
+	std::cout &lt;&lt; "The sum is: " &lt;&lt; x &lt;&lt; '\n';
+}
+
+int main()
+{
+	int x {};
+	readNumber(x);
+	x = x + readNumber(x);
+	writeAnswer(x);
+	return 0;
+}</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="形参 x 确实多余（应该用局部变量），但这是次要问题——它不影响正确性。主要 bug 在 main 里。" >readNumber 的形参 x 不该存在</button>
+    <button data-k="b" data-ok="1" data-why="正确！两处问题：① main 第一个 readNumber(x) 的返回值被直接丢弃了（没赋给谁）——这正是单步时你会发现'输入了但 x 没变'的地方；② readNumber 用形参接收输入，应改用局部变量。修复版：int x { readNumber() }; x = x + readNumber();。这道题练的就是'监视形参与实参'。" >
+      readNumber 的返回值被丢弃了——第一次调用等于白做</button>
+    <button data-k="c" data-why="x = x + readNumber(x) 本身语法合法逻辑可行——只是把返回值丢弃的问题藏在了看不见的地方，调试器抓的就是它。" >第二行 x = x + readNumber(x) 语法错误</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">调试</span>⑨ 程序应做除法。输入 8 和 4，程序崩溃。用调试器定位：</p>
+  <pre class="code">#include &lt;iostream&gt;
+
+int readNumber()
+{
+	std::cout &lt;&lt; "Please enter a number: ";
+	int x {};
+	std::cin &gt;&gt; x;
+	return x;
+}
+
+void writeAnswer(int x)
+{
+	std::cout &lt;&lt; "The quotient is: " &lt;&lt; x &lt;&lt; '\n';
+}
+
+int main()
+{
+	int x{ };
+	int y{ };
+	x = readNumber();
+	x = readNumber();   // ← 嫌疑行
+	writeAnswer(x/y);
+	return 0;
+}</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！第二次调用把返回值又赋给了 x（本该赋给 y）——y 保持 0，x/y 就是除以 0，整数除零是未定义行为 → 崩溃。调试会话里你会亲眼看到：第二次 readNumber 返回 4 后，Local 区 y 依然是 0。附带发现：整数除法还会丢弃小数部分（第 4 章细讲）。" >
+      第二次 readNumber 的结果赋给了 x，y 一直是 0 → 除零崩溃</button>
+    <button data-k="b" data-why="除法表达式本身没问题——问题在 y 从未被赋值。先修赋值 bug，程序才能正常算除法。" >x/y 除法写法有误</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 3 章全部通过！你已经拥有完整的调试武器库——下一章：基本数据类型。</div>
+
+<div class="pager">
+  <a class="prev" href="10-prevention.html"><span class="dir">← 上一节</span>3.10 防患于未然</a>
+  <a class="next" href="../chapter4/index.html"><span class="dir">下一章 →</span>第 4 章 · 基本数据类型</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-3-summary-and-quiz/">LearnCpp Chapter 3 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

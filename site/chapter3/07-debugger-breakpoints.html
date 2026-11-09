@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3.7 调试器：断点与运行控制 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter3/07-debugger-breakpoints.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 3 章</a> / 调试器：断点</div>
+<article>
+<h1>3.7 调试器：断点与运行控制</h1>
+
+<p>单步执行的痛点：大程序里，从 main 走到你想看的那一行要按几十次 F10。这一课的命令让你<strong>直接跳到想看的地方</strong>。</p>
+
+<h2>Run to cursor（运行到光标）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>Run to cursor</strong>：程序一直运行，直到执行到光标所在的语句，然后停下交还控制权。相当于"瞬移到这一行开始调试"。</p>
+</div>
+
+<p>VS Code 操作：<strong>调试进行中</strong>，在目标语句上<strong>右键 → Run to Cursor</strong>。</p>
+
+<p>演示程序（原文同款）：</p>
+
+<pre class="code">#include &lt;iostream&gt;
+
+void printValue(int value)
+{
+    std::cout &lt;&lt; value &lt;&lt; '\n';
+}
+
+int main()
+{
+    printValue(5);
+    return 0;
+}</pre>
+
+<p>启动调试（F5）后，右键第 5 行 → Run to Cursor：程序瞬间跑到这一行停下。从这一行开始单步、看变量，都随你。注意：如果光标所在的行<strong>永远不会被执行</strong>（比如 return 之后的死代码），程序会一路跑到底。</p>
+
+<h2>Continue 与 Start</h2>
+
+<table class="cmp">
+  <tr><th>命令</th><th>VS Code</th><th>做什么</th></tr>
+  <tr><td><strong>Continue</strong>（继续）</td><td><code>F5</code>（调试中）</td><td>从当前位置正常跑下去，直到程序结束<strong>或撞上断点</strong>才停</td></tr>
+  <tr><td><strong>Start</strong>（启动调试）</td><td><code>F5</code>（未调试时）</td><td>从头开始一个调试会话</td></tr>
+</table>
+
+<p>同一个 F5 键，语境不同含义不同：未调试时是 Start，调试暂停中是 Continue。</p>
+
+<h2>断点（breakpoint）——本章最重要的工具</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>断点</strong>：打在某行代码上的特殊标记。调试模式下程序每次<strong>即将执行到这一行</strong>都会停下，把控制权交给你。</p>
+</div>
+
+<p>VS Code 操作：<strong>行号左侧的灰色区域点击一下</strong>（出现红点），或光标放行内按 <strong>F9</strong>，或右键 → Toggle Breakpoint。再点一次红点即取消。</p>
+
+<pre class="code">#include &lt;iostream&gt;
+
+void printValue(int value)
+{
+    std::cout &lt;&lt; value &lt;&lt; '\n';   // ← 在这行打个断点
+}
+
+int main()
+{
+    printValue(5);
+    printValue(6);
+    printValue(7);
+    return 0;
+}</pre>
+
+<p>打上断点，按 F5 启动：程序不跑到底，而是停在 <code>std::cout</code> 那行。此时按 Continue：打印 5，程序继续跑——<strong>然后又停下了！</strong>因为 <code>printValue(6)</code> 也要执行这一行。再 Continue，第三次停。再 Continue，程序跑完。</p>
+
+<div class="box concept">
+  <div class="box-t">📐 断点 vs Run to cursor：一字之差，天壤之别</div>
+  <ul>
+    <li><strong>Run to cursor</strong>：一次性命令——只停第一次；</li>
+    <li><strong>断点</strong>：持久标记——<strong>每次经过都停</strong>，且一直保留到你手动删除。</li>
+  </ul>
+  <p>循环体、被多次调用的函数入口，用断点；单次跳跃，用 run to cursor。两者都不触发的情况：断点所在的行根本不在执行路径上（比如死代码）。</p>
+</div>
+
+<h2>Set next statement（跳转执行点）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念（低频但值得知道）</div>
+  <p><strong>Set next statement（跳到语句）</strong>：调试暂停时，把"下一条要执行的语句"改成你指定的行——可以向后跳（跳过某些代码不执行），也可以向前跳（让已执行过的代码再跑一遍）。VS Code 操作：调试中右键目标行 → <strong>Jump to Cursor</strong>。</p>
+</div>
+
+<p>向后跳的实验：停在 <code>printValue(5);</code>（已打印 5），右键 <code>printValue(7);</code> → Jump to Cursor → Continue。输出是 <code>5</code> 和 <code>7</code>——<code>printValue(6)</code> 被整个跳过了。这相当于"运行时版的注释掉代码"（3.4 战术一），但<strong>不改代码</strong>。向前跳则让刚看过的函数再跑一遍，方便配合监视窗口反复观察。</p>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 两条原文警告</div>
+  <ul>
+    <li>跳转<strong>只改变执行位置，不改变程序状态</strong>——变量保持着跳转前的值。向前跳"重跑"时变量可能带着"未来"的值，行为可能和自然执行完全不同。慎用，尤其向前跳。</li>
+    <li>绝不要把执行点跳到<strong>另一个函数</strong>里——调用栈会被破坏，多半直接崩溃（未定义行为）。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>循环体 <code>for (int i{0}; i &lt; 100; ++i) { process(i); }</code> 里 <code>process</code> 偶尔出错。你怀疑第 37 次调用附近有问题。最省力的调试器用法是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="F10 逐行会执行 process 100 次、每次都按一遍——其中前 36 次都是浪费，而且'偶尔出错'的时机你也把握不住。" >每次都 F10 单步，盯着看</button>
+    <button data-k="b" data-ok="1" data-why="正确！断点打到 process 入口（或循环内某行），每经过一次就停一次、看一眼 i 和参数——第 37 次附近的问题迟早现形。断点'每次经过都停 + 持久保留'的特性就是为这种场景设计的。这个场景里 run to cursor 只能帮你跳到循环开头，进去之后还得靠断点。" >
+      在 process 入口（或循环体内）打断点，配合 Continue 逐次观察</button>
+    <button data-k="c" data-why="Jump to Cursor 向后跳会让变量带着'未来'的值重跑，行为可能失真——用它重放单次执行可以，用来找'第 37 次'这种累计性问题不合适。" >用 Jump to Cursor 反复重放</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：断点是"程序里的观察哨"</div>
+  <p>把断点想成你在程序地图上布下的<strong>观察哨</strong>：布好后按一次 F5，程序自己跑，每到一处哨点自动"叫停汇报"。相比 run to cursor（每次手动指路），断点让你从"驾驶员"变成"调度员"—— especially 在多次调用、循环这类重复路径上。加上前两课的工具，你的定位工具箱已经完整：<strong>hi-lo 策略决定在哪布哨（3.3），断点+单步负责现场勘查（3.6/3.7）</strong>。还差最后一块拼图——不挪步也能看清现场细节的"望远镜"：变量监视（3.8）。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：仓库 <code>chapter3/07-debugger-breakpoints/</code> 的 <code>breakpoints_demo.cpp</code>（三连调用，体验断点多次触发）和 <code>exercises/loop_hunt.cpp</code>（10 次循环里某次把 total 改错，用断点找出来）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="06-debugger-stepping.html"><span class="dir">← 上一节</span>3.6 调试器：单步执行</a>
+  <a class="next" href="08-debugger-watch.html"><span class="dir">下一节 →</span>3.8 调试器：监视变量</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/using-an-integrated-debugger-running-and-breakpoints/">LearnCpp 3.7</a> 改编 · 交互式中文教程（VS Code 版）</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

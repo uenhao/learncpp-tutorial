@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6.3 条件运算符与逻辑运算 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter6/03-conditional-logic.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 6 章</a> / 条件运算符与逻辑运算</div>
+<article>
+<h1>6.3 条件运算符与逻辑运算</h1>
+
+<h2>条件运算符 ?: —— 能嵌进表达式的 if-else</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>条件运算符（?:）</strong>：C++ 唯一的三元运算符（吃 3 个操作数），俗称"三元运算符"。它是 if-else 的表达式版本：</p>
+  <pre class="code">condition ? expression1 : expression2;
+// 真 → 整个表达式取 expression1 的值；假 → 取 expression2 的值</pre>
+</div>
+
+<p>原文示例——找最大值：</p>
+
+<pre class="code">if (x &gt; y)
+    max = x;
+else
+    max = y;
+
+// 等价的条件运算符写法：
+max = ((x &gt; y) ? x : y);</pre>
+
+<p><strong>关键优势：它是表达式</strong>——能用在语句到不了的地方，最典型的是初始化：</p>
+
+<pre class="code">int max{ (x &gt; y) ? x : y };  // 初始化里不能写 if-else，但能写 ?:
+
+// 打印时选择文本：
+std::cout &lt;&lt; "You are " &lt;&lt; (age &gt;= 18 ? "an adult" : "a minor") &lt;&lt; '\n';</pre>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践：只在"取值"场景用 ?:</div>
+  <p>?: 适合"二选一<strong>取一个值</strong>"的场景。如果两个分支是<strong>做不同的动作</strong>（各执行多条语句），用 if-else——可读性远胜硬塞进三元的写法。别为了短而牺牲清晰。</p>
+</div>
+
+<h2>逻辑运算符全家福（4.10 课的正式展开）</h2>
+
+<table class="cmp">
+  <tr><th>运算符</th><th>形式</th><th>真值条件</th></tr>
+  <tr><td>逻辑非 !</td><td><code>!x</code></td><td>x 为 false 则 true，反之亦然</td></tr>
+  <tr><td>逻辑与 &amp;&amp;</td><td><code>x &amp;&amp; y</code></td><td><strong>两者都</strong> true 才 true</td></tr>
+  <tr><td>逻辑或 ||</td><td><code>x || y</code></td><td><strong>至少一个</strong> true 即 true</td></tr>
+</table>
+
+<pre class="code">bool tooLarge{ x &gt; 100 };  // 命名技巧：bool 变量名写成"陈述句"
+if (!tooLarge)
+    std::cout &lt;&lt; "OK\n";
+
+if (age &gt;= 18 &amp;&amp; hasID)   // 都满足才放行
+    std::cout &lt;&lt; "enter\n";
+
+if (sick || tired || wonLottery) // 任一满足即可请假
+    std::cout &lt;&lt; "rest today\n";</pre>
+
+<h3>NOT 的高优先级陷阱（6.1 课表格的实战）</h3>
+
+<pre class="code">int x{ 5 };
+int y{ 7 };
+
+if (!x &gt; y)      // 解析为 (!x) > y → (!5)>y → 0>7 → false
+    std::cout &lt;&lt; "x is not greater\n";
+else
+    std::cout &lt;&lt; "x is greater\n";   // 实际输出这句！</pre>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践</div>
+  <p><strong>NOT 作用于其他运算符的结果时，给那部分加括号</strong>：<code>!(x &gt; y)</code>。简单场景（<code>if (!value)</code>）不需要括号。变量命名小技巧：bool 变量写成陈述句（<code>tooLarge</code>、<code>hasID</code>），<code>if (!tooLarge)</code> 读起来就是一句人话。</p>
+</div>
+
+<h3>短路求值再强化（4.4 课）</h3>
+
+<p><code>&amp;&amp;</code> 左假必假 → 右边不求值；<code>||</code> 左真必真 → 右边不求值。除了保住除法安全（<code>b != 0 &amp;&amp; a/b &gt; 10</code>），还能做"低成本的先遣检查"：</p>
+
+<pre class="code">if (cheapCheck &amp;&amp; expensiveCheck())  // 便宜的先算，贵的不必总跑
+if (isNull || readData())            // 非空才去读</pre>
+
+<h2>浮点比较：== / != 是雷区（4.3 课伏笔兑现）</h2>
+
+<div class="box warn">
+  <div class="box-t">⚠️ &lt; &gt; 尚可，== / != 危险</div>
+  <ul>
+    <li><code>&lt; &gt; &lt;= &gt;=</code>：两个数差距明显时可靠；数值几乎相等时结果随舍入误差摆动——影响不大时（游戏碰撞判定）可接受；</li>
+    <li><strong><code>== !=</code>：要求完全相等，而浮点几乎从不完全相等</strong>——0.1+0.2 == 0.3 是 false（4.3 课实测过）。</li>
+  </ul>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 浮点相等的正确姿势：与"误差带"比较</div>
+  <pre class="code">double expected{ 0.3 };
+double actual{ 0.1 + 0.2 };
+
+if (actual - expected &lt; 1e-9 &amp;&amp; expected - actual &lt; 1e-9)
+    std::cout &lt;&lt; "close enough\n";  // 差值在容差内视为相等</pre>
+  <p>误差阈值（容差）多大取决于应用精度需求。这也是为什么 3.4/3.10 课的测试函数对浮点结果用"接近期望"而非"全等"。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>输出什么？</p>
+  <pre class="code">int x{ 9 };
+int y{ 3 };
+std::cout &lt;&lt; ((x / y == 3) ? "yes" : "no");</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="9/3 = 3（整数除法整除无损失），3 == 3 为 true，取 "yes"。" >no</button>
+    <button data-k="b" data-ok="1" data-why="正确！9/3 == 3 成立，条件为真输出 yes。注意外层括号不能省：<< 的优先级高于 ?:，不加括号会解析成 (cout << (x/y==3 ? yes : no)) 的乱套组合——?: 在输出链中必须整体括住。" >
+      yes</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"0.1 + 0.2 == 0.3 在 double 下通常为 false，所以浮点没法做相等判断。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why='前半句对（4.3 课实测），但结论错了——正确做法是"差值容差比较"（如 |a−b| < 1e-9），浮点相等判断完全可行，只是不能硬用 ==。' >对 —— 浮点无法判等</button>
+    <button data-k="b" data-ok="1" data-why="正确！== 的失效不等于判等的失败：与容差比较才是标准答案。同样地，3.10 课的测试函数对浮点结果也应采用容差比较。" >
+      不对 —— 用误差带比较替代 ==</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：表达式的能力边界</div>
+  <p>?: 的存在揭示了 C++ 的一个深层划分：<strong>语句（statement）产生动作，表达式（expression）产生值</strong>（1.6 课的问句/命令之辨）。凡是"要一个值"的位置——初始化、实参、返回值、输出链——只能放表达式；而 ?: 让"条件选择"第一次进入值的世界。逻辑运算符则把多个 bool 表达式编织成复杂条件。至此你的条件工具箱齐了：简单分支用 if，取值分支用 ?:，复合条件用 && || 组合。第 8 章的 switch 和循环会把这个工具箱扩容一倍。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter6/03-conditional-logic/</code> 的 <code>max_ternary.cpp</code>（原文最大值示例）、<code>exercises/not_trap.cpp</code>（!x &gt; y 陷阱实测+修复）和 <code>float_equal.cpp</code>（容差比较模板）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="02-remainder-increment.html"><span class="dir">← 上一节</span>6.2 取余与自增自减</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 6 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/the-conditional-operator/">LearnCpp 6.6–6.8</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

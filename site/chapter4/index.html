@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnCpp 交互式教程 · 第 4 章：基本数据类型</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter4/index.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / 第 4 章</div>
+<article>
+<h1>第 4 章 · 基本数据类型</h1>
+
+<p>1.2 课说"变量 = 类型 + 名字 + 值"，但你一直用的只有 int。这一章把类型世界展开：<strong>每种类型占多宽、比特怎么解释、什么时候溢出、什么时候有损</strong>。</p>
+
+<p>本章同时兑付前几章欠下的所有"欠条"：整数除法之谜（1.6）、'A' 与 "A" 之辨（1.9）、if 语句正式教学（1.7 偷跑过）、char 读数字的 bug（第 3 章测验 Q4）。学完你会发现：那些当时"记住现象"的坑，全部有了机制解释。</p>
+
+<ul class="lesson-list">
+  <li><a data-page="/chapter4/01-fundamental-types.html" href="01-fundamental-types.html"><span>4.1 · 数据类型基础：比特、字节与 sizeof（4.1+4.3）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter4/02-integers.html" href="02-integers.html"><span>4.2 · 整数类型与溢出（4.4–4.6）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter4/03-float-bool.html" href="03-float-bool.html"><span>4.3 · 浮点数与布尔（4.7–4.9）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter4/04-if-statements.html" href="04-if-statements.html"><span>4.4 · if 语句（4.10）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter4/05-chars-cast.html" href="05-chars-cast.html"><span>4.5 · 字符与类型转换（4.11–4.12）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter4/quiz.html" href="quiz.html"><span>4.x · 章综合测验（10 题）</span><span class="mark todo">未开始</span></a></li>
+</ul>
+
+<div class="box story">
+  <div class="box-t">🗺️ 本章的两条主线</div>
+  <p><strong>主线一：类型 = 宽度 + 解释规则</strong>。每个类型都问两个问题——多宽（sizeof）、比特怎么读（整数补码/浮点 IEEE 754/char ASCII）。<br>
+  <strong>主线二：边界与转换</strong>。整数有溢出墙（有符号溢出=UB），浮点有精度墙（近似存储），转换有方向（宽化安全/窄化有损）。这两条主线在第 5 章（constexpr 与 string）、第 8 章（控制流）、第 10 章（类型推导）都会继续延伸。</p>
+</div>
+
+<div class="pager">
+  <a class="prev" href="../chapter3/quiz.html"><span class="dir">← 上一章</span>第 3 章</a>
+  <a class="next" href="01-fundamental-types.html"><span class="dir">本章开始 →</span>4.1 数据类型基础</a>
+</div>
+</article>
+<footer class="site">基于 LearnCpp Chapter 4 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

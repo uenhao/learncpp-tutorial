@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3.3 定位策略：代码审查与 hi-lo 收敛 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter3/03-strategy.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 3 章</a> / 定位策略</div>
+<article>
+<h1>3.3 定位策略：代码审查与 hi-lo 收敛</h1>
+
+<p>上一课说：调试的大部分时间花在"找到错误在哪"。这一课讲两条定位路径：<strong>靠看（代码审查）</strong>和<strong>靠跑（运行程序收集线索）</strong>——以及从后者提炼出的 hi-lo 收敛策略。</p>
+
+<h2>路径一：代码审查（code inspection）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>代码审查定位</strong>：根据错误的性质和程序结构，推断问题最可能藏在哪个函数里，然后盯着那段代码看。</p>
+</div>
+
+<pre class="code">int main()
+{
+    getNames();  // 让用户输入一堆名字
+    sortNames(); // 按字母序排序
+    printNames(); // 打印排序后的名单
+    return 0;
+}</pre>
+
+<p>预期"按字母序打印"，实际却"逆序打印"——三个函数里谁最可疑？显然是 <code>sortNames</code>。能收敛到一个函数时，肉眼审查往往直接命中。</p>
+
+<p>但审查有四个天然局限：</p>
+<ul>
+  <li><strong>代码量大</strong>：几千行逐行看，又慢又枯燥；</li>
+  <li><strong>代码复杂</strong>：出错的可能位置太多；</li>
+  <li><strong>线索缺失</strong>：程序什么都不输出时，连"从哪看起"都不知道；</li>
+  <li><strong>最致命的——坏假设</strong>：如果 bug 是由一个错误假设造成的，你审查时会<strong>犯同样的错误假设</strong>，于是对着那行代码看十遍也看不出错。你想的和代码做的是同一件错事。</li>
+</ul>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"只要足够仔细，盯着代码看总能发现所有 bug。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="不可能。坏假设型 bug 的定义就是：你审查时会带着同样的坏假设去看，所以视觉上几乎无法发现它。比如你坚信'函数参数按引用传递'（实际是按值），看一百遍也看不出'改形参不影响实参'这个问题的根源。" >对 —— 认真看总能看出来</button>
+    <button data-k="b" data-ok="1" data-why="正确！由坏假设造成的 bug 是肉眼审查的盲区——因为审查者脑中的世界模型和 bug 本身是同一个错误模型。这正是需要'运行程序收集客观证据'的原因：程序的实际行为不会陪你犯假设错误。" >
+      不对 —— 坏假设型 bug 恰恰是审查的盲区</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>路径二：运行程序收集线索</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：通用三步循环</div>
+  <ol>
+    <li><strong>重现问题</strong>（reproduce）</li>
+    <li><strong>运行程序，收集信息，缩小怀疑范围</strong></li>
+    <li>重复上一步，直到锁定问题</li>
+  </ol>
+</div>
+
+<h3>第一步：重现问题</h3>
+
+<p><strong>能稳定重现是定位的第一前提</strong>——无法观察到的错误几乎无法诊断。回想制冰机：朋友说"你家的制冰机坏了"，你过去一看，好好的——这怎么诊断？只有当你亲眼看到"不出冰"，调查才能展开。</p>
+
+<p>明显的 bug（每次运行都在同一处崩溃）天然可重现；麻烦的是"只在某些机器 / 某些输入下出现"的 bug。此时要整理<strong>重现步骤（reproduction steps）</strong>：一串清晰、精确、可高概率复现问题的操作序列。理想是 100% 重现；哪怕只有 50%，也只是诊断时间翻倍——最糟的是无法重现，线索直接断掉。</p>
+
+<h3>第二步：hi-lo 收敛法</h3>
+
+<p>重现了问题、但完全不知道 bug 在哪，怎么办？原文用了 hi-lo 猜数游戏的类比：猜 1–10 之间的数，每次猜完只告诉你"太大 / 太小 / 正确"。用最优策略，最多 4 次就能锁定——<strong>不需要遍历所有可能</strong>，每次猜测都会给你排除一半空间的信息。</p>
+
+<p>调试同款策略。关键事实：bug 必然位于"程序开始执行"到"第一次出现可观察症状"之间的代码里——症状之后的部分先排除。然后做有依据的猜测：</p>
+
+<div class="box concept">
+  <div class="box-t">📐 两种"猜测结果"的判读</div>
+  <ul>
+    <li><strong>能证明"这一刻问题还没发生"</strong> → 相当于"太小"：<strong>bug 在更靠后的代码里</strong>。例：程序每次都在同一处崩溃；在崩溃点之前的某处检查过、确认状态正常 → 往后找。</li>
+    <li><strong>观察到与问题相关的错误行为</strong> → 相当于"太大"：<strong>bug 在更靠前的代码里</strong>。例：程序打印变量 x，期望 2 却打印 8；在运行途中发现 x 此时已经是 8 → 往前找（x 被污染发生在你看它之前）。</li>
+  </ul>
+  <p>有时还能整段排除代码而不产生方向信息（比如注释掉一个显然无关的函数）——这同样缩小包围圈。</p>
+</div>
+
+<p>猜得足够多次、方法得当，包围圈就收敛到<strong>一行代码</strong>。到那时，"理解为什么"往往一眼即穿——而且这个过程会顺带暴露你的坏假设（你猜错了方向，说明你的假设和现实不符）。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>程序把用户的存款余额显示为 999999，正确值应为 500。你在"读取账户"之后加了检查，余额此时仍是正确的 500；在"显示余额"之前又检查了一次，此时已经变成 999999。按 hi-lo 策略，结论是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="方向反了：'显示前已经是错的'说明污染发生在检查点之前——问题在你还没看的更早的代码里。" >问题在"显示余额"的代码里</button>
+    <button data-k="b" data-ok="1" data-why="正确！两个检查点夹出了包围圈：读取之后还正常（bug 尚未发生），显示之前已出错（bug 已发生）——根因必然位于这两个观察点之间的代码。包围圈已从'整个程序'缩到'读账户与显示之间的几行'。这就是 hi-lo 的两次猜测夹逼。" >
+      bug 在"读账户正确"与"显示前已错"两个观察点之间</button>
+    <button data-k="c" data-why="两次检查已经排除了'读取账户'本身——它刚执行完时值还是对的。" >问题在"读取账户"函数里</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：把"找不到 bug"转化为"缩小包围圈"</div>
+  <p>"这个程序几千行，bug 在哪？"这个问题令人绝望；"bug 在这两行之间，怎么缩小？"这个问题可解。hi-lo 策略的本质是<strong>用信息换空间</strong>：每次观察（哪怕只是"这里还正常"）都在砍掉一半的嫌疑代码。所以调试时别问"哪里错了"，问"我能做什么观察、能把包围圈砍掉多少"。下一课的具体战术（注释代码、打印流程、打印值）全都是"做观察"的手段；3.6–3.9 的调试器则是让观察变便宜的工具。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：仓库 <code>chapter3/03-strategy/</code> 的 <code>exercises/hilo_hunt.cpp</code> 是一个"余额污染"程序（与上面选择题同款），用两次插入检查的方式亲手把包围圈收敛到一行。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="02-debug-process.html"><span class="dir">← 上一节</span>3.2 调试流程</a>
+  <a class="next" href="04-basic-tactics.html"><span class="dir">下一节 →</span>3.4 基础调试战术</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/a-strategy-for-debugging/">LearnCpp 3.3</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

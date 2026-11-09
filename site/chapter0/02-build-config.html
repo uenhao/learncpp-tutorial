@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0.2 构建配置与语言标准 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter0/02-build-config.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 0 章</a> / 构建配置与语言标准</div>
+<article>
+<h1>0.2 构建配置与语言标准</h1>
+
+<p>上一节你跟踪了一段代码的五站旅程。这一节讲一件实际操作层面的事：<strong>同样的旅程，可以按不同的"配方"走</strong>。配方决定两件事：<strong>程序为谁优化</strong>，以及<strong>编译器按哪一版 C++ 规则理解你的代码</strong>。</p>
+
+<h2>构建配置是什么：一个你可能天天见却没注意的选项</h2>
+
+<p>"构建配置（build configuration）"听起来抽象，但它其实就是一个<strong>具体的开关</strong>。在本项目的 VS Code 里（装了 CMake Tools 扩展后），打开任何一个 .cpp 文件，看窗口<strong>底部状态栏</strong>：会有一项显示当前的构建变体，默认是 <strong>CMake: [Debug]</strong>——点它就能在 Debug / Release / MinSizeRel / RelWithDebInfo 之间切换。在命令行里，它则对应你传给 CMake 的 <code>-DCMAKE_BUILD_TYPE=Debug</code> 参数。</p>
+
+<p>换句话说：<strong>构建配置 = 一组预设的编译器参数</strong>。你不需要每次手敲一长串选项，而是选一个预设名字，CMake 就知道该给编译器带上哪些参数。最重要的两套预设，就是 Debug 和 Release。</p>
+
+<h2>Debug 与 Release：同一份代码的两种人格</h2>
+
+<p>两套预设到底差在哪？先看它们各自"翻译成命令行"是什么样子：</p>
+
+<pre class="plain"># Debug 配置实际上相当于：
+g++ -std=c++20 -g -O0 -o prog main.cpp
+
+# Release 配置实际上相当于：
+g++ -std=c++20 -O2 -o prog main.cpp</pre>
+
+<p>这些以 <code>-</code> 开头的词叫<strong>编译器选项（flag）</strong>。逐个拆解——注意 g++ 的选项几乎都是英文单词的缩写，知道全称就再也不会记混：</p>
+
+<table class="cmp">
+  <tr><th>选项</th><th>缩写自</th><th>含义</th></tr>
+  <tr><td><code>-std=c++20</code></td><td><strong>st</strong>an<strong>d</strong>ard</td><td>指定按哪一版 C++ 标准编译（= 后面跟标准名）</td></tr>
+  <tr><td><code>-g</code></td><td><strong>g</strong>db / debug</td><td>把调试信息（源码行号 ↔ 机器码的映射表）写进可执行文件，gdb 等调试器靠它工作。文件会明显变大</td></tr>
+  <tr><td><code>-O0</code> / <code>-O2</code></td><td><strong>O</strong>ptimization + 数字</td><td>优化等级：-O0 不优化（最快编译、行为最"直白"）；-O2 是常用的发布级优化；还有 -O3 更激进、-Os 为体积优化</td></tr>
+  <tr><td><code>-o prog</code></td><td><strong>o</strong>utput</td><td>指定输出文件名（这里是 prog）。注意是小写 o，和优化的大写 O 是两个东西！</td></tr>
+  <tr><td><code>main.cpp</code></td><td>——</td><td>要编译的源文件（不是选项）</td></tr>
+</table>
+
+<p>两个最容易踩的坑，题目里见分晓：</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>g++ 的优化选项 <code>-O2</code> 和输出选项 <code>-o</code>，如何区分？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="恰好相反：-o（小写）是 output 指定输出文件名；-O（大写）是 optimization 控制优化等级。大小写在命令行参数里是天壤之别。" >大写 -O 是输出，小写 -o 是优化</button>
+    <button data-k="b" data-ok="1" data-why="正确！大写 -O 接优化等级（-O0/-O1/-O2/-O3），小写 -o 接输出文件名（-o prog）。写反的典型事故：把 -O2 打成 -o2，编译器会以为你要生成名为 '2' 的输出文件——输出名悄悄变了，优化完全没开。" >小写 -o 是 output（输出文件名），大写 -O 是 optimization（优化等级）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<p>看懂了这些参数，两套配置的定义就好理解了：</p>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>Debug 构建</strong>：不做优化（-O0），并嵌入调试信息（-g）。不做优化意味着程序按你写的顺序、一步一步执行，每个变量都真实存在于内存里——调试器才能让你打断点、单步执行、查看变量。调试信息则记录"机器码第几条对应源码第几行"这类映射，让调试器能把两边对上。这是给<strong>你自己（开发者）</strong>用的配置。</p>
+  <p><strong>Release 构建</strong>：开优化（-O2），不嵌调试信息。编译器被允许重排语句、内联函数、消除"算出来没人用"的代码——一切为了让最终程序<strong>快而小</strong>。这是给<strong>用户</strong>用的配置：用户不需要调试你的程序，只需要它跑得快。</p>
+</div>
+
+<p>一句话总结分工：<strong>Debug 给人调试用，Release 给人使用。</strong>这也直接回答了"该用哪个"：写代码、找 bug 时用 Debug；确认没问题、要交付或测性能时用 Release。</p>
+
+<p>现在回到"优化"到底做了什么。想想这个函数：</p>
+
+<pre class="code">int square(int x)
+{
+    return x * x;
+}
+
+int main()
+{
+    int width{ 5 };
+    int height{ 8 };
+    int area{ square(width * height / 2) };
+    std::cout << area << '\n';
+}</pre>
+
+<p>Debug 模式下，程序老老实实地：创建 width、创建 height、调用 square、返回 400、存进 area、打印。每一步都真实发生。</p>
+
+<p>Release 模式下编译器"一眼看穿"：width、height 是常量，<code>square(20)</code> 恒等于 400，于是<strong>整个计算在编译期就完成了</strong>，运行时只剩一条"打印 400"。width、height 这些变量在可执行文件里根本没有存在过。</p>
+
+<p>这就是双重含义所在：</p>
+<ul>
+  <li><strong>好处</strong>：同样的功能，程序更快、文件更小；</li>
+  <li><strong>代价</strong>：在 Release 下用调试器查看变量，会看到 <code>&lt;optimized out&gt;</code>——变量被优化掉了，物理上不存在，调试器无从展示。这就是为什么<strong>调试必须用 Debug 构建</strong>。</li>
+</ul>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>你的程序在 Debug 下运行结果正确，在 Release 下偶尔崩溃。最可能的解释是什么？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="编译器 bug 极其罕见，几乎可以排除。99% 的情况是代码里本来就有未定义行为（UB）。">编译器在 Release 模式下有 bug</button>
+    <button data-k="b" data-ok="1" data-why="正确！这是最经典的症状。Debug 不优化，UB（如读取未初始化变量、越界）往往'碰巧'表现为正常；Release 优化改变了内存布局和执行顺序，UB 以另一种方式暴露——崩溃。记住：Debug 正常 ≠ 代码正确，它只是 UB 还没发作。">代码里有未定义行为，Release 的优化让它暴露了</button>
+    <button data-k="c" data-why="恰恰相反：优化只会让程序更快，不会让它变慢到崩溃。崩溃的根源几乎总在代码本身。">Release 优化让程序变快，时序错乱导致崩溃</button>
+    <button data-k="d" data-why="方向反了。正确做法恰恰是在 Debug 下仔细排查 UB（比如开 -fsanitize），Debug'正常'只是侥幸。">应该放弃 Debug，只用 Release 开发</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>语言标准：你的代码说的是哪一年的 C++</h2>
+
+<p>C++ 大约每三年发布一个新标准：C++11 → 14 → 17 → 20 → 23。标准决定了"哪些写法合法"。问题在于：<strong>很多编译器默认标准偏旧</strong>（比如不少 g++ 默认 C++17），你写了 C++20 的语法却忘了告诉编译器，就会得到莫名其妙的报错。</p>
+
+<pre class="plain"># 显式指定标准 —— 养成习惯
+g++ -std=c++20 -Wall -Wextra -o prog main.cpp
+
+# 查看编译器实际用的标准
+g++ -dM -E - &lt; /dev/null | grep __cplusplus
+# 201709L = C++17、202002L = C++20（仓库 chapter0/04-language-standard/check_standard.cpp 可直接运行验证）</pre>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践（learncpp 原文强烈强调）</div>
+  <ul>
+    <li>始终显式指定 <code>-std=c++20</code>（或项目统一的标准），<strong>不要依赖编译器默认值</strong></li>
+    <li>开发用 Debug 配置；发布/测性能用 Release</li>
+    <li>永远开 <code>-Wall -Wextra</code>，把警告当 bug 对待</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"警告（warning）不是错误（error），所以可以放心忽略。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="危险的想法！警告往往就是 bug：比如'control reaches end of non-void function'背后是未定义行为。第 0 章练习里你已经见过——一段有 UB 的代码不带警告编译完全通过。">对，警告不影响生成程序</button>
+    <button data-k="b" data-ok="1" data-why="正确！警告 = 编译器在说'这里很可疑，但我不能确定到拒绝你的程度'。实践证明大部分警告背后都有真实问题。所以团队项目常加 -Werror 把警告升级为错误。">不对 —— 警告常常是披着警告外衣的 bug</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变</div>
+  <p>"在我机器上是好的"（Works on my machine）之所以成为经典梗，根源就在构建配置：不同的人用了不同标准、不同优化等级、不同警告级别，UB 在不同环境里发作方式不同。<strong>把配置写进构建脚本（如 CMake）而不是口头约定</strong>，就是为了让所有人的"配方"完全一致——本项目根目录的 CMakeLists.txt 就在做这件事。</p>
+</div>
+
+<div class="predict" data-answer="3" data-hint="提示：两边都是 int，整数除法会怎样？" data-explain="输出 3。C++ 中 int / int 是整数除法，小数部分直接丢弃（不是四舍五入），所以 7/2 = 3 而不是 3.5。这是初学者最常见的意外之一，第 1 章会专门展开。">
+  <p class="quiz-q">🎯 预测输出：<code>std::cout &lt;&lt; 7 / 2;</code> 输出什么？</p>
+  <div class="prow"><input type="text" placeholder="输入程序输出"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="practice-note">💻 动手验证：进入 <code>chapter0/03-build-configurations/</code>，分别执行 <code>g++ -std=c++20 -g -O0 -o d sizeof_demo.cpp</code> 与 <code>g++ -std=c++20 -O2 -o r sizeof_demo.cpp</code>，然后 <code>ls -l d r</code> 比较大小，并想想差异从哪来。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="01-compile-link.html"><span class="dir">← 上一节</span>0.1 编译与链接</a>
+  <a class="next" href="index.html"><span class="dir">返回 →</span>第 0 章</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/configuring-your-compiler-build-configurations/">LearnCpp 0.9–0.13</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

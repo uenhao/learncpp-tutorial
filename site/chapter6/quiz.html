@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 6 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter6/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 6 章</a> / 综合测验</div>
+<article>
+<h1>第 6 章综合测验</h1>
+
+<p>10 题：优先级、取余符号、副作用、?:、逻辑运算、浮点比较。先预测再作答。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "一元负号 -x 和二元减法 a - b 用的是同一个符号，所以含义相同。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="同符号、不同运算：一元负号吃一个操作数（乘 −1），二元减法吃两个（相减）。x = 5 - -3 里两个 '-' 身份完全不同——第一个是减法，第二个是负号。" >对 —— 符号即含义</button>
+    <button data-k="b" data-ok="1" data-why="正确！靠操作数个数区分：一元负号（-x）返回操作数乘 −1；二元减法（a−b）。这也是为什么原文强调负号紧贴操作数写（-x 不写 - x）——视觉上立刻能区分身份。" >
+      不对 —— 同符号、两种运算，靠操作数个数区分</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="12" data-hint="9/2 是哪种除法？乘法和除法同级，从左往右。" data-explain="输出 12。9/2 是整数除法得 4（不是 4.5！），再 4*3 = 12。同级运算从左往右结合，且整数除法的截断发生在第一步。">
+  <p class="quiz-q">🎯 预测输出：</p>
+  <div class="prow"><input type="text" placeholder="程序输出"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="predict" data-answer="-2" data-hint="% 的符号跟第一个操作数。" data-explain="输出 -2。−5 = 3×(−1) + (−2)，余数 −2 与第一个操作数同号。这也解释了为什么奇偶判断要与 0 比较：负奇数余 −1 而非 1。">
+  <p class="quiz-q">🎯 预测输出：</p>
+  <div class="prow"><input type="text" placeholder="程序输出"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>④ "<code>x % 2 == 1</code> 可以安全地判断奇数。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="负奇数是 −1：−5 % 2 = −1 ≠ 1 → 判成偶。这是原文的原版错误示范。与 0 比较（x % 2 != 0）才是负数安全的写法。" >对 —— 余 1 就是奇数</button>
+    <button data-k="b" data-ok="1" data-why="正确！% 的符号跟第一个操作数，负奇数余 −1 而非 1。最佳实践：取余结果只与 0 比较（!= 0 或 == 0）。" >
+      不对 —— 负奇数余 −1，必须与 0 比较</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "if (!x &gt; y) 是判断 'x 不大于 y' 的正确写法。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="! 的优先级高于 >：解析为 (!x) > y——先把 x 翻转成 0/1 再比较，几乎从来不是本意。正确写法 !(x > y) 或干脆 x <= y。" >对 —— 语义正确</button>
+    <button data-k="b" data-ok="1" data-why="正确！原文演示过这个坑：x=5、y=7 时 !x>y 打印 '5 is greater than 7'（因为 (!5)>7 = 0>7 = false 走了 else）。NOT 作用于其他运算符结果时必须加括号。" >
+      不对 —— ! 先于 > 结合，需写 !(x > y)</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑥ "int value{ add(x, ++x) }; 中 x = 5 时结果是 11。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="结果不确定——11 还是 12 取决于编译器先求哪个实参。实参求值顺序标准未定义，同一语句内'读 x + 改 x'的副作用组合直接 UB。" >对 —— 一定是 11</button>
+    <button data-k="b" data-ok="1" data-why="正确！实参求值顺序未定义：左先 add(5,6)=11，右先 add(6,6)=12。修复法：把副作用拆成独立语句（++x; 然后 add(x, x)）。本章头号规则：一条语句一个副作用。" >
+      不对 —— 这是未定义行为（11 或 12 皆可能）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑦ "读入年龄，判断'成年与否'并直接打印结果文本"，最合适的一行写法是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="能工作，但多一个临时变量占三行——取值场景正是 ?: 的主场。" >bool adult{ age &gt;= 18 }; if (adult) ... else ...</button>
+    <button data-k="b" data-ok="1" data-why="正确！'二选一取一个值'的典型场景：表达式里放 ?:。但注意边界——如果两个分支是'执行不同动作'（各有多条语句），该用 if-else（可读性优先）。" >
+      std::cout &lt;&lt; (age &gt;= 18 ? "adult" : "minor");</button>
+    <button data-k="c" data-why="把整条 if-else 塞进一行不加分号拼接是非法的；?: 才是表达式世界的 if-else。" >if (age &gt;= 18) std::cout &lt;&lt; "adult" else std::cout &lt;&lt; "minor"</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑧ "if (d1 &gt; d2) 在两个浮点数非常接近时可能给出意外结果。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！&lt; &gt; &lt;= &gt;= 在操作数几乎相等时随舍入误差摇摆（原文原话）。影响不大时可用（游戏碰撞），影响大时用容差比较。== != 则任何场景都不可靠。" >
+      对 —— 接近相等时 < > 也不可靠</button>
+    <button data-k="b" data-why="浮点误差让'几乎相等'的比较结果不确定——原文明确警告过这一场景。" >不对 —— < > 总是可靠的</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑨ 判断"x 在 [1, 10] 区间内（含端点）"，正确写法是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="数学写法在 C++ 里被解析为 (1 <= x) == 10 → (1)==10 → false——bool 与 10 比较，恒为 false。经典陷阱！" >if (1 &lt;= x == 10)</button>
+    <button data-k="b" data-ok="1" data-why="正确！区间判断必须用 && 拆成两个比较。顺带记住：== 的结果是 bool，再与整数比较就会得 0/1 与 10 的比较——这就是'数学式连写'失效的机制。" >
+      if (x &gt;= 1 &amp;&amp; x &lt;= 10)</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="yes" data-hint="先按优先级解析：!(x > y) 还是 (!x) > y？x=5 时 !x 是多少？" data-explain="yes。!x 优先级高于 >：(!5) = 0（x 非 0 为真，取反得 false 即 0），0 > 7 为 false，else 分支打印 yes。这正是 NOT 高优先级陷阱的原文案例——想表达'x 不大于 y'要写 !(x > y)。">
+  <p class="quiz-q">⑩ <code>int x{5}, y{7}; if (!x &gt; y) cout &lt;&lt; "no"; else cout &lt;&lt; "yes";</code></p>
+  <div class="prow"><input type="text" placeholder="no 或 yes"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 6 章全部通过！运算符工具箱已齐——下一站：第 7 章（作用域、生命周期与链接）。</div>
+
+<div class="pager">
+  <a class="prev" href="03-conditional-logic.html"><span class="dir">← 上一节</span>6.3 条件运算符与逻辑运算</a>
+  <a class="next" href="../index.html"><span class="dir">返回 →</span>目录</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-6-summary-and-quiz/">LearnCpp Chapter 6 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

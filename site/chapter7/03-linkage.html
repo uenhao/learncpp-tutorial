@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7.3 链接性：static、extern 与全局变量之恶 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter7/03-linkage.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 7 章</a> / 链接性与全局之恶</div>
+<article>
+<h1>7.3 链接性：static、extern 与全局变量之恶</h1>
+
+<p>两个 .cpp 文件里各有一个 <code>int g_x</code>——链接器会把它们当同一个对象吗？答案取决于<strong>链接性</strong>。</p>
+
+<h2>internal vs external：一张表说清</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：全局变量与函数的两种链接性</div>
+  <table class="cmp">
+    <tr><th>链接性</th><th>含义</th><th>谁默认拥有</th></tr>
+    <tr><td><strong>internal（内部）</strong></td><td>只在本翻译单元可见；两个文件同名 = 两个独立对象，<strong>不违反 ODR</strong></td><td>const 全局变量、constexpr 全局变量</td></tr>
+    <tr><td><strong>external（外部）</strong></td><td>跨翻译单元可见：文件 A 的声明可与文件 B 的定义对接（链接器对接）</td><td>非 const 全局变量、函数</td></tr>
+  </table>
+  <p><strong>static 关键字</strong>把非 const 全局变量的链接性从 external 改成 internal。</p>
+</div>
+
+<pre class="code">static int g_internal{};   // 强制内部链接：其他文件看不见它
+const int g_const{ 1 };    // 默认内部链接（const 全局）
+constexpr int g_cexpr{ 2 };// 默认内部链接
+extern int g_shared;       // 声明：定义在别的文件里（外链接）</pre>
+
+<h2>extern：跨文件共享变量的声明（2.8 课机制的变量版）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：extern 声明</div>
+  <p>函数有前向声明（2.4 课），全局变量也有：<strong>extern 声明</strong>告诉编译器"这个变量在别的翻译单元里定义"。链接时跨文件对接——与函数声明对接函数定义完全同构。</p>
+</div>
+
+<pre class="code">// globals.cpp —— 定义
+int g_mode{ 4 };
+
+// globals.h —— 声明（extern）
+extern int g_mode;
+
+// main.cpp —— #include "globals.h" 后直接用</pre>
+
+<p>注意：extern 声明处<strong>不要写初始化</strong>（写了就是重定义）；声明可多处，定义只能一处（ODR）——与函数的声明/定义规则一模一样。</p>
+
+<h2>非 const 全局变量是恶魔（原文原话）</h2>
+
+<p>3.9 课"制冰机"级的警告：全局变量<strong>任何函数都能改</strong>，而且读代码的人<strong>无从知道</strong>哪个调用会改：</p>
+
+<pre class="code">int g_mode{};
+
+void doSomething()
+{
+    g_mode = 2; // 谁能想到这个函数会动全局状态？
+}
+
+int main()
+{
+    g_mode = 1;
+    doSomething();
+    if (g_mode == 1)
+        std::cout &lt;&lt; "safe\n";
+    else
+        std::cout &lt;&lt; "boom\n"; // 实际走这里
+}</pre>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 恶魔的三宗罪</div>
+  <ol>
+    <li><strong>不可追踪</strong>：值错了，要翻遍整个程序找是谁改的（3.3 课 hi-lo 的包围圈瞬间变成全程序）；</li>
+    <li><strong>状态不可预测</strong>：每次函数调用都可能是"暗改"，程序行为依赖调用历史；</li>
+    <li><strong>初始化顺序问题</strong>：跨文件的全局变量初始化顺序不确定——一个全局的初始化依赖另一个全局，就可能拿到未初始化的值。</li>
+  </ol>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 原文最佳实践</div>
+  <ul>
+    <li><strong>优先用局部变量，避免非 const 全局变量</strong>；</li>
+    <li>需要"共享的量"？用<strong>参数传递</strong>把数据显式交给函数（谁改了什么一目了然）；</li>
+    <li>全局<strong>常量</strong>（const/constexpr）是安全的——只读属性天然免疫"暗改"；跨文件共享见下一课的 inline 变量。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "两个 .cpp 各定义了 <code>static int g_count{0};</code>，链接器会报重复定义。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="static 给了它内部链接——每个翻译单元独享自己的 g_count，互不相干，不触发 ODR。这正是 static 在这里的全部价值：把'我的'和'你的'隔开。" >对 —— ODR 必炸</button>
+    <button data-k="b" data-ok="1" data-why="正确！internal 链接的定义就是'同名声明不指同一对象'——两个文件的两个 g_count 是两个独立变量。对比：去掉 static（外链接）才会 multiple definition。" >
+      不对 —— internal 链接的同名变量互相独立，合法</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>② 文件 A 定义 <code>int g_score{ 0 };</code>，文件 B 想用它。B 里该写？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="这是重定义！B 里会创建自己的 g_score（外链接下还可能直接 ODR 冲突——取决于是否初始化形式）。定义只能有一处。" >int g_score{ 0 };</button>
+    <button data-k="b" data-why="const 全局默认 internal 链接——写 const 就切断了跨文件对接：B 里是一个新的独立常量，不是 A 的那个。" >const int g_score;</button>
+    <button data-k="c" data-ok="1" data-why="正确！extern 声明 + 不带初始化 = '定义在别处'。最佳实践是像函数一样把 extern 声明集中到头文件（globals.h），谁需要谁 include——2.11 课头文件机制的变量版。" >
+      extern int g_score;</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：链接性是"翻译单元的隐私设置"</div>
+  <p>2.8 课你学过"翻译单元是编译的基本单位、编译器不知道别的 .cpp 存在"。链接性就是<strong>翻译单元层面的隐私开关</strong>：internal = "本单元私有"（static/const/constexpr），external = "愿意跨单元共享"（默认）。ODR、头文件保护、extern 声明、static——这些散落的规则全部统一到这张图上。**命名空间是'作用域层'的隔离（2.9），链接性是'文件层'的隔离**——两层防线，各管一段。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter7/03-linkage/</code> 是一个双文件工程（globals.cpp + main.cpp），先跑通 extern 对接；然后试试把两个文件都定义非 const 全局变量，亲眼看 multiple definition；再加 static 看冲突消失。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="02-globals-shadowing.html"><span class="dir">← 上一节</span>7.2 全局变量与影子</a>
+  <a class="next" href="04-inline-static.html"><span class="dir">下一节 →</span>7.4 inline 与静态局部变量</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/internal-linkage/">LearnCpp 7.6–7.8</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

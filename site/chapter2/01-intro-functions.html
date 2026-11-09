@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2.1 函数：把语句打包复用 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter2/01-intro-functions.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 2 章</a> / 函数简介</div>
+<article>
+<h1>2.1 函数：把语句打包复用</h1>
+
+<p>其实你从第一行代码起就在用函数了——<code>main</code> 就是函数，只不过它是被操作系统调用的。这一课正式揭开"函数是什么"，以及程序执行时<strong>到底发生了什么</strong>。</p>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>函数（function）</strong>：被命名的语句集合，可以反复"调用（call）"。</p>
+  <p><strong>函数调用</strong>：CPU 跳去执行函数体，执行完毕后<strong>回到调用处</strong>继续。</p>
+  <p>语法结构：<code>返回类型 函数名(参数列表) { 语句... }</code>——本课先用最简单的 <code>void</code>（无返回值、无参数）。</p>
+</div>
+
+<pre class="code">#include &lt;iostream&gt;
+
+void doPrint()              // 定义：一个名为 doPrint 的函数
+{
+    std::cout &lt;&lt; "In doPrint()\n";
+}
+
+int main()
+{
+    std::cout &lt;&lt; "Starting main\n";
+    doPrint();              // 调用：执行权跳到 doPrint
+    std::cout &lt;&lt; "Ending main\n";
+    return 0;
+}</pre>
+
+<h2>调用是怎么"回来"的？</h2>
+
+<p>执行模型的升级版：<strong>CPU 现在不只是向下走，还会"跳出去再跳回来"</strong>。跟踪一遍上面的程序，注意每一步"执行权"在谁手里：</p>
+
+<div class="flow">
+  <div class="flow-step">main 开头</div>
+  <div class="flow-step">doPrint() 体内</div>
+  <div class="flow-step">回到 main 的下一句</div>
+  <div class="flow-step">main 结束</div>
+</div>
+
+<p>逐步拆开：</p>
+<ol>
+  <li><strong>main 开头</strong>——执行 <code>std::cout &lt;&lt; "Starting main\n"</code>，屏幕出现第一行；紧接着遇到 <code>doPrint();</code>。</li>
+  <li><strong>doPrint() 体内</strong>——执行权<strong>整个跳走</strong>：main 被"冻结"在调用这一行，CPU 去执行 doPrint 的函数体，打印 <code>In doPrint()</code>。函数体执行到右花括号，标志着 doPrint 的工作结束。</li>
+  <li><strong>回到 main 的下一句</strong>——执行权带着"doPrint 干完了"的消息返回 main，<strong>从调用处的下一条语句</strong>继续：打印 <code>Ending main</code>。注意不是回到 main 开头重来，而是精确接在离开的地方。</li>
+  <li><strong>main 结束</strong>——执行 <code>return 0;</code>，把"程序成功"的状态码交回操作系统，程序生命周期终结。</li>
+</ol>
+
+<p>每个函数执行完，都自动回到<strong>它被调用的那一行</strong>的下一条语句。函数可以嵌套调用（A 调 B，B 调 C），执行权像传接力棒，每一棒结束时都还给上一棒。</p>
+
+<div class="predict" data-answer="A start C A end B" data-hint="跟紧接力棒：main → a（内部调 c）→ 回 a → 回 main → b。" data-explain="执行顺序：main 调 a()；a 打印 A start，调 c() 打印 C，回到 a 打印 A end；回到 main 调 b() 打印 B。输出一行：A start C A end B。（注意：这段代码要真正编译，需要给 c() 加前向声明——2.1 课正文讲的'先用后定义'坑，练习里你会亲手踩。）函数返回时总是回到'调用点的下一句'。">
+  <p class="quiz-q">🎯 预测输出（一行内，空格分隔）：</p>
+  <pre class="code">void a() { std::cout &lt;&lt; "A start "; c(); std::cout &lt;&lt; "A end "; }
+void b() { std::cout &lt;&lt; "B "; }
+void c() { std::cout &lt;&lt; "C "; }
+
+int main() { a(); b(); }</pre>
+  <div class="prow"><input type="text" placeholder="如: A B C"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 一个你现在就会踩的坑：先用后定义</div>
+  <p>上面预测题的代码其实<strong>编译不过</strong>——<code>a()</code> 里调用了 <code>c()</code>，但 <code>c</code> 定义在 a 的后面。编译器自上而下工作，读到 a 的函数体时<strong>还不知道 c 存在</strong>。解法（前向声明）是 2.4 课的主角；现在先记住现象：<strong>编译器不预读整个文件</strong>。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"<code>main</code> 也是函数，所以可以在自己的代码里调用 <code>main()</code> 来让程序重新开始。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="不行——main 是特殊的：C++ 标准规定程序不能调用 main，也不能对它取地址。想要'重新开始'的逻辑，应该把主流程放进自己的函数（如 run()），由 main 调用 run()。" >对 —— main 就是普通函数</button>
+    <button data-k="b" data-ok="1" data-why="正确！main 由操作系统调用，地位特殊：不能被程序调用、不能提前声明它、可以省略 return。想要'重来'的效果，用循环或把主逻辑抽成普通函数。">不对 —— main 是特殊函数，标准禁止程序内调用</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：函数是"动词"的封装</div>
+  <p>写 main 之前的思维是"我要做 A 然后 B 然后 C"；有了函数，思维升级为"这件事可以命名，命名后可以谈论、复用、替换"。<code>doPrint()</code> 三个字读起来就是一句英文命令——<strong>好的函数名让代码读起来像描述意图，而非罗列步骤</strong>。第 2.3 课会专门训练"什么时候该抽函数"。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter2/01-intro-functions/</code> 的 <code>functions_demo.cpp</code> 运行并对照输出顺序；<code>exercises/call_chain.cpp</code> 会让你亲手踩一次"先用后定义"的坑再修好它。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 2 章</a>
+  <a class="next" href="02-return-values.html"><span class="dir">下一节 →</span>2.2 返回值与参数</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-functions/">LearnCpp 2.1</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

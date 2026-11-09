@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2.5 头文件与命名空间：代码的组织学 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter2/05-headers-namespaces.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 2 章</a> / 头文件与命名空间</div>
+<article>
+<h1>2.5 头文件与命名空间：代码的组织学</h1>
+
+<p>2.4 课的结尾留了动机："声明应该只写一次、处处引用"。本课给出 C++ 的标准答案——<strong>头文件</strong>，以及解决名字打架问题的<strong>命名空间</strong>。</p>
+
+<h2>头文件：声明集中营</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：三件套结构</div>
+  <table class="cmp">
+    <tr><th>文件</th><th>放什么</th></tr>
+    <tr><td><code>math_utils.h</code></td><td>函数<strong>声明</strong>（契约清单）</td></tr>
+    <tr><td><code>math_utils.cpp</code></td><td>函数<strong>定义</strong>（兑现）</td></tr>
+    <tr><td><code>main.cpp</code> 等消费者</td><td><code>#include "math_utils.h"</code> 然后直接调用</td></tr>
+  </table>
+  <p><code>#include</code> 的本质（0.1 课说过）：预处理器把头文件内容<strong>原样粘贴</strong>到 include 处。于是"写一次声明"变成"写一次，粘贴到每个需要它的文件"。</p>
+</div>
+
+<pre class="code">// math_utils.h
+#ifndef MATH_UTILS_H        // 头文件保护：2.6 课的主角
+#define MATH_UTILS_H
+
+int square(int x);
+int cube(int x);
+
+#endif</pre>
+
+<pre class="code">// math_utils.cpp
+#include "math_utils.h"     // ★ 先 include 自己的头！
+
+int square(int x) { return x * x; }
+int cube(int x) { return x * x * x; }</pre>
+
+<p>那个 ★ 是重要的职业习惯：<strong>源文件先 include 自己的头文件</strong>。这样如果声明和定义不一致（比如改了 .h 忘了改 .cpp 的签名），<strong>编译器在编译这个 .cpp 时当场报错</strong>，而不是等到别的文件链接时给出一条模糊的错误。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>头文件里<strong>不应该</strong>放什么？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="声明正该放头文件——这是它的本职，整个头文件机制就是为'声明写一次、处处引用'而生的。">函数声明</button>
+    <button data-k="b" data-why="冗余但无害：声明允许重复任意次（ODR 只约束定义）。重复声明只是难看，不会破坏构建——注意这和'重复定义'的本质区别。" >同一个函数的声明重复写两遍</button>
+    <button data-k="c" data-ok="1" data-why="正确！普通函数体（定义）放进头文件，一旦这个头文件被两个 .cpp include，两个翻译单元各有一份定义，链接时报 multiple definition——违反 ODR。例外：inline 函数、模板、类的成员函数定义可以放头文件（它们的 ODR 规则特殊，后续章节展开）。">
+      普通函数的定义（函数体）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>命名空间：给名字划定管辖区</h2>
+
+<p>两个第三方库都提供 <code>doSomething()</code> 怎么办？<strong>命名空间（namespace）</strong>把名字圈进各自的领地，用 <code>::</code>（作用域解析运算符）指名道姓：</p>
+
+<pre class="code">namespace alexmath
+{
+    int doSomething(int x, int y) { return x + y; }
+}
+
+namespace bobmath
+{
+    int doSomething(int x, int y) { return x - y; }
+}
+
+int main()
+{
+    alexmath::doSomething(4, 3);   // 7
+    bobmath::doSomething(4, 3);    // 1
+}</pre>
+
+<p>你其实早就在用它：<code>std::cout</code> 的 <code>std</code> 就是标准库的命名空间——正因成千上万个标准名字都住在 std 里，你才能放心定义自己的 <code>count</code>、<code>swap</code> 而不相撞。</p>
+
+<h2>using：便捷与风险的交易</h2>
+
+<pre class="code">using std::cout;         // 只引入一个名字：风险小，可接受
+using namespace std;     // 倾倒整个 std：方便，但危险！</pre>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 为什么 learncpp 反对 using namespace std</div>
+  <p>std 里有几千个名字，其中 <code>count</code>、<code>swap</code>、<code>data</code>、<code>size</code> 都极易与你自己的变量撞车。撞车后报错信息往往晦涩难懂。<strong>头文件里写 using namespace 危害加倍</strong>——它会强制污染所有 include 它的文件，而那个文件的作者可能毫不知情。习惯：cpp 文件里可用 <code>using std::cout;</code> 这类单名引入；头文件里两者都别用。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"在头文件里写 <code>using namespace std;</code> 只影响这个头文件自己。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="致命误区！#include 是文本粘贴——头文件里的 using namespace std 会原样进入每一个 include 它的 .cpp，污染所有下游文件的名字查找。这也是'头文件要最小化'的原因之一。" >对 —— using 只作用于所在文件</button>
+    <button data-k="b" data-ok="1" data-why="正确！头文件的内容会被粘贴进所有消费者。在头文件里 using namespace 等于替所有下游作者做决定，是典型的'祸水东引'。这也是为什么大项目的头文件审查对 using 极其敏感。">
+      不对 —— 会污染每一个 include 它的文件</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：物理组织反映逻辑组织</div>
+  <p>.h/.cpp 拆分不只是"文件多了好找"。它在回答一个结构性问题：<strong>哪些是"别人需要知道的"（接口 → .h），哪些是"内部怎么做到的"（实现 → .cpp）</strong>。命名空间则在回答"这些名字归谁管"。文件结构、名字结构和你脑子里的概念结构对齐了，代码库才可能长大——这就是"组织学"的含义。</p>
+</div>
+
+<div class="predict" data-answer="25" data-hint="square 的定义在哪个文件？链接器会把它接过来。" data-explain="输出 25。main.cpp include 了 math_utils.h 获得声明，调用放行；链接阶段，链接器把调用对接到 math_utils.o 中 square 的定义。头文件本身不参与编译产物——它只是声明的搬运工。">
+  <p class="quiz-q">🎯 预测输出：math_utils.h 声明 <code>int square(int);</code>，math_utils.cpp 定义它，main.cpp include 头文件后调用 <code>square(5)</code> 并打印。输出？</p>
+  <div class="prow"><input type="text" placeholder="程序输出"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter2/11-header-files/math_utils/</code> 三件套编译运行；<code>chapter2/09-namespaces/exercises/namespace_conflict.cpp</code> 亲手解决重名冲突。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="04-forward-decl.html"><span class="dir">← 上一节</span>2.4 前向声明</a>
+  <a class="next" href="06-preprocessor-guards.html"><span class="dir">下一节 →</span>2.6 预处理器与头文件保护</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/header-files/">LearnCpp 2.10–2.11</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

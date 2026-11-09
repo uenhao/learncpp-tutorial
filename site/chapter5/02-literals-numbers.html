@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5.2 字面量与进制 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter5/02-literals-numbers.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 5 章</a> / 字面量与进制</div>
+<article>
+<h1>5.2 字面量与进制</h1>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：字面量（literal）</div>
+  <p><strong>字面量</strong>：直接插入代码的值——<code>return 5;</code> 的 5、<code>true</code>、<code>3.4</code>、<code>"Hello"</code>。也叫字面量常量：<strong>含义不可重定义</strong>（5 永远是整数 5）。</p>
+  <p>字面量也有类型，由值的形式推断：整数→int；小数→<strong>double</strong>（不是 float！）；单引号→char；双引号→C 风格字符串。</p>
+</div>
+
+<h2>后缀（suffix）：改字面量的默认类型</h2>
+
+<table class="cmp">
+  <tr><th>后缀</th><th>类型</th><th>示例</th></tr>
+  <tr><td>u / U</td><td>unsigned int</td><td><code>5u</code></td></tr>
+  <tr><td>l / <strong>L（推荐大写）</strong></td><td>long</td><td><code>5L</code></td></tr>
+  <tr><td>ll / LL</td><td>long long</td><td><code>5LL</code></td></tr>
+  <tr><td>f / F</td><td>float</td><td><code>5.0f</code></td></tr>
+  <tr><td>（无后缀小数）</td><td>double</td><td><code>5.0</code></td></tr>
+</table>
+
+<div class="box best">
+  <div class="box-t">✅ 原文最佳实践</div>
+  <ul>
+    <li>多数情况不需要后缀——<strong>除了 f</strong>（想要 float 时必须写）</li>
+    <li><strong>用大写 L 不用小写 l</strong>：小写 l 在很多字体里和数字 1 几乎一样，<code>5l</code> 极易误读</li>
+  </ul>
+</div>
+
+<p>回顾 4.8 课你已见过的组合：<code>double d{ 5.0 };</code>（无后缀=double）、<code>float f{ 5.0f };</code>（f 后缀）、<code>long double ld{ 5.0L };</code>。数字分隔符也再强化一次：<code>1'000'000</code>（C++14，纯粹为可读性）。</p>
+
+<h2>进制：二进制、八进制、十六进制</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：四种进制的字面量前缀</div>
+  <table class="cmp">
+    <tr><th>进制</th><th>前缀</th><th>示例</th><th>等于十进制</th></tr>
+    <tr><td>十进制</td><td>（无）</td><td><code>12</code></td><td>12</td></tr>
+    <tr><td>二进制</td><td><code>0b</code> / <code>0B</code></td><td><code>0b1100</code></td><td>12</td></tr>
+    <tr><td>八进制</td><td><code>0</code></td><td><code>014</code></td><td>12</td></tr>
+    <tr><td>十六进制</td><td><code>0x</code> / <code>0X</code></td><td><code>0xC</code></td><td>12</td></tr>
+  </table>
+  <p>它们只是<strong>同一数字的不同写法</strong>——值完全相等，选用哪种取决于语境：颜色 <code>0xFF0000</code>（红）、位掩码 <code>0b0000'0001</code>、老式 Unix 权限 <code>0755</code>。</p>
+</div>
+
+<h3>二进制 ↔ 十六进制：四位一组</h3>
+
+<p>十六进制能流行的原因：<strong>每位十六进制恰好对应 4 位二进制</strong>。</p>
+
+<pre class="plain">0xC  = 1100
+0xFF = 1111 1111
+0b1010'1100 = 0xAC</pre>
+
+<p>所以十六进制是二进制的"压缩记法"——16 位数据写 4 个十六进制位，比 0110100010101001 好读得多。</p>
+
+<h3>输出进制：dec/oct/hex 操作器</h3>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{
+    int x{ 12 };
+    std::cout &lt;&lt; x &lt;&lt; '\n';            // 12（默认十进制）
+    std::cout &lt;&lt; std::hex &lt;&lt; x &lt;&lt; '\n'; // c —— 切到十六进制
+    std::cout &lt;&lt; std::oct &lt;&lt; x &lt;&lt; '\n'; // 14 —— 切到八进制
+    std::cout &lt;&lt; std::dec &lt;&lt; x &lt;&lt; '\n'; // 12 —— 切回十进制
+    return 0;
+}</pre>
+
+<p>与 <code>std::boolalpha</code>（4.3 课）同理：一旦切换，对该流持续生效，直到再次切换。注意十六进制输出不会自动带 0x 前缀（想要前缀用 <code>std::showbase</code>）。</p>
+
+<h3>重要规则：写二进制时每 4 位加分隔符</h3>
+
+<pre class="code">int bin1 { 0b101101101 };       // 合法但难读
+int bin2 { 0b1011'0110'1 };     // ✅ 推荐：每 4 位一组加 '
+int hex1 { 0x1234ABCD };        // 十六进制同理，常用 4 位一组</pre>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>输出什么？</p>
+  <pre class="code">int x { 0b1100 };
+std::cout &lt;&lt; x &lt;&lt; '\n';
+std::cout &lt;&lt; std::hex &lt;&lt; x &lt;&lt; '\n';</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="0b1100 的值是十进制 12，不是二进制字面量本身。第二行 hex 后打印 12 的十六进制形式是 c，不带 0x 前缀。" >1100\nc</button>
+    <button data-k="b" data-ok="1" data-why="正确！0b1100 是'二进制写法的十二'，值即 12；切到 std::hex 后按十六进制打印得 c（12 = 8+4 → 一个 c）。字面量的前缀只影响'如何写'，不影响值；hex 只影响'如何打印'。" >
+      12\nc</button>
+    <button data-k="c" data-why="0x 前缀只用于书写十六进制字面量，hex 输出默认不带前缀（那是 showbase 的事）。" >1100\n0xc</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span><code>012</code> 的十进制值是多少？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！前缀 0（单个零）表示八进制：012 = 1×8 + 2 = 10。这是著名的'意外八进制'坑——对齐数字时多敲一个前导零（比如 012 表示序号），含义完全变了。所以：十进制数字永远不要以 0 开头。" >
+      10 —— 前导 0 表示八进制！</button>
+    <button data-k="b" data-why="直觉答案，但 C++ 里前导 0 不是'无意义补零'而是八进制前缀。" >12</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：进制的本质是"同一值的写法"</div>
+  <p>新手常把 0b1100、014、0xC、12 当成"四个不同的数"——错了，它们是<strong>同一个值的四种写法</strong>，就像" XII "和"12"是同一个数。选写法的标准是<strong>语境</strong>：表达"数量"用十进制；操作"比特"用二进制/十六进制（与硬件对齐）。这也呼应 4.1 课的"类型=解释规则"：进制是写法层面的事，值与类型不变。什么时候你会真正用到它们？第 O 章（位运算）里位掩码全是十六进制——现在先打好阅读基础。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter5/02-literals-numbers/</code> 的 <code>numeral_demo.cpp</code>（四种进制互相打印）和 <code>octal_trap.cpp</code>（亲历"前导零八进制"的坑）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="01-constants.html"><span class="dir">← 上一节</span>5.1 常量变量</a>
+  <a class="next" href="03-constexpr.html"><span class="dir">下一节 →</span>5.3 编译期求值与 constexpr</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/literals/">LearnCpp 5.2–5.3</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

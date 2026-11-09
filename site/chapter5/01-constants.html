@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5.1 常量变量：不许变的名字 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter5/01-constants.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 5 章</a> / 常量变量</div>
+<article>
+<h1>5.1 常量变量：不许变的名字</h1>
+
+<p>程序里有一类特殊的量：初始化之后<strong>永远不该再变</strong>——重力加速度、圆周率、最大关卡数。用普通变量装它们，谁都能顺手改掉；用字面量写死，又失去名字和语义。这一课给出正解：<strong>常量变量</strong>。</p>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：常量（constant）的两种形态</div>
+  <p><strong>常量</strong>：程序运行期间不可更改的值。C++ 支持两种：</p>
+  <ul>
+    <li><strong>具名常量（named/symbolic constant）</strong>：有名字的常量——本课主角；</li>
+    <li><strong>字面量常量（literal constant）</strong>：直接写在代码里的值（<code>5</code>、<code>3.4</code>）——5.2 课展开。</li>
+  </ul>
+</div>
+
+<h2>const 变量：定义后禁止赋值</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：const 变量</div>
+  <p>声明时加 <code>const</code> 关键字：<strong>必须初始化</strong>（不给初始值编译错误——常量必须"出生即有值"），此后任何赋值都是编译错误。</p>
+</div>
+
+<pre class="code">const double gravity { 9.8 };  // 常量变量：初始化后不可改
+int main()
+{
+    gravity = 9.81;  // ❌ 编译错误：不能给 const 变量赋值
+}</pre>
+
+<h2>const 变量的初始化：可以来自运行时</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 const ≠ 编译期已知</div>
+  <p>const 只承诺"创建后不可改"，<strong>不承诺初始值在编译期已知</strong>：</p>
+  <pre class="code">int a{};
+std::cin &gt;&gt; a;                 // 运行时才确定
+const int b{ a };              // ✅ 合法！b 不可改，但值来自运行时
+const int c{ 5 + 3 };          // ✅ 初始值编译期已知（8）</pre>
+  <p>这两种 const 有本质区别——"运行时才确定的常量"和"编译期就确定的常量"。5.6 课的 constexpr 正是为后者而生。</p>
+</div>
+
+<h2>命名约定：不需要特殊待遇</h2>
+
+<p>流传着两派命名法：C 程序员爱用全大写加下划线（<code>EARTH_GRAVITY</code>），C++ 圈常见 k 前缀（<code>kEarthGravity</code>）。但原文的观点很干脆：<strong>const 变量行为上就是普通变量（只是不能赋值），没必要特殊命名</strong>——照常使用 camelCase（<code>earthGravity</code>）。全大写常量在 C++ 里反而常被预留给宏（2.6 课的坑）。</p>
+
+<h2>两个"不该用 const"的地方</h2>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践（原文两条明确禁令）</div>
+  <ul>
+    <li><strong>值传递的函数参数不要加 const</strong>：<code>void printInt(const int x)</code>——形参本来就是拷贝，函数内部改不改都随它（改了也不影响调用者），加 const 只添乱；</li>
+    <li><strong>按值返回不要加 const</strong>：<code>const int getValue()</code>——对基本类型编译器直接忽略（还可能警告）；返回临时拷贝加 const 毫无意义，还会妨碍移动语义优化。</li>
+  </ul>
+  <p>这两条是"const 用在真正需要的地方"的体现——等到第 12 章引用/指针传递时，const 才真正大显身手。</p>
+</div>
+
+<h2>为什么"能 const 就 const"</h2>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{
+    std::cout &lt;&lt; "Enter a number: ";
+    int x{};
+    std::cin &gt;&gt; x;
+    // ... 使用 x 的过程中，若 x 被意外修改，错误值会静默传播 ...
+}</pre>
+
+<p>变量能被改，就存在<strong>被意外改掉</strong>的可能——错误值会顺着后续代码静默传播（3.1 课层级 3）。const 把这类事故在<strong>编译期</strong>拦下：你想改？编译器拒绝。原文规则：<strong>能设为常量的变量，就应该设为常量</strong>。这让"哪些量会变"一目了然——读代码时看到没带 const 的变量，就知道它值得多看两眼。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"const 变量的值一定在编译期就确定。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="错——const 只承诺'不可再赋值'。const int b{ a }; 完全合法，a 来自用户输入，b 的值运行时才确定。'编译期已知'是另一件事，由 constexpr（5.6 课）负责。区分这两者是本章最重要的概念分野。" >对 —— const 即编译期常量</button>
+    <button data-k="b" data-ok="1" data-why="正确！const = 只读；编译期已知 = constexpr 的领域。两者的区别在 5.4–5.6 课逐步展开：编译期已知才能参与'编译期求值'，运行时常量不行。" >
+      不对 —— const 只承诺只读，初始值可以来自运行时</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>以下哪条声明<strong>无法通过编译</strong>？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="这条完全合法——const 变量必须初始化，而它有初始化。">const int a { 5 };</button>
+    <button data-k="b" data-ok="1" data-why="正确！const 变量必须在定义时初始化——没有初始值的 const 无意义也无定义。编译器直接拒绝。记住口诀：常量出生即有值。" >
+      const int b;</button>
+    <button data-k="c" data-why="合法。初始值来自运行时输入不妨碍 const——const 管的是'此后不许改'，不管'值何时确定'。" >int t{}; std::cin &gt;&gt; t; const int c{ t };</button>
+    <button data-k="d" data-why="合法。const 变量可以读、可以打印、可以参与表达式——只是不能被赋值。" >const int d{ 7 }; std::cout &lt;&lt; d;</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：const 是"意图的编译器化"</div>
+  <p><code>const</code> 的本质是把<strong>你的设计意图</strong>写进代码交给编译器执法："这个量不许变"。它的收益全部来自"意图被机器验证"：意外赋值从运行时 bug 变成编译错误（3.1 层级 3 → 层级 1，错误提前两站被抓）。这和第 0 章的构建配置、第 2 章的头文件一脉相承——<strong>能用编译器锁住的东西，就不要靠自觉</strong>。顺便：你此前学的"宏常量别用、用 constexpr"将在 5.6 课正式兑现，本章会先埋好伏笔。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter5/01-constants/</code> 的 <code>const_demo.cpp</code>——取消注释一行"给 const 赋值"的代码，亲眼看编译错误；再编译 <code>runtime_const.cpp</code> 体验"来自运行时的 const"。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 5 章</a>
+  <a class="next" href="02-literals-numbers.html"><span class="dir">下一节 →</span>5.2 字面量与进制</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/constant-variables-named-constants/">LearnCpp 5.1</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

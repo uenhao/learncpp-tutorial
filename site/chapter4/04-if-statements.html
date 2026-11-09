@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4.4 if 语句：程序第一次有了"想法" · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter4/04-if-statements.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 4 章</a> / if 语句</div>
+<article>
+<h1>4.4 if 语句：程序第一次有了"想法"</h1>
+
+<p>到此为止，你的所有程序都是直线执行：从 main 第一行走到最后。从 if 语句开始，程序获得<strong>选择的能力</strong>——这是"控制流"的第一步（第 8 章全面展开），也是 1.7 课身高排序里我们"偷跑"的那个 if 的正式身份登记。</p>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>if 语句</strong>：条件为真才执行某段代码。最简形式：</p>
+  <pre class="code">if (condition)
+    true_statement;</pre>
+  <p><strong>条件（condition）</strong>：求值结果为布尔值的表达式。真 → 执行；假 → 跳过。</p>
+</div>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{
+    std::cout &lt;&lt; "Enter an integer: ";
+    int x {};
+    std::cin &gt;&gt; x;
+
+    if (x == 0)
+        std::cout &lt;&lt; "The value is zero\n";
+
+    return 0;
+}</pre>
+
+<p><code>x == 0</code> 用的是 <strong>==（相等比较）</strong>——求值产生 bool。对比 <code>=</code>（赋值）。这是 1.6 课"表达式 vs 副作用"辨析的第一个实战场景，也是最经典的初学者打字错误：<code>if (x = 0)</code> 会把 0 赋给 x（整个条件变成 false，且永远如此）。</p>
+
+<h2>else：另一条路</h2>
+
+<pre class="code">if (x == 0)
+    std::cout &lt;&lt; "zero\n";
+else
+    std::cout &lt;&lt; "not zero\n";</pre>
+
+<p>条件为假时执行 else 分支。二选一，必走其一。</p>
+
+<h2>if 语句块与链式 else if</h2>
+
+<p>条件成立要执行<strong>多条</strong>语句时，用块 <code>{}</code>（1.1 课的花括号作用域）：</p>
+
+<pre class="code">if (x &gt; 0)
+{
+    std::cout &lt;&lt; "positive\n";
+    std::cout &lt;&lt; "(greater than zero)\n";
+}</pre>
+
+<p>多个条件排他时，<strong>else if 链</strong>从上往下检查，命中即停：</p>
+
+<pre class="code">if (x &gt; 0)
+    std::cout &lt;&lt; "positive\n";
+else if (x &lt; 0)
+    std::cout &lt;&lt; "negative\n";
+else
+    std::cout &lt;&lt; "zero\n";</pre>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践：总是给 if/else 配花括号</div>
+  <p>单语句可以省略 <code>{}</code>，但原文强烈建议<strong>永远写上</strong>。原因：后续往分支里加语句时，忘加括号的错误（新语句游离在分支外、无条件执行）肉眼极难发现，是著名的事故来源。花括号的成本几乎为零，保险价值巨大。</p>
+</div>
+
+<h2>逻辑运算符：组合条件</h2>
+
+<table class="cmp">
+  <tr><th>运算符</th><th>名称</th><th>真值条件</th></tr>
+  <tr><td><code>&amp;&amp;</code></td><td>逻辑与 AND</td><td>两个操作数<strong>都</strong>为 true</td></tr>
+  <tr><td><code>||</code></td><td>逻辑或 OR</td><td><strong>至少一个</strong>为 true</td></tr>
+  <tr><td><code>!</code></td><td>逻辑非 NOT</td><td>翻转操作数</td></tr>
+</table>
+
+<pre class="code">if (x &gt; 0 &amp;&amp; x &lt; 10)     // x 在 (0, 10) 开区间
+    std::cout &lt;&lt; "between\n";
+
+if (x == 0 || y == 0)    // x 或 y 至少一个是 0
+    std::cout &lt;&lt; "has zero\n";
+
+if (!(x == 0))           // 等价于 x != 0
+    std::cout &lt;&lt; "not zero\n";</pre>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：短路求值（short-circuit evaluation）</div>
+  <p><code>&amp;&amp;</code> 与 <code>||</code> 在能确定结果时<strong>不会求值右操作数</strong>：<code>a &amp;&amp; b</code> 里 a 为假则 b 根本不算（结果必假）；<code>a || b</code> 里 a 为真则 b 不算（结果必真）。</p>
+  <p>这不只是性能优化，更是<strong>正确性工具</strong>：<code>if (b != 0 &amp;&amp; a / b &gt; 10)</code>——左条件保证 b 非 0，右边的除法才安全。顺序反过来就是除零 UB。</p>
+</div>
+
+<h2>真假值：任何东西都能变 bool</h2>
+
+<p>C++ 里整数/浮点可以直接当条件用，规则一句话：<strong>0（和 0.0）为假，其余全为真</strong>：</p>
+
+<pre class="code">if (5)  // 5 非 0 → true，执行
+if (0)  // 0 → false，跳过
+if (-2) // 非 0 → true</pre>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 但别把整数当 bool 写</div>
+  <p><code>if (n)</code> 和 <code>if (n != 0)</code> 行为相同，但后者<strong>自解释</strong>——读者不用回想"n==0 是假还是真"。原文建议：条件里写明确的比较，让代码自己说话。这条规则与 1.5 课"命名要达意"一脉相承：代码是写给人读的。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">找错</span>这段代码想判断"x 等于 0"，实际会发生什么？</p>
+  <pre class="code">int x { 5 };
+if (x = 0)
+    std::cout &lt;&lt; "x is zero\n";</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="赋值表达式 x = 0 的'值'就是被赋的值（0），0 求值为 false——分支不执行。而且 x 已经被改成 0 了！一个字符的错误，两个后果。" >编译错误：条件必须是 bool</button>
+    <button data-k="b" data-ok="1" data-why="正确！x = 0 是赋值表达式，值为 0 → false → 分支永不执行，还顺手把 x 改成了 0。这也是'总是写 if (0 == x)'写法的由来（把常量放左边，误写成 = 会直接编译报错——给常量赋值非法），不过更普遍的解法是养成 == 的肌肉记忆 + 开 -Wall（编译器会警告 if 内的赋值）。" >
+      x 被赋值为 0，条件求值为 false，分支永不执行</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span><code>if (b != 0 &amp;&amp; a / b &gt; 10)</code> 里，若 b == 0，右边 <code>a / b &gt; 10</code> 会被求值吗？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="左边 b != 0 为 false，整个 && 表达式已经确定为 false——右边直接跳过（短路）。这正是把'防护条件'写在前面的意义：右边的除法永远不会在 b==0 时执行。" >会 —— && 两边总是都求值</button>
+    <button data-k="b" data-ok="1" data-why="正确！&& 短路：左操作数为 false 时右操作数不求值（结果已定）。这就是为什么'先检查除数再相除'的顺序不是风格偏好，而是正确性要求——反过来写就是每次 b==0 都触发除零 UB。" >
+      不会 —— 短路求值，右边直接跳过</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>输入 10 时输出什么？</p>
+  <pre class="code">if (x &gt; 0)
+    std::cout &lt;&lt; "A\n";
+    std::cout &lt;&lt; "B\n";   // 注意缩进！
+if (x &gt; 100)
+    std::cout &lt;&lt; "C\n";</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="缩进骗人：没有花括号时 if 只管紧跟的一条语句。B 那行是独立语句，无条件执行。" >A B</button>
+    <button data-k="b" data-ok="1" data-why="正确！这就是'省略花括号'的经典事故：B 不属于 if（无论条件真假都执行），只有 A 受 x>0 控制；x=10 不满足 x>100，C 不打。输出是 A 和 B。最佳实践'总是写花括号'防的就是这种坑。" >
+      A 和 B —— B 不受 if 控制，无条件执行</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：程序开始"分流"了</div>
+  <p>if 之前，程序的执行路径唯一；if 之后，<strong>同一个程序在不同输入下走不同的路</strong>。这带来两个深远变化：① 测试变重要了——一条路径对不代表所有路径对，所以要测试每个分支（3.10 课测试函数的思想）；② 调试复杂了——hi-lo 观察要"沿实际执行的路径"做，你看到的现象取决于走了哪条分支。1.7 课身高排序的三个 if 你已经用过它们；现在你知道了它们的完整规则书。第 8 章还有 switch 和循环等着——但 if 是所有控制流的起点。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter4/04-if-statements/</code> 的 <code>if_demo.cpp</code>、<code>exercises/sign_classify.cpp</code>（读入整数，输出正/负/零——用 else if 链）和 <code>exercises/assignment_trap.cpp</code>（亲手编译一次 if (x = 0)，读 -Wall 的警告）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="03-float-bool.html"><span class="dir">← 上一节</span>4.3 浮点数与布尔</a>
+  <a class="next" href="05-chars-cast.html"><span class="dir">下一节 →</span>4.5 字符与类型转换</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-if-statements/">LearnCpp 4.10</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

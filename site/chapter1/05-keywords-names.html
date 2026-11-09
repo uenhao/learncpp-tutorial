@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1.5 关键字、命名与代码格式 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter1/05-keywords-names.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 1 章</a> / 关键字、命名与格式</div>
+<article>
+<h1>1.5 关键字、命名与代码格式</h1>
+
+<p>写程序不只是写给编译器看，更是写给<strong>三个月后的自己</strong>和<strong>同事</strong>看。这一课讲两件事：什么样的名字合法，什么样的名字<strong>好</strong>。</p>
+
+<h2>标识符的硬规则（编译器强制）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：标识符（identifier）</div>
+  <p>变量、函数等的名字。规则：</p>
+  <ul>
+    <li>只能用字母、数字、下划线</li>
+    <li>不能以数字开头</li>
+    <li>不能是<strong>关键字</strong>（<code>int</code>、<code>return</code>、<code>class</code>……编译器保留字）</li>
+    <li>（加分规则）不要用双下划线或下划线开头——那些留给编译器实现者</li>
+  </ul>
+</div>
+
+<h2>好名字的软规则（人类约定）</h2>
+
+<table class="cmp">
+  <tr><th>风格</th><th>示例</th><th>用途</th></tr>
+  <tr><td>camelCase 驼峰</td><td><code>totalPrice</code></td><td>变量、函数（本教程采用）</td></tr>
+  <tr><td>PascalCase 帕斯卡</td><td><code>PlayerInventory</code></td><td>类型、类（后续章节）</td></tr>
+  <tr><td>snake_case 蛇形</td><td><code>total_price</code></td><td>也可，统一即可</td></tr>
+</table>
+
+<p>风格本身不重要，<strong>一致</strong>才重要。但"有意义的名字"更重要——对比：</p>
+
+<pre class="code">int res = calc(p, q);              // res？p？q？读代码的人只能猜
+int totalPrice = calcTotal(unitPrice, quantity);   // 自解释</pre>
+
+<div class="box best">
+  <div class="box-t">✅ 命名的两条检验标准</div>
+  <ol>
+    <li><strong>不读实现也能猜对用途</strong>：看到 <code>daysUntilDeadline</code> 就知道它是什么；看到 <code>dup</code> 就未必了。</li>
+    <li><strong>在它的作用域里不产生歧义</strong>：循环里的 <code>i</code>、<code>j</code> 可以接受（传统、且生命周期极短）；但函数级的 <code>data</code>、<code>temp</code>、<code>result2</code> 都是坏味道。</li>
+  </ol>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>以下哪个名字<strong>合法但不该用</strong>？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="3rdPlace 以数字开头，是非法标识符，编译器直接拒绝。注意题目问的是'合法但不该用'。">3rdPlace</button>
+    <button data-k="b" data-why="class 是关键字，非法。想要'班级'的意思可以用 course、className、grade 等。">class</button>
+    <button data-k="c" data-ok="1" data-why="正确！__flag 合法（编译器放行），但双下划线开头是 C++ 标准保留给编译器/标准库实现的名字空间——你的代码用它，可能与编译器内部名字冲突，产生最难查的诡异问题。同理 _flag（单下划线开头）在全局作用域也是保留的。">__flag</button>
+    <button data-k="d" data-why="totalAmount 完全合法且达意——虽然大小写风格如果与项目其他变量不一致会显得突兀，但它不踩任何保留规则。">totalAmount</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>空白与格式：编译器不在乎，人在乎</h2>
+
+<p>下面两段代码对编译器<strong>完全等价</strong>：</p>
+
+<pre class="code">int width=3;int height=4;std::cout&lt;&lt;width*height;</pre>
+<pre class="code">int width{ 3 };
+int height{ 4 };
+std::cout &lt;&lt; width * height;</pre>
+
+<p>但可读性天差地别。几条最低限度的排版约定：</p>
+<ul>
+  <li><strong>每条语句一行</strong>，块内语句用 4 空格缩进</li>
+  <li><strong>花括号风格二选一并坚持</strong>：换行或同行都行</li>
+  <li>运算符两侧加空格：<code>x * y + 1</code></li>
+  <li>别手工较劲——用 <strong>clang-format</strong> 一键统一（<code>clang-format -i *.cpp</code>）</li>
+</ul>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 空白的例外：字符串不能折行</div>
+  <pre class="code">std::cout &lt;&lt; "Hello
+world";    // ❌ 编译错误：字符串字面量必须写在一行
+std::cout &lt;&lt; "Hello "
+              "world";  // ✅ 相邻字符串字面量自动拼接（或拆成两个 &lt;&lt;）</pre>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"代码格式只是美观问题，不影响程序行为。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="'缩进不影响语义'在大多数时候成立，但别急着下结论——有一类格式错误会直接改变代码含义（甚至让代码无法编译），看看选项 b。" >对 —— 格式纯粹是美观问题，与编译无关</button>
+    <button data-k="b" data-ok="1" data-why="正确！两个实打实的例外：① 多行注释 /* */ 不能嵌套，格式错位会让'想注释掉的代码'意外提前结束注释，甚至吞掉真正的代码；② 字符串字面量不能跨行（本节的预测题就是例子）。此外格式影响'人的理解速度'——可读性差的代码更容易藏真 bug，所以格式管理是工程质量的一部分，而非装饰。">大体对，但有例外且格式影响可读性</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：代码的读者首先是人</div>
+  <p>编译器不在乎名字叫 x 还是 totalPrice，但<strong>调试时的人</strong>在乎。命名和格式是你每天在写"文档"——代码即文档。learncpp 反复强调：当你的代码需要一条注释才能看懂时，先考虑改名字。</p>
+</div>
+
+<div class="predict" data-answer="no error||编译错误||compile error||error" data-hint="注意字符串字面量被折成了两行。" data-explain="这是编译错误！字符串字面量中间不能直接换行（C++ 字符串不自动跨行）。要么写在同一行，要么拆成两个相邻字面量靠编译器自动拼接：std::cout &lt;&lt; &quot;Hello &quot; &quot;world!&quot;;（或用两个 &lt;&lt;）。">
+  <p class="quiz-q">🎯 这段代码能编译通过吗？如果能，输出什么？</p>
+  <pre class="code">std::cout &lt;&lt; "Hello
+world!";</pre>
+  <div class="prow"><input type="text" placeholder="输出内容 或 填'编译错误'"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter1/07-keywords-naming/exercises/naming_quiz.cpp</code> 与 <code>chapter1/08-whitespace-formatting/exercises/messy.cpp</code>。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="04-iostream.html"><span class="dir">← 上一节</span>1.4 iostream 与用户输入</a>
+  <a class="next" href="06-expressions.html"><span class="dir">下一节 →</span>1.6 字面量、运算符与表达式</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/keywords-and-naming-identifiers/">LearnCpp 1.7–1.9</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

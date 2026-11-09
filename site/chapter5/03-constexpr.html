@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5.3 编译期求值与 constexpr · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter5/03-constexpr.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 5 章</a> / 编译期求值与 constexpr</div>
+<article>
+<h1>5.3 编译期求值与 constexpr</h1>
+
+<p>这一课回答三个递进的问题：<strong>编译器能替你提前算什么（as-if 规则）→ 什么表达式"有资格"提前算（常量表达式）→ 怎么显式要求提前算（constexpr）</strong>。它同时兑现 2.6 课的承诺：为什么"宏做常量"该被淘汰。</p>
+
+<h2>第一问：as-if 规则——编译器的自由度</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：as-if 规则</div>
+  <p><strong>编译器可以随意修改你的程序</strong>——重排语句、消除冗余、提前计算——唯一约束：修改后程序的<strong>可观察行为不变</strong>。这是 Release 优化（0.2 课）的全部理论依据。</p>
+</div>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{
+	int x { 3 + 4 };
+	std::cout &lt;&lt; x &lt;&lt; '\n';
+	return 0;
+}</pre>
+
+<p>按字面执行，<code>3 + 4</code> 在<strong>每次运行时</strong>都要算一遍——但结果永远是 7。符合 as-if 规则的优化：编译器直接在编译期算出 7，把它当常量塞进程序。这种"编译期就把表达式算完"的做法叫<strong>编译期求值（compile-time evaluation）</strong>。</p>
+
+<div class="box best">
+  <div class="box-t">✅ 关键洞察</div>
+  <p><strong>编译期求值让编译器替你做运行时的工作</strong>。能在编译期算完的表达式：不占运行时间、不占运行内存（结果直接嵌入指令）。这正是 0.2 课那个"Release 下变量被优化掉"现象的合法机制。</p>
+</div>
+
+<h2>第二问：常量表达式——"有资格"的表达式</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：常量表达式（constant expression）</div>
+  <p><strong>常量表达式</strong>：每个组成部分都能在编译期求值的表达式。允许的内容包括：</p>
+  <ul>
+    <li>字面量（5、'a'、1.2）</li>
+    <li><strong>用常量表达式初始化的 const 变量</strong>（const int x{8}; 里的 x）</li>
+    <li>用常量表达式初始化的 constexpr 变量</li>
+    <li>上述内容的运算组合（5 + 3、x * 2）</li>
+  </ul>
+  <p>反例：用户输入的值、调用"普通函数"的结果——这些只能在运行时确定，<strong>不是</strong>常量表达式。</p>
+</div>
+
+<pre class="code">std::cin &gt;&gt; a;
+const int b{ a };      // const，但 b 不是常量表达式（值来自运行时）
+const int c{ 5 + 3 };  // const，且 c 是常量表达式（值编译期已知）
+int d { c };           // d 本身不是 const，不是常量表达式
+constexpr int e{ c * 2 }; // ✅ 常量表达式（下文）</pre>
+
+<h2>第三问：constexpr——显式的编译期常量</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：constexpr 变量</div>
+  <p><strong>constexpr</strong>：声明"这个变量必须能用常量表达式初始化"。若初始化式不是常量表达式——<strong>编译错误</strong>（而不是静默降级）。</p>
+  <pre class="code">constexpr double gravity{ 9.8 };        // ✅ 值编译期已知
+constexpr int sum{ 4 + 5 };             // ✅
+
+int a{};
+std::cin &gt;&gt; a;
+constexpr int bad{ a };                 // ❌ 编译错误！a 是运行时值</pre>
+</div>
+
+<h3>constexpr vs const：一张对照表</h3>
+
+<table class="cmp">
+  <tr><th></th><th><code>const</code></th><th><code>constexpr</code></th></tr>
+  <tr><td>初始化后不可改</td><td>✅</td><td>✅（隐含 const）</td></tr>
+  <tr><td>初始值可来自运行时</td><td>✅</td><td>❌（必须编译期已知）</td></tr>
+  <tr><td>是常量表达式的一部分</td><td>仅当"整型且初始化式是常量表达式"</td><td>✅ 总是</td></tr>
+  <tr><td>用途</td><td>运行时常量（值来自输入/系统）</td><td>编译期常量</td></tr>
+</table>
+
+<div class="box best">
+  <div class="box-t">✅ 原文最佳实践（本章核心口诀）</div>
+  <ul>
+    <li>初始值是<strong>常量表达式</strong>的常量变量 → 用 <strong>constexpr</strong></li>
+    <li>初始值<strong>不是</strong>常量表达式（运行时才确定）→ 用 <strong>const</strong></li>
+    <li>一句话：值的来源决定用哪个。<strong>"编译期知道"用 constexpr，"运行时才知道"用 const</strong>。</li>
+  </ul>
+  <p>例外：std::string 等动态内存类型与 constexpr 不兼容（5.4 课的 string_view 是替代品）。</p>
+</div>
+
+<h3>兑现 2.6 课的承诺：为什么宏被淘汰</h3>
+
+<pre class="code">#define MAX_STUDENTS 30      // 2.6 课：宏是无类型文本替换
+constexpr int maxStudents{ 30 }; // 现代 C++ 的正确答案</pre>
+
+<p>2.6 课说"宏没有类型、没有作用域、调试困难，用 constexpr 替代"——现在你知道 constexpr 是什么了，这条最佳实践正式生效：<strong>从今天起，所有"永不变化的量"都写 constexpr 变量</strong>（值来自运行时的写 const）。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>用户输入年龄后，程序定义"年龄上限"为 120 并与输入比较。120 该怎么声明？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="能用 constexpr——120 是字面量，编译期已知。上限是设计常量，不是运行时产物，constexpr 是首选。" >const int maxAge{ 120 };</button>
+    <button data-k="b" data-ok="1" data-why="正确！120 是字面量——常量表达式——按最佳实践用 constexpr。区分点在'值的来源'：上限 120 写在代码里，编译期已知；而用户输入的年龄才是运行时值（那个变量用普通 int，它不是常量）。" >
+      constexpr int maxAge{ 120 };</button>
+    <button data-k="c" data-why="宏被 2.6/本课双重否决：无类型、无作用域。">#define MAX_AGE 120</button>
+    <button data-k="d" data-why="普通 int 意味着'可被修改'——上限这类量被误改就是逻辑事故，违背 5.1 课'能 const 就 const'。" >int maxAge{ 120 };</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"constexpr 变量在运行期间也不能被赋值。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="对——constexpr 隐含 const（原文明确：constexpr 变量 implicitly const）。给 constexpr 变量赋值和给 const 赋值一样是编译错误。" >对 —— constexpr 隐含 const</button>
+    <button data-k="b" data-why="constexpr = constant expression，它比 const 更严：不仅不可改，还强制编译期已知。赋值当然不允许。" >不对 —— constexpr 可以重新赋值</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>以下哪一行会<strong>编译失败</strong>？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="合法：constexpr 变量可用于常量表达式。" >constexpr int a{ 4 + 5 };</button>
+    <button data-k="b" data-ok="1" data-why="正确！用户输入的值是运行时才确定的——constexpr 强制要求编译期已知，编译器拒绝。这正是 constexpr 的价值：它不静默降级，而是把'我以为这是编译期常量'的错误假设当场戳穿。" >
+      int a{}; std::cin &gt;&gt; a; constexpr int b{ a };</button>
+    <button data-k="c" data-why="合法：constexpr 变量 c 是常量表达式的一部分，c*2 整体也是常量表达式。" >constexpr int c{ 8 }; constexpr int d{ c * 2 };</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：把工作从运行时搬到编译期</div>
+  <p>这一课的思维内核是一句工程哲学：<strong>能在编译期完成的工作，绝不留到运行时</strong>。constexpr 变量是这条哲学的第一块落地面（数组长度、模板参数等后续章节都会要求 constexpr）。它还改变了"常量"的角色：const 是"防守"（禁止修改），constexpr 是"进攻"（参与编译期计算）。记住选择口诀——<strong>来源决定关键字</strong>——第 5 章后面的 string（运行时构造，用 const）与 string_view（可 constexpr）还会再考你一遍。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter5/03-constexpr/</code> 的 <code>constexpr_demo.cpp</code>——包含一行"用运行时值初始化 constexpr"的注释代码，取消注释亲眼编译失败；再用 0.2 课方法分别用 -O0/-O2 编译，对比 as-if 规则下 3+4 是否真的被提前算掉。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="02-literals-numbers.html"><span class="dir">← 上一节</span>5.2 字面量与进制</a>
+  <a class="next" href="04-strings.html"><span class="dir">下一节 →</span>5.4 std::string 与 string_view</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/the-as-if-rule-and-compile-time-optimization/">LearnCpp 5.4–5.6</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6.1 优先级、结合性与算术运算 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter6/01-arith.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 6 章</a> / 优先级与算术运算</div>
+<article>
+<h1>6.1 优先级、结合性与算术运算</h1>
+
+<p>1.6 课你用过优先级和"从左往右"，现在给它们正式的名字和完整的规则体系。</p>
+
+<h2>优先级（precedence）：谁先结合操作数</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>优先级</strong>：每个运算符被分配一个等级，<strong>等级高的先与操作数结合</strong>。所以 <code>4 + 2 * 3</code> 被分组为 <code>4 + (2 * 3)</code> = 10——乘除（等级 5）高于加减（等级 6）。</p>
+  <p>本课常用的等级速查（完整表见原文）：</p>
+  <table class="cmp">
+    <tr><th>等级</th><th>运算符</th></tr>
+    <tr><td>1（最先）</td><td>函数调用 ()、++ / --（后缀）、一元 + -、! 等</td></tr>
+    <tr><td>2</td><td>* / %</td></tr>
+    <tr><td>3</td><td>+ -（二元加减）</td></tr>
+    <tr><td>4</td><td>&lt; &gt; &lt;= &gt;=</td></tr>
+    <tr><td>5</td><td>== !=</td></tr>
+    <tr><td>6</td><td>&amp;&amp;</td></tr>
+    <tr><td>7</td><td>||</td></tr>
+    <tr><td>8</td><td>赋值 =（条件运算符在它前面）</td></tr>
+  </table>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 两个高频陷阱</div>
+  <ul>
+    <li><strong>一元负号和 ！ 的等级比 == 高</strong>：<code>!x == y</code> 被解析成 <code>(!x) == y</code>（先取反再比较）——几乎从来不是你的本意。想要"x 不等于 y"要么写 <code>x != y</code>，要么加括号 <code>!(x == y)</code>。</li>
+    <li><strong>== 的等级高于 &amp;&amp; 和 ||</strong>：<code>a || b == c</code> 是 <code>a || (b == c)</code>。拿不准就加括号。</li>
+  </ul>
+</div>
+
+<h2>结合性（associativity）：同级怎么办</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p>同级运算符按<strong>结合性</strong>分组：<strong>左结合</strong>（从左往右）——算术、比较、逻辑；<strong>右结合</strong>（从右往左）——赋值 <code>a = b = c</code> 等价 <code>a = (b = c)</code>。</p>
+</div>
+
+<pre class="plain">7 - 4 - 1  →  (7 - 4) - 1 = 2     左结合</pre>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践</div>
+  <p>除最简单的表达式外，<strong>用括号明确分组</strong>。括号零成本、消灭记忆负担——这条在 1.6 课说过，现在你知道了完整的等级表，更应明白：优先级是"编译器的解析规则"，不是"让你背的口诀"。</p>
+</div>
+
+<h2>一元正负号</h2>
+
+<pre class="code">int x{ 5 };
+int neg{ -x };   // -5（一元负号：乘 -1）
+int pos{ +x };   // 5（一元正号：几乎没用，只是与负号对称）</pre>
+
+<p><code>x = 5 - -3;</code> 里两个减号身份不同：第一个是二元减法，第二个是一元负号（5 减去负 3 = 8）。一元负号紧贴操作数写（<code>-x</code> 不要 <code>- x</code>）。</p>
+
+<h2>除法：两个模式（1.6 课欠条再兑付）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：除法的两种模式</div>
+  <ul>
+    <li><strong>任一操作数是浮点</strong> → 浮点除法，保留小数：<code>7.0 / 4 = 1.75</code>；</li>
+    <li><strong>两个都是整数</strong> → 整数除法，<strong>小数部分直接丢弃（向零截断）</strong>：<code>7 / 4 = 1</code>，<code>-7 / 4 = -1</code>（注意是向零取整，不是向下取整——-1.75 截成 -1 而非 -2）。</li>
+  </ul>
+</div>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{
+    std::cout &lt;&lt; 7 / 4 &lt;&lt; '\n';                      // 1
+    std::cout &lt;&lt; 7.0 / 4 &lt;&lt; '\n';                    // 1.75
+    std::cout &lt;&lt; static_cast&lt;double&gt;(7) / 4 &lt;&lt; '\n'; // 1.75
+    return 0;
+}</pre>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span><code>std::cout &lt;&lt; -7 / 4;</code> 输出什么？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="向零截断：−1.75 的小数部分被丢弃，朝零的方向取 −1。'向下取整'会得 −2，但整数除法的规则是向零。" >-2</button>
+    <button data-k="b" data-ok="1" data-why="正确！整数除法向零截断：−7/4 数学上是 −1.75，截断小数 → −1。正负号规则：截断方向永远朝零。注意优先级：一元负号先作用于 7（得 −7），再除。" >
+      -1</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：优先级表是"解析器视角"</div>
+  <p>背等级表不是目的。真正的能力是<strong>用编译器的眼睛读表达式</strong>：看到复合表达式，先按等级画括号，再看结合性，最后算值。当你发现自己需要在脑中模拟编译器分组时——就顺手把括号写进代码，让下一个读者也省一遍脑力。下一课的取模运算符还有一整个"负数签名"的惊喜等着你。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter6/01-arith/</code> 的 <code>precedence_demo.cpp</code>（! 与 == 的等级陷阱实测）和 <code>division_modes.cpp</code>（两种除法模式对照）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 6 章</a>
+  <a class="next" href="02-remainder-increment.html"><span class="dir">下一节 →</span>6.2 取余与自增自减</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/operator-precedence-and-associativity/">LearnCpp 6.1–6.2</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

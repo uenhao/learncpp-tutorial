@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1.2 对象与变量 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter1/02-objects-variables.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 1 章</a> / 对象与变量</div>
+<article>
+<h1>1.2 对象与变量：给内存贴上名字</h1>
+
+<p>程序的本质是<strong>处理数据</strong>，而数据要有个地方住。这一课讲清楚"C++ 里数据住在哪、怎么称呼它"。</p>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>对象（object）</strong>：一块能存储值的内存。注意这个定义比日常语言的"对象"宽得多——一个 int 也是对象。</p>
+  <p><strong>变量（variable）</strong>：有名字的对象。<code>int x;</code> 做了三件事：分配一块能装 int 的内存、给它起名 x、规定它只能存整数。</p>
+  <p><strong>值（value）</strong>：对象里此刻存放的数据，读取时取出，写入时覆盖。</p>
+</div>
+
+<table class="cmp">
+  <tr><th>要素</th><th>类比（酒店房间）</th><th>在代码里</th></tr>
+  <tr><td>类型</td><td>房型（单人间/双人间，决定能住谁）</td><td><code>int</code></td></tr>
+  <tr><td>名字</td><td>房间号（别人怎么找到它）</td><td><code>x</code></td></tr>
+  <tr><td>值</td><td>当前住客</td><td><code>5</code></td></tr>
+</table>
+
+<h2>定义 = 声明 + 分配内存</h2>
+
+<p><code>int x;</code> 是<strong>定义（definition）</strong>：它分配了内存。而<strong>声明（declaration）</strong>只是告诉编译器"有这么个名字"。变量定义同时完成声明；但反过来不成立（第 2 章讲函数时这个区别会变得非常重要）。</p>
+
+<pre class="code">int x;        // 定义：内存就位，但里面的值是垃圾！（下一课细说）
+x = 5;        // 赋值：把 5 装进去
+
+int y{ 5 };   // 定义 + 初始化：创建时就装好 5（推荐写法）</pre>
+
+<h2>作用域：名字的"可见范围"</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>作用域（scope）</strong>：名字从定义处开始，到它所在的 <code>{}</code> 块结束为止。出了块，这个名字就不存在了——就像人走出了房间。</p>
+</div>
+
+<pre class="code">int main()
+{
+    int outer{ 1 };        // outer 从这里可见
+    {                      // 内层块开始
+        int inner{ 2 };    // inner 只在内层块里可见
+    }                      // inner 在这里销毁
+    // std::cout &lt;&lt; inner; // ❌ 编译错误：inner 不存在了
+}</pre>
+
+<p>同名的情况需要特别小心。内层块可以定义一个与外层<strong>同名的</strong>新变量——这叫<strong>遮蔽（shadowing）</strong>：</p>
+
+<pre class="code">int value{ 10 };
+{
+    int value{ 99 };       // 这是另一个对象！碰巧同名
+    std::cout &lt;&lt; value;    // 打印 99（内层优先）
+}
+std::cout &lt;&lt; value;        // 打印 10（内层已销毁）</pre>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>上面的遮蔽代码中，两个 <code>value</code> 是几个对象？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="不对。内层的 int value{99} 是一次全新的定义，分配了新的内存。名字相同不代表对象相同——就像两个城市可以都有'人民路'。" >同一个对象，内层修改的是外层</button>
+    <button data-k="b" data-ok="1" data-why="正确！每个定义都是一次独立的内存分配。遮蔽的规则只是：在内层作用域里，'value'这个名字解析到内层对象；出了内层块，内层对象销毁，名字重新解析到外层对象。正因如此遮蔽极易造成'我明明赋值了怎么没变'的 bug，编译器提供了 -Wshadow 警告来帮你抓它。">两个对象 —— 遮蔽只是名字解析规则</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践</div>
+  <ul>
+    <li>变量在<strong>离使用最近的地方</strong>定义（缩小作用域 = 减少混乱）</li>
+    <li><strong>避免遮蔽</strong>：给变量起不同的名字，让 -Wshadow 保持安静</li>
+    <li>同一作用域内同名变量<strong>不能定义两次</strong>（编译器会拦住你）</li>
+  </ul>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变</div>
+  <p>"变量"这个词容易让人以为名字本身就是数据。更准确的图景是：<strong>名字是标签，对象是盒子，值是盒子里的东西</strong>。赋值是"换东西"，不改标签；对象销毁是"盒子没了"，名字也随之作废。保持这个图景，第 2 章的"按值传参"、第 12 章的"引用"都会容易得多。</p>
+</div>
+
+<div class="predict" data-answer="1 99 1||1,99,1||1991" data-hint="提示：三条输出分别是：遮蔽前的 value、内层的 value、出了块之后的 value。" data-explain="输出 1 99 1。内层 value 是独立对象（遮蔽）；出块后内层销毁，外层 value 从头到尾没被碰过，仍是初值 1。遮蔽只在内层块里有效——这就是为什么读代码时要随时知道'这个名字此刻指向谁'。">
+  <p class="quiz-q">🎯 预测输出（用空格分隔）：</p>
+  <pre class="code">int value{ 1 };
+std::cout &lt;&lt; value &lt;&lt; ' ';
+{
+    int value{ 99 };
+    std::cout &lt;&lt; value &lt;&lt; ' ';
+}
+std::cout &lt;&lt; value;</pre>
+  <div class="prow"><input type="text" placeholder="如: 1 2 3"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter1/03-objects-variables/exercises/variable_basics.cpp</code> 的 TODO 4 会让你打开一行错误代码，亲眼看"作用域外使用"的编译错误。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="01-statements.html"><span class="dir">← 上一节</span>1.1 语句与程序结构</a>
+  <a class="next" href="03-initialization.html"><span class="dir">下一节 →</span>1.3 初始化与赋值</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-objects-and-variables/">LearnCpp 1.3</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

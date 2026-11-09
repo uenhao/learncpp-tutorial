@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2.2 返回值与参数：函数的输入与输出 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter2/02-return-values.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 2 章</a> / 返回值与参数</div>
+<article>
+<h1>2.2 返回值与参数：函数的输入与输出</h1>
+
+<p>上一课的函数像"只会说话的盒子"。真正的函数是<strong>有进有出</strong>的：数据从参数进来，结果从返回值出去。</p>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>形参（parameter）</strong>：定义函数时括号里的名字，如 <code>int add(int x, int y)</code> 的 x、y。它们是函数体内的<strong>局部变量</strong>。</p>
+  <p><strong>实参（argument）</strong>：调用时括号里的值，如 <code>add(3, 4)</code> 的 3、4。</p>
+  <p><strong>按值传递（pass by value）</strong>：调用时实参的<strong>值被拷贝</strong>给形参。从此形参自成一个独立对象。</p>
+  <p><strong>返回值（return value）</strong>：<code>return 表达式;</code> 把一个值交回调用处，函数立即结束。</p>
+</div>
+
+<pre class="code">int add(int x, int y)     // x、y：形参（局部变量）
+{
+    return x + y;         // 计算结果交回去，函数结束
+}
+
+int main()
+{
+    int sum{ add(3, 4) }; // 3、4：实参；返回值 7 初始化 sum
+    std::cout &lt;&lt; sum;
+}</pre>
+
+<h2>调用那一刻发生了什么？</h2>
+
+<p>把 <code>add(3, 4)</code> 这一行执行时发生的事逐步展开，你脑中的世界应该是这样：</p>
+
+<div class="flow">
+  <div class="flow-step">实参 3 拷贝给 x</div>
+  <div class="flow-step">实参 4 拷贝给 y</div>
+  <div class="flow-step">执行函数体</div>
+  <div class="flow-step">return 把 7 送回调用处</div>
+  <div class="flow-step">x、y 销毁</div>
+</div>
+
+<p>逐步拆开：</p>
+<ol>
+  <li><strong>实参 3 拷贝给 x</strong>——调用发生，先"布置场地"：创建形参 x（add 的局部变量），把实参的值 3 <strong>拷贝</strong>进去。此时 add 的世界里有了 x = 3。</li>
+  <li><strong>实参 4 拷贝给 y</strong>——同样地，第二个形参 y 被创建并拷入 4。参数按位置一一对应：第 1 个实参给第 1 个形参，第 2 个给第 2 个。</li>
+  <li><strong>执行函数体</strong>——CPU 跳到 add 内部，计算 <code>x + y</code>，即 3 + 4 = 7。main 仍然"冻结"在调用行等待。</li>
+  <li><strong>return 把 7 送回调用处</strong>——<code>return x + y;</code> 做两件事：把 7 这个值交给 main（在那里它用于初始化 sum），同时立即结束 add 的执行。</li>
+  <li><strong>x、y 销毁</strong>——add 的"世界"被拆除：形参 x、y 是局部变量，随函数结束而消失。它们带走的任何修改（如果有）也随之蒸发——这就是"按值传递"的完整含义。</li>
+</ol>
+
+<p>注意最后一格：<strong>形参随函数结束而销毁</strong>（局部作用域，1.2 课的规则）。这就是"函数是独立世界"的含义——它每次调用都领到全新的拷贝，也带走一切内部状态。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>运行下面代码后，<code>a</code> 的值是多少？</p>
+  <pre class="code">void setTo100(int x)
+{
+    x = 100;
+}
+
+int main()
+{
+    int a{ 5 };
+    setTo100(a);
+    std::cout &lt;&lt; a;
+}</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="setTo100 收到的是 a 的'复印件'。改复印件不影响原件——除非用引用传递（第 12 章），那是后话。">100</button>
+    <button data-k="b" data-ok="1" data-why="正确！按值传递意味着 x 是 a 的拷贝。x = 100 只改了拷贝；函数结束时 x 销毁，a 从头到尾没被动过。这也是为什么'想通过参数修改调用者变量'必须学引用——现在先把这个预期刻进脑子。">5 —— 形参是拷贝，改它不影响实参</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>返回值的规矩</h2>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 反例：有返回类型的函数"漏了出口"</div>
+  <pre class="code">int score(int s)
+{
+    if (s &gt;= 60)
+        return 1;
+    // s &lt; 60 时走不到任何 return！
+}</pre>
+  <p>编译器会警告 <code>control reaches end of non-void function</code>。这不是风格问题——函数结束时没有值可交回，是<strong>未定义行为</strong>。规则：<strong>每个执行路径都必须 return</strong>。修法很简单：在末尾补 <code>return 0;</code>。</p>
+</div>
+
+<p>返回值的三种用法：</p>
+
+<pre class="code">int sum{ add(2, 3) };         // ① 接住：初始化变量
+std::cout &lt;&lt; add(2, 3);       // ② 直接用：送进输出流
+add(1, 2);                    // ③ 丢弃：合法但几乎总是写错了</pre>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"<code>void</code> 函数里写 <code>return;</code>（不带值）是语法错误。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="恰恰相反，它是合法且常用的：用于'条件不满足就提前退场'，让主逻辑少一层缩进（早返回模式）。比如 if (x &lt;= 0) return; 放在函数开头做'卫语句'。">对 —— void 函数不能写 return</button>
+    <button data-k="b" data-ok="1" data-why="正确！void 函数的 return 不带值，作用是提前结束函数。唯一禁止的是 return 带上值（return 5; 在 void 函数里是错误）。">不对 —— 不带值的 return 是合法的提前退场</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：函数 = 契约</div>
+  <p>函数头 <code>int add(int, int)</code> 是一份<strong>契约</strong>："给我两个 int，我还你一个 int"。调用者只需要信契约，不需要读实现（第 0 章链接器的分工正是基于此）；实现者只需要守契约，可以随时重写实现。这种"接口与实现分离"的思维，是从小脚本走向大工程的分水岭——第 2.6 课的头文件就是契约的物理载体。</p>
+</div>
+
+<div class="predict" data-answer="5 100 5" data-hint="三次打印：main 的 a、modify 内的 x、回到 main 后的 a。a 的初值是多少？" data-explain="输出 5 100 5。① main 的 a 是 5，先打印 5；② modify 收到 a 的拷贝，x = 100 改的是拷贝，打印 100；③ 回到 main，a 从未被改过，仍是 5。按值传递：形参是复印件，改复印件不影响原件。">
+  <p class="quiz-q">🎯 预测输出（三段，空格分隔）：</p>
+  <pre class="code">void modify(int x) { x = 100; std::cout &lt;&lt; x &lt;&lt; ' '; }
+
+int main()
+{
+    int a{ 5 };
+    std::cout &lt;&lt; a &lt;&lt; ' ';
+    modify(a);
+    std::cout &lt;&lt; a;
+}</pre>
+  <div class="prow"><input type="text" placeholder="如: 1 2 3"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter2/04-parameters-arguments/exercises/parameters.cpp</code> 的 TODO 2/3 就是这道题的动手版；<code>chapter2/02-return-values/exercises/return_values.cpp</code> 修"漏 return"。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="01-intro-functions.html"><span class="dir">← 上一节</span>2.1 函数简介</a>
+  <a class="next" href="03-scope-refactor.html"><span class="dir">下一节 →</span>2.3 局部作用域与重构</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/function-return-values-value-returning-functions/">LearnCpp 2.2–2.4</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

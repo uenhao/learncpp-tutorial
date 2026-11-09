@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3.4 基础调试战术：注释、流程验证、打印值 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter3/04-basic-tactics.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 3 章</a> / 基础调试战术</div>
+<article>
+<h1>3.4 基础调试战术：注释、流程验证、打印值</h1>
+
+<p>3.3 课说定位靠"猜测 + 收集信息"。这一课讲三个手动做"猜测"的具体战术。它们朴实无华，却在你没有调试器或程序必须跑在别处时是唯一选择。</p>
+
+<h2>战术一：注释掉代码（commenting out）</h2>
+
+<p>程序行为异常，把部分代码注释掉再运行——问题依旧，说明被注释的部分多半无辜；问题消失，锁定嫌疑人。</p>
+
+<pre class="code">int main()
+{
+    getNames();      // 输入名字
+//    doMaintenance(); // 一些杂事 —— 注释掉试试
+    sortNames();     // 排序
+    printNames();    // 打印
+    return 0;
+}</pre>
+
+<p>三种可能结果：</p>
+<ol>
+  <li><strong>问题消失</strong> → doMaintenance 就是元凶，火力集中到它；</li>
+  <li><strong>问题不变</strong>（更常见）→ doMaintenance 基本排除，至少这几行不用再看了；</li>
+  <li><strong>问题变形</strong>（比如名字不打印了）→ doMaintenance 在提供别的代码依赖的东西，暂时排除不了——恢复它，换战术。</li>
+</ol>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 别忘了恢复注释掉的代码！</div>
+  <p>调试改了很多处之后，漏掉一两处没恢复是常事——结果修好一个 bug 又亲手引入新的。原文给的两条护栏：① 用<strong>版本控制</strong>（git diff 一眼看清所有调试期改动）；② 用 3.5 课的 <code>#ifdef</code> 条件编译替代反复注释。</p>
+</div>
+
+<h2>战术二：验证代码流程（validating flow）</h2>
+
+<p>另一类常见 bug：<strong>函数被调用的次数不对（太多、太少、压根没调）</strong>。在函数入口打印函数名，运行后一目了然：</p>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int getValue()
+{
+std::cerr &lt;&lt; "getValue() called\n";   // 调试语句：故意不缩进，方便日后删除
+	return 4;
+}
+
+int main()
+{
+std::cerr &lt;&lt; "main() called\n";
+    std::cout &lt;&lt; getValue &lt;&lt; '\n';    // 有 bug！
+    return 0;
+}</pre>
+
+<p>运行输出：</p>
+
+<pre class="plain">main() called
+1</pre>
+
+<p><strong>getValue() called 没出现！</strong>函数从未被调用——问题出在调用处。凑近看：<code>getValue</code> 后面<strong>漏了括号</strong>，打印的是函数指针而不是调用结果。补上括号，输出立刻正确：</p>
+
+<pre class="plain">main() called
+getValue() called
+4</pre>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：为什么调试输出用 std::cerr 而不是 std::cout</div>
+  <p><code>std::cout</code> 是<strong>带缓冲</strong>的：你让它输出的文字可能先攒在缓冲区，稍后才真正写到屏幕。如果程序在输出前崩溃，缓冲区内容会丢失——你看到的"最后一条输出"可能骗你（它后面的代码其实执行过）。<code>std::cerr</code> 是<strong>无缓冲</strong>的：发出去立刻显示，绝不迟到。调试时我们要的是"每个观察都准时"，性能损失无所谓。这也是原文的明确规则：<strong>调试输出一律用 std::cerr</strong>。</p>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 临时调试语句故意不缩进</div>
+  <p>上面调试行顶格写（无缩进）不是手滑——是让它们在代码里一眼可辨，方便日后统一删除（如果用 clang-format 自动格式化，会被缩进"隐藏"掉，需要 <code>// clang-format off</code> 保护）。</p>
+</div>
+
+<h2>战术三：打印值（printing values）</h2>
+
+<p>最常用的战术：怀疑哪个变量/表达式的值，就把它打印出来看。完整走一遍原文的案例：</p>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int add(int x, int y)
+{
+	return x + y;
+}
+
+void printResult(int z)
+{
+	std::cout &lt;&lt; "The answer is: " &lt;&lt; z &lt;&lt; '\n';
+}
+
+int getUserInput()
+{
+	std::cout &lt;&lt; "Enter a number: ";
+	int x{};
+	std::cin &gt;&gt; x;
+	return x;
+}
+
+int main()
+{
+	int x{ getUserInput() };
+	int y{ getUserInput() };
+
+	int z{ add(x, 5) };   // ← bug 藏在这里
+	printResult(z);
+
+	return 0;
+}</pre>
+
+<p>运行（输入 4 和 3）：</p>
+
+<pre class="plain">Enter a number: 4
+Enter a number: 3
+The answer is: 9        ← 应该是 7！</pre>
+
+<p>肉眼不好找。给每个关键变量加打印：</p>
+
+<pre class="code">	int x{ getUserInput() };
+std::cerr &lt;&lt; "main::x = " &lt;&lt; x &lt;&lt; '\n';
+	int y{ getUserInput() };
+std::cerr &lt;&lt; "main::y = " &lt;&lt; y &lt;&lt; '\n';
+
+	int z{ add(x, 5) };
+std::cerr &lt;&lt; "main::z = " &lt;&lt; z &lt;&lt; '\n';
+	printResult(z);</pre>
+
+<p>输出变成：</p>
+
+<pre class="plain">Enter a number: 4
+main::x = 4
+Enter a number: 3
+main::y = 3
+main::z = 9        ← x、y 都对，z 从这里就开始错
+The answer is: 9</pre>
+
+<p>x、y 正确而 z 错误 → 问题必然在"由 x、y 算出 z"这一步，也就是 <code>add</code>。给 add 加入口打印：</p>
+
+<pre class="plain">add() called (x=4, y=5)    ← 传入的 y 是 5！但 main 里 y 是 3</pre>
+
+<p>真相大白：回头看调用行 <code>int z{ add(x, 5) };</code>——<strong>第二个实参写成了字面量 5，本该是变量 y</strong>。修复、删调试语句、收工。</p>
+
+<h3>进阶案例：入口打印抓"提前修改"</h3>
+
+<p>另一个几乎相同的程序，输出 4+3=5。加全套调试后：</p>
+
+<pre class="plain">main() called
+getUserInput() called
+Enter a number: 4
+main::x = 3        ← 用户输入 4，x 却是 3！
+getUserInput() called
+Enter a number: 3
+main::y = 2        ← 同样少 1
+...</pre>
+
+<p>问题出在"用户输入 → main 的 x"之间。给 getUserInput 内部再加一行打印：<code>getUserInput::x = 4</code>——函数内 x 是对的，返回到 main 却少了 1。包围圈收到最后一行：<code>return --x;</code> 里的 <code>--</code>（自减，你此刻还没学过，但<strong>不认识它不妨碍你锁定它是嫌疑人</strong>——这就是 hi-lo 的威力）。删掉 <code>--</code>，程序正确。</p>
+
+<h2>打印调试的局限</h2>
+
+<p>原文对打印调试的四条批评，值得记住（它们是 3.6 起调试器存在的理由）：</p>
+<ol>
+  <li>调试语句<strong>弄脏代码</strong>；</li>
+  <li>调试输出<strong>弄脏程序输出</strong>；</li>
+  <li>加/删调试语句要改代码，<strong>可能引入新 bug</strong>；</li>
+  <li>用完必须删，<strong>不可复用</strong>。</li>
+</ol>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>调试输出应该用 <code>std::cerr</code> 的根本理由是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="缓冲其实有性能上的好处，调试时也不在乎这点性能。选它的理由和性能无关，恰恰是要放弃缓冲。" >cerr 比 cout 输出更快</button>
+    <button data-k="b" data-ok="1" data-why="正确！cout 有缓冲：崩溃时缓冲区里没来得及显示的内容会丢失，导致你看到'最后一条输出'与实际执行进度不符——以为崩在 A 处，其实崩在 B 处。cerr 无缓冲、立即显示，保证观察准时。原文规则：调试输出一律 cerr。" >
+      cerr 无缓冲立即输出，程序崩溃时不会丢失调试线索</button>
+    <button data-k="c" data-why="cerr 和 cout 语法一样，不存在'更不容易写错'。区别只在缓冲行为和默认去向。" >cerr 的语法更简单不易出错</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"用打印法定位 bug 时，只要给<strong>所有</strong>变量都加上打印，就一定最快找到问题。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="输出爆炸反而淹没关键线索，而且加打印/删打印本身就可能引入新 bug（战术一的警告）。正确姿势是 hi-lo 式地放观察点：用最少的观察夹出包围圈，必要时再加密。" >对 —— 全打出来最快</button>
+    <button data-k="b" data-ok="1" data-why="正确！打印的本质是 3.3 课的'做观察缩小包围圈'——观察点是侦察兵不是人海。先在粗粒度位置放几个观察点（入口、可疑函数前后），根据结果再决定往哪加密。原文两个案例都是这么走的：先 x/y/z，再 add 入口，最后函数内部。" >
+      不对 —— 观察 点要 hi-lo 式布置，逐步加密</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：调试语句是"探针"，位置比数量重要</div>
+  <p>三个战术其实是同一个动作的三种形态：<strong>把程序的内部状态暴露出来供你观察</strong>。注释法暴露"这段代码是否影响行为"，流程打印暴露"执行路径长什么样"，值打印暴露"数据在哪一步开始变错"。原文案例最精彩的地方：那行 <code>return --x;</code> 里的 <code>--</code> 是个你还不会的语法，但你依然<strong>不需要懂它就能锁定它</strong>——探针给出的是客观行为证据，不依赖你的理解是否正确。这恰好补上了 3.3 课说的"坏假设是审查盲区"的洞。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：仓库 <code>chapter3/04-basic-tactics/</code> 的 <code>exercises/</code> 有两个原文同款 bug 程序（漏括号版 <code>missing_parens.cpp</code>、字面量实参版 <code>literal_arg.cpp</code>），只用 std::cerr 打印法定位并修复；<code>solutions/</code> 有逐步插桩过程。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="03-strategy.html"><span class="dir">← 上一节</span>3.3 定位策略</a>
+  <a class="next" href="05-more-tactics.html"><span class="dir">下一节 →</span>3.5 进阶调试战术</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/basic-debugging-tactics/">LearnCpp 3.4</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

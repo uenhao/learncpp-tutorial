@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3.6 调试器：单步执行 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter3/06-debugger-stepping.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 3 章</a> / 调试器：单步执行</div>
+<article>
+<h1>3.6 调试器：单步执行</h1>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：调试器（debugger）与集成调试器</div>
+  <p><strong>调试器</strong>：让你控制程序"怎么执行"（跑多快、停在哪儿）并在运行中<strong>检查程序状态</strong>的工具。<strong>集成调试器</strong>：直接嵌在编辑器/IDE 里的调试器——VS Code 的调试功能就是一个。</p>
+  <p>调试器能做的事，打印法全都要改代码才能做；而调试器<strong>零代码侵入</strong>。这是本章后四课的主角。</p>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 前提：必须是 Debug 构建！</div>
+  <p>0.2 课埋的伏笔在这里兑现：<strong>调试必须在 Debug 构建下进行</strong>。Release 的优化会把变量塞进寄存器、重排语句、内联函数——调试器的"停在源码第 N 行、查看变量"将失去依据。如果你调试时发现变量全是 <code>&lt; optimized out&gt;</code>、断点不命中，第一反应应该是检查构建配置。</p>
+</div>
+
+<h2>对照实验：打印法 vs 调试器</h2>
+
+<p>还是 3.4 课那个 <code>return --x;</code> 的 bug。打印法的流程是：改代码（加 cerr）→ 编译 → 运行 → 读输出 → 再改代码（换位置）→ 再编译 → ……每一轮观察都要付出"改代码 + 重编译"的成本。</p>
+
+<p>用调试器：一次编译 → F5 启动 → 单步走、随时看变量、想看哪看哪——<strong>观察是免费的，且不修改代码</strong>。3.4 课批评的四个缺点（弄脏代码/输出、引入新 bug、不可复用）全部消失。</p>
+
+<h2>核心命令：单步执行的三个变体</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：Step into / Step over / Step out</div>
+  <p>这三个命令都执行"当前语句"，区别在<strong>遇到函数调用时往哪走</strong>：</p>
+  <table class="cmp">
+    <tr><th>命令</th><th>遇到函数调用时</th><th>什么时候用</th></tr>
+    <tr><td><strong>Step into</strong>（逐语句）</td><td>钻进函数体，停在函数第一行</td><td>怀疑 bug 在这个函数<strong>内部</strong></td></tr>
+    <tr><td><strong>Step over</strong>（逐过程）</td><td>把整个函数执行完，停在下一行</td><td>相信这个函数没问题，不想进去浪费时间</td></tr>
+    <tr><td><strong>Step out</strong>（跳出）</td><td>执行完当前函数<strong>剩余的全部代码</strong>，停在返回处</td><td>不小心 step into 了不感兴趣的函数，想出来</td></tr>
+  </table>
+  <p>三个命令都把程序停在"下一条语句"，然后把控制权交给你。</p>
+</div>
+
+<h2>VS Code 中的操作（本项目配置）</h2>
+
+<p>本项目根目录的 <code>.vscode/launch.json</code> 已配好调试。步骤：</p>
+
+<ol>
+  <li>打开任意 <code>.cpp</code>（先用 <code>chapter3/06-debugger-stepping/</code> 的 <code>stepping_demo.cpp</code>）</li>
+  <li>确认底部状态栏构建变体是 <strong>CMake: [Debug]</strong>，按 <strong>F7</strong> 构建</li>
+  <li>按 <strong>F5</strong> 启动调试——程序停在 main 入口，当前行高亮（执行标记）</li>
+</ol>
+
+<table class="cmp">
+  <tr><th>命令</th><th>VS Code 快捷键/按钮</th><th>行为</th></tr>
+  <tr><td>Step over</td><td><code>F10</code>（顶部工具栏 →⃠ 图标）</td><td>执行当前行；若是函数调用，整个函数跑完</td></tr>
+  <tr><td>Step into</td><td><code>F11</code>（↓ 图标）</td><td>执行当前行；若是函数调用，钻进函数第一行</td></tr>
+  <tr><td>Step out</td><td><code>Shift+F11</code>（↑ 图标）</td><td>执行完当前函数剩余部分，停在调用处的下一行</td></tr>
+</table>
+
+<p>原文的演示程序：</p>
+
+<pre class="code">#include &lt;iostream&gt;
+
+void printValue(int value)
+{
+    std::cout &lt;&lt; value &lt;&lt; '\n';
+}
+
+int main()
+{
+    printValue(5);   // 停在这里时：
+    return 0;        //   F10 → 直接打印 5 并跳到下一行
+                     //   F11 → 钻进 printValue 的第一行
+}</pre>
+
+<p><strong>动手实验（本章第一个真正的调试器练习）</strong>：</p>
+<ol>
+  <li>F5 启动，停在 <code>printValue(5);</code>；</li>
+  <li>按 <strong>F11</strong>（step into）→ 你进入了 <code>printValue</code> 的函数体，高亮在 <code>std::cout</code> 行；</li>
+  <li>按 <strong>Shift+F11</strong>（step out）→ 函数执行完毕（屏幕出现 5），你回到 main 的下一行；</li>
+  <li>再来一次，这次按 <strong>F10</strong>（step over）→ 没有钻进去，直接打印 5 并跳到下一行。</li>
+</ol>
+
+<p>感受一下区别了吗？<strong>step into 是"进去查"，step over 是"跳过去"，step out 是"查完出来"</strong>。三者配合：怀疑谁就 into 谁，查完就 out 出来，信任的就 over 过去。</p>
+
+<div class="box warn">
+  <div class="box-t">⚠️ Step into 钻进"不速之客"怎么办</div>
+  <p>对 <code>std::cout &lt;&lt; x</code> 这类标准库语句按 F11，可能钻进一屏幕你看不懂的模板代码。补救：连续按 <strong>Shift+F11（step out）</strong>跳出来，改用 F10 重走。经验法则：<strong>标准库调用、assert 等一律 F10</strong>；只对自己写的、有嫌疑的函数用 F11。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>你停在 <code>int result{ calculateScore(userInput) };</code> 这一行，<strong>怀疑 calculateScore 有 bug</strong>。应该用哪个命令？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="方向反了。step over 会把整个 calculateScore 执行完——你恰恰想看它内部怎么算的，用 step over 就等于放弃了观察机会。" >Step over（F10）</button>
+    <button data-k="b" data-ok="1" data-why="正确！怀疑函数内部有 bug → step into 钻进去，然后逐行观察（配合下一课的变量监视）。若进去后发现这函数没问题，再用 step out 出来不迟。这三种命令的组合正是'逐函数排查'的标准节奏。" >
+      Step into（F11）</button>
+    <button data-k="c" data-why="step out 是从函数内部往外跳的命令——你现在还没进任何函数，它无从谈起。" >Step out（Shift+F11）</button>
+    <button data-k="d" data-why="调试器就是干这个的——这正是它的本职工作，不改一行代码即可深入任何函数。" >都不行，得加打印语句才能看函数内部</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：从"改代码观察"到"免修改观察"</div>
+  <p>本章前五课的所有战术都要"修改代码才能收集信息"；调试器的单步执行第一次做到了<strong>观察零侵入</strong>。别小看这个差别：加打印要重编译（大项目要几十分钟）、要记得删、还可能改错；而单步执行想看哪停哪、想看多少遍看多少遍。原文反复强调：调试器的学习成本会在省下的调试时间上百倍赚回。接下来两课给它加上两个放大器：<strong>断点</strong>（不必逐行走）和<strong>变量监视</strong>（不必逐个打印）。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：仓库 <code>chapter3/06-debugger-stepping/</code> 的 <code>stepping_demo.cpp</code>（命令对照演示）和 <code>exercises/step_hunt.cpp</code>（用纯单步定位一个 <code>return x/2;</code> 类的运算符 bug——不许打印、不许看注释）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="05-more-tactics.html"><span class="dir">← 上一节</span>3.5 进阶调试战术</a>
+  <a class="next" href="07-debugger-breakpoints.html"><span class="dir">下一节 →</span>3.7 调试器：断点</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/using-an-integrated-debugger-stepping/">LearnCpp 3.6</a> 改编 · 交互式中文教程（VS Code 版）</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

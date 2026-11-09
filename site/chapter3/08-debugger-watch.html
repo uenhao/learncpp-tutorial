@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3.8 调试器：监视变量 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter3/08-debugger-watch.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 3 章</a> / 调试器：监视变量</div>
+<article>
+<h1>3.8 调试器：监视变量</h1>
+
+<p>前两课你学会了"控制程序怎么走"。这一课补上另一半：<strong>随时查看变量的值——不打印、不改代码</strong>。</p>
+
+<h2>观察变量 x 的三种姿势</h2>
+
+<p>演示程序：</p>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{
+	int x{ 1 };
+	std::cout &lt;&lt; x &lt;&lt; ' ';
+
+	x = x + 2;
+	std::cout &lt;&lt; x &lt;&lt; ' ';
+
+	x = x + 3;
+	std::cout &lt;&lt; x &lt;&lt; ' ';
+
+	return 0;
+}</pre>
+
+<p>程序打印 <code>1 3 6</code>。启动调试（F5），用 <strong>Run to Cursor</strong> 停在第 6 行（<code>std::cout &lt;&lt; x &lt;&lt; ' '</code>）——此刻 x 已创建并初始化为 1。</p>
+
+<h3>姿势一：悬停（hover）</h3>
+
+<p><strong>调试暂停时，把鼠标悬停在变量名上</strong>——VS Code 会弹出小窗显示当前值。对程序里<strong>任何位置</strong>的 x 悬停都有效（不只当前行）。看一眼就走，最快。</p>
+
+<h3>姿势二：Watch 窗口（监视窗口）</h3>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>监视窗口（watch window）</strong>：把你关心的变量登记进去，调试过程中它的值<strong>实时更新</strong>——单步一次、自动刷新一次。悬停是"问一次答一次"，监视是"全程跟踪"。</p>
+</div>
+
+<p>VS Code 操作：调试暂停时，左侧边栏出现"运行和调试"面板，其中 <strong>WATCH（监视）</strong>区域——点 <strong>+</strong> 输入变量名（或在代码里右键变量 → Add to Watch）。把 x 加进去，然后 F10 单步，看着它从 1 → 3 → 6 变化。</p>
+
+<h3>姿势三：Local 变量区（顺带福利）</h3>
+
+<p>调试面板里还有一个 <strong>VARIABLES / LOCAL（局部变量）</strong>区：<strong>当前函数的所有局部变量自动列出</strong>，不用登记、自动刷新。很多时候根本不需要手动加 watch——扫一眼 Local 区就够了。监视窗口留给"只在远处定义、Local 区看不到"的变量，以及"想持续盯一个表达式"的场景。</p>
+
+<h2>监视窗口的高级用法：看表达式</h2>
+
+<p>监视窗口不仅能放变量名，还能放<strong>表达式</strong>——它会按当前程序状态求值：</p>
+
+<pre class="plain">x            6      // 当前值
+x + 10       16     // 表达式也能算
+x * x        36</pre>
+
+<p>这相当于"随时可改的打印语句"——想看什么组合就在观察点算什么，依然零代码侵入。</p>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 监视的是"当前作用域"的变量</div>
+  <p>监视 x 后一路单步走出了 x 的作用域（或钻进了另一个没有 x 的函数），监视项会显示错误或空值——变量不在场。程序走回 x 可见的位置，监视项恢复显示。另外老规矩：<strong>必须在 Debug 构建</strong>下监视才有意义，Release 下变量可能已被优化掉。</p>
+</div>
+
+<h2>三件套合体：一次完整的调试会话</h2>
+
+<p>用 3.4 课的 <code>add(x, 5)</code> bug 演示现代调试流程（对照打印法数一数省了多少步）：</p>
+
+<ol>
+  <li>在 <code>int z{ add(x, 5) };</code> 打断点；</li>
+  <li>F5 → 程序停在断点，Local 区自动显示 x、y（不用打印）；</li>
+  <li>发现 x=4、y=3 正常 → F11 step into <code>add</code>；</li>
+  <li>Local 区显示形参 <strong>x=4、y=5</strong>——输入 y 是 3，进来变成 5！</li>
+  <li>Step out 回到 main，盯着调用行看：实参写的是 <code>5</code> 不是 <code>y</code>。破案。</li>
+</ol>
+
+<p>全程没改一行代码、没编译一次、没被输出刷屏。打印法要 3 轮"改代码-编译-运行"，这里一次会话搞定。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"监视窗口里加了变量 x，之后无论程序执行到哪里，监视项都会显示 x 的当前值。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="不对。变量只在它的作用域内存在——走出作用域（或所在函数返回后），监视项无从取值，会显示错误/空值，直到执行回到可见处。监视窗口不能超越作用域法则。" >对 —— 全程实时跟踪</button>
+    <button data-k="b" data-ok="1" data-why="正确！监视的是'变量'这个对象，而对象有生命周期。调试器尊重作用域规则：x 不在场时监视项失效。这也是为什么'函数返回后形参销毁'（2.2 课）在调试器里肉眼可见——单步跨过函数结尾，形参的值瞬间消失。" >
+      不对 —— 走出作用域后监视项失效</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>以下哪件事<strong>做不到</strong>？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="悬停和监视都能看当前值，这是基本功能。" >调试暂停时查看某变量此刻的值</button>
+    <button data-k="b" data-why="监视窗口支持表达式，x * x 之类的都能实时算。" >监视一个表达式（如 x * x）随程序更新</button>
+    <button data-k="c" data-why="X32 调试器的 Local 区自动列出当前函数所有局部变量，不用手动登记。" >查看当前函数的所有局部变量（无需逐个登记）</button>
+    <button data-k="d" data-ok="1" data-why="正确！调试器是'观察者'不是'时光机'——没有倒带功能。想再看一遍已经过去的过程，要么重新 Start + 断点，要么用 Jump to Cursor 向前跳重放（但要记住它不重置变量状态，重放可能失真）。这是 3.7 课警告的重述。" >
+      让程序回到三行之前重新执行（完整重置状态）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：程序状态从"黑盒"变成"透明鱼缸"</div>
+  <p>3.4 课的打印法本质是"隔玻璃看鱼"——你只能看到你提前布置的那几行 cerr 输出；调试器是把整个鱼缸换成透明玻璃：<strong>任意时刻、任意变量、任意表达式，随意观察</strong>。再回忆 3.3 课的 hi-lo 策略——它需要"做观察"来缩小包围圈，而观察的成本决定策略的可行性：打印法一轮观察要改代码+重编译，所以你只敢放少量观察点；调试器让观察近乎免费，你可以大胆地多看、随时看。<strong>工具降低观察成本，观察成本决定调试策略</strong>——这就是本章课程顺序背后的逻辑。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：仓库 <code>chapter3/08-debugger-watch/</code> 的 <code>watch_demo.cpp</code>（对照原文演示）和 <code>exercises/watch_hunt.cpp</code>（值被中途污染的数组求和程序——用 Local 区 + 监视窗口定位，全程禁止打印）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="07-debugger-breakpoints.html"><span class="dir">← 上一节</span>3.7 调试器：断点</a>
+  <a class="next" href="09-debugger-callstack.html"><span class="dir">下一节 →</span>3.9 调试器：调用栈</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/using-an-integrated-debugger-watching-variables/">LearnCpp 3.8</a> 改编 · 交互式中文教程（VS Code 版）</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

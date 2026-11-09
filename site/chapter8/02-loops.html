@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8.2 循环三型：while、do-while、for · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter8/02-loops.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 8 章</a> / 循环三型</div>
+<article>
+<h1>8.2 循环三型：while、do-while、for</h1>
+
+<p>1.7 课的欠条在这一课正式兑付：身高排序练习里你写下"100 人需要 4950 个 if，希望语言提供循环能力"——现在，循环来了。这不仅让重复工作变成三行代码，更让程序第一次能处理<strong>任意规模</strong>的输入。</p>
+
+<h2>while：条件为真就一直转</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：while 循环</div>
+  <pre class="code">while (condition)
+    statement;   // 条件为真就执行，执行完回到条件再判断</pre>
+  <p>与 if 的唯一区别：<strong>执行完跳回条件重新判断</strong>——真就再来，假就出循环。</p>
+</div>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{
+    int count{ 1 };
+    while (count &lt;= 10)
+    {
+        std::cout &lt;&lt; count &lt;&lt; ' ';
+        ++count;
+    }
+    std::cout &lt;&lt; "done!\n";
+    return 0;
+}</pre>
+
+<p class="codecap">输出：1 2 3 4 5 6 7 8 9 10 done! —— 改成 count <= 1000 只需改一个数</p>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 循环变量的两件事：迭代与失效</div>
+  <p>每个循环变量都要回答：<strong>① 何时改变（迭代）？② 何时失效（条件何时变假）？</strong>忘写 <code>++count</code> 的循环条件永远为真——<strong>无限循环</strong>（程序挂死）。这是循环第一 bug。另外注意：循环内定义的变量每轮重建（2.5/7.4 课规则）。</p>
+</div>
+
+<h2>do-while：至少执行一次</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <pre class="code">do
+    statement;
+while (condition);   // 注意分号！</pre>
+  <p>与 while 的唯一区别：<strong>先执行后判断</strong>——循环体至少跑一次。适合"先要一个输入，再看合不合格"的菜单/重试场景。</p>
+</div>
+
+<pre class="code">char choice{};
+do
+{
+    std::cout &lt;&lt; "(a) attack (b) run: ";
+    std::cin &gt;&gt; choice;
+} while (choice != 'a' &amp;&amp; choice != 'b'); // 输错重问</pre>
+
+<h2>for：三段式循环，最常用</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：for 语句的三段结构</div>
+  <pre class="code">for (init-statement; condition; end-expression)
+    statement;</pre>
+  <p>等价的 while 形式（理解顺序的钥匙）：</p>
+  <pre class="code">{ // 块：循环变量在这里定义、在这里销毁（循环作用域）
+    init-statement;              // ① 只执行一次：定义并初始化循环变量
+    while (condition)            // ② 每轮先判断
+    {
+        statement;               // ③ 循环体
+        end-expression;          // ④ 每轮末尾执行（常为 ++i）
+    }
+}</pre>
+</div>
+
+<pre class="code">#include &lt;iostream&gt;
+
+int main()
+{
+    for (int i{ 1 }; i &lt;= 10; ++i)
+        std::cout &lt;&lt; i &lt;&lt; ' ';   // 1 2 3 ... 10
+    return 0;
+}</pre>
+
+<p><code>i</code> 具有<strong>循环作用域</strong>（本质是块作用域）——循环结束即销毁。三种循环怎么选？原文速查：<strong>知道次数用 for；至少一次用 do-while；其余用 while</strong>。</p>
+
+<h2>兑付 1.7 课的欠条：100 人排序</h2>
+
+<p>1.7 课你推断过：n 人排序需要 n(n−1)/2 次比较，100 人 = 4950 个手写 if。现在有了循环，这个数字变成一行循环条件：</p>
+
+<pre class="code">#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include &lt;utility&gt;
+
+int main()
+{
+    std::cout &lt;&lt; "How many people? ";
+    int n{};
+    std::cin &gt;&gt; n;
+
+    std::string names[100]{};   // 数组（第 17 章细讲，先借用）
+    int heights[100]{};
+
+    for (int i{ 0 }; i &lt; n; ++i)          // 读入 n 组——循环代替 4950 个 if 的一半
+        std::cin &gt;&gt; names[i] &gt;&gt; heights[i];
+
+    for (int i{ 0 }; i &lt; n; ++i)          // 选择排序：照样只有循环和比较
+        for (int j{ i + 1 }; j &lt; n; ++j)
+            if (heights[j] &gt; heights[i])
+            {
+                std::swap(names[i], names[j]);
+                std::swap(heights[i], heights[j]);
+            }
+
+    for (int i{ 0 }; i &lt; n; ++i)          // 输出
+        std::cout &lt;&lt; names[i] &lt;&lt; ' ' &lt;&lt; heights[i] &lt;&lt; '\n';
+    return 0;
+}</pre>
+
+<p class="codecap">任何人数都行——这就是 1.7 课"希望语言提供的能力"的兑现现场</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>输出什么？</p>
+  <pre class="code">for (int i{ 0 }; i &lt; 5; ++i)
+    std::cout &lt;&lt; i &lt;&lt; ' ';
+std::cout &lt;&lt; i;   // 这一行为什么出错？</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="0 1 2 3 4 之后，第二句直接编译错误：i 的循环作用域在 for 内，循环外不存在。想在外面用，把定义挪到 for 之前。" >0 1 2 3 4 5</button>
+    <button data-k="b" data-ok="1" data-why="正确！第一行打印 0 1 2 3 4；第二行编译错误——i 是循环作用域变量（7.1 课档案：块作用域/自动/无链接），循环结束即销毁。'循环外要用循环变量'就把定义挪出去。" >
+      0 1 2 3 4，然后编译错误（i 出了循环作用域）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>"让用户输入一个 1–9 的数字，输错就重新要"，最合适的循环是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="while 先判断后执行——变量还没值就得判断，写不出自然的条件（得额外设初值）。" >while (x &lt; 1 || x &gt; 9)</button>
+    <button data-k="b" data-ok="1" data-why="正确！'先要输入再验证'是 do-while 的教科书场景：循环体至少执行一次（第一次总要问的），不合条件重问。选型速查回顾：至少一次 → do-while。" >
+      do { std::cin &gt;&gt; x; } while (x &lt; 1 || x &gt; 9);</button>
+    <button data-k="c" data-why="for 是'知道次数'的循环——这里恰恰不知道用户要输错几次。" >for (int i{ 0 }; i &lt; ??; ++i)</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：从"重复的代码"到"重复的结构"</div>
+  <p>循环思维的关键转变：把"重复 N 次的代码"改写成"重复的<strong>结构</strong> + 变化的<strong>数据</strong>"。4950 个 if 是复制的代码；两层 for 是同一个结构换数据。这也是 2.6 课"抽函数"思想的极致形态——只不过这次被抽出来的不是逻辑，而是<strong>重复本身</strong>。注意循环变量 i 的命名惯例（1.5 课说过可以接受）以及循环作用域（7.1 课档案）。下一课的 break/continue 给循环加上"提前退出"和"跳过本轮"的精调旋钮。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter8/02-loops/</code> 的 <code>loop_types.cpp</code>（三型对照）、<code>exercises/height_sort_n.cpp</code>（上面 100 人排序的完成版，输入任意 n 测试）和 <code>exercises/infinite_trap.cpp</code>（亲手造一次无限循环，用 Ctrl+C 逃生）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="01-if-switch.html"><span class="dir">← 上一节</span>8.1 分支进阶</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 8 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-loops-and-while-statements/">LearnCpp 8.7–8.12</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

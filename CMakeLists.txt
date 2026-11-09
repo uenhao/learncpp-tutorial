@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 3.16)
+project(learncpp_tutorial CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_compile_options(-Wall -Wextra -Wpedantic)
+
+# add_lesson(<section-dir> <sources...>)
+# Creates one executable named after the section directory per source file.
+function(add_lesson dir)
+    foreach(src IN LISTS ARGN)
+        get_filename_component(name "${src}" NAME_WE)
+        add_executable(${name} "${dir}/${src}")
+        target_include_directories(${name} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
+    endforeach()
+endfunction()
+
+add_subdirectory(chapter0)
+add_subdirectory(chapter1)
+add_subdirectory(chapter2)
+add_subdirectory(chapter3)
+add_subdirectory(chapter4)
+add_subdirectory(chapter5)
+add_subdirectory(chapter6)
+add_subdirectory(chapter7)
+add_subdirectory(chapter8)

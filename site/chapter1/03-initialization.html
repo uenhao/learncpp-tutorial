@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1.3 初始化与赋值 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter1/03-initialization.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 1 章</a> / 初始化与赋值</div>
+<article>
+<h1>1.3 初始化与赋值：出生与改写是两回事</h1>
+
+<p>上一课你见过 <code>int x;</code> 的注释——"里面的值是垃圾"。这可不是吓唬人。这一课讲清楚"给对象第一次值"和"给已有对象换值"的区别，并介绍 C++ 里最值得养成的书写习惯。</p>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>初始化（initialization）</strong>：对象<strong>创建时</strong>给它初始值。一生只发生一次。</p>
+  <p><strong>赋值（assignment）</strong>：对象创建<strong>之后</strong>，用 <code>=</code> 覆盖当前值。可发生任意次。</p>
+</div>
+
+<h2>初始化的三种写法</h2>
+
+<pre class="code">int a = 5;    // 拷贝初始化（copy initialization）
+int b(5);     // 直接初始化（direct initialization）
+int c{ 5 };   // 列表初始化（list initialization）★ 推荐这是一种</pre>
+
+<p>三者对 <code>int</code> 效果相同。但看这个实验：</p>
+
+<pre class="code">int x = 3.5;    // ✅ 编译通过！x 得到 3（小数被悄悄扔掉）
+int y{ 3.5 };   // ❌ 编译错误！</pre>
+
+<p><code>= 3.5</code> 做了一次<strong>隐式转换</strong>：double 被截断成 int，编译器不吭声。<code>{ 3.5 }</code> 则被拒绝——<strong>列表初始化禁止"窄化转换"（narrowing conversion）</strong>，即"装不下就报错"。</p>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 为什么截断是隐患</div>
+  <p><code>3.5</code> 截成 <code>3</code> 看似无害，但真实代码里往往是：<code>int itemCount{ cartValue };</code>——购物车金额 199.99 被悄悄截成 199，钱不见了，<strong>没有任何报错</strong>。这类 bug 可能潜伏几个月。列表初始化把"运行时的数据事故"提前变成"编译期的报错"，用编译时间换运行时安全，非常划算。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>以下哪一行<strong>无法通过编译</strong>？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="它能通过（结果 3）——这正是隐患所在。隐式窄化转换在 = 初始化里是允许的，编译器默认沉默。">int x = 3.5;</button>
+    <button data-k="b" data-ok="1" data-why="正确！列表初始化遇到窄化转换（double → int 丢失小数）直接编译错误。这就是它被称为'安全初始化'的原因。">int y{ 3.5 };</button>
+    <button data-k="c" data-why="它能通过，且因为没有转换发生（8 就是 int），什么都不会丢。">int z{ 8 };</button>
+    <button data-k="d" data-why="它能通过。虽然 3.5 被截成 3，但普通的赋值（而非初始化）同样允许隐式窄化——这也是推荐初始化用 {} 的原因之一。">int w; w = 3.5;</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>未初始化：看不见的地雷</h2>
+
+<pre class="code">int main()
+{
+    int x;                 // 定义了，但没给值
+    std::cout &lt;&lt; x;        // ❓ 读到的是什么？
+}</pre>
+
+<p>答案：<strong>未定义行为（Undefined Behavior，UB）</strong>。局部变量不会自动清零，x 的内存里残留着之前某个程序用过的字节。读它、用它，结果没有任何保证：可能打印随机数，可能打印 0，可能崩溃，甚至可能表现"正常"。</p>
+
+<div class="box warn">
+  <div class="box-t">⚠️ UB 的可怕之处在于"不可预测"</div>
+  <p>未定义行为的标准后果是"<strong>什么都可能发生</strong>"：今天碰巧正常，明天换了编译器就崩；Debug 好好的，Release 就炸（0.2 节你刚见过这个病例）。不要试图"利用"UB 的某种表现，唯一的正确姿势是<strong>消灭它</strong>。</p>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践：变量定义时总是初始化</div>
+  <pre class="code">int x{};          // 列表初始化无值 → 零初始化，x = 0，安全
+int count{ 0 };   // 或给一个明确的初值
+int total{ 10 };  // 有意义就写有意义的</pre>
+  <p>记住口诀：<strong>定义即初始化，永远别让变量"裸奔"</strong>。成本为零，收益是消灭一整类 UB。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"<code>int x{};</code> 里的 x 值是未定义的，和 <code>int x;</code> 一样危险。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="不对！列表初始化不提供初始值时，规则是执行'值初始化'——对 int 就是清零。这是标准保证的行为，不是 UB。两条语句的区别正是安全与危险的分界线。">对 —— 都是垃圾值</button>
+    <button data-k="b" data-ok="1" data-why="正确！int x{} 保证 x == 0。这正是推荐 {} 的另一个理由：忘了给值时，至少是确定的 0 而不是垃圾。">不对 —— {} 是零初始化，标准保证</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="10 5 3" data-hint="注意三行打印发生的位置：value 在赋值前打印一次，a 在赋值后打印，truncated 是 int 接住了 double。" data-explain="value 先打印 10（打印之后才被赋值成 5）；a 打印 5；truncated = 3.9 隐式截断得 3。注意 int w = 3.9 是'向零截断'不是四舍五入。">
+  <p class="quiz-q">🎯 预测输出（三段，用空格分隔）：</p>
+  <pre class="code">int value{ 10 };
+std::cout &lt;&lt; value &lt;&lt; ' ';   // ①
+value = 5;
+std::cout &lt;&lt; value &lt;&lt; ' ';   // ②
+int truncated = 3.9;
+std::cout &lt;&lt; truncated;      // ③</pre>
+  <div class="prow"><input type="text" placeholder="如: 1 2 3"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter1/04-assignment-initialization/</code> 的 <code>init_styles_demo.cpp</code> 里有一行被注释的 <code>int narrowed{ 3.5 };</code>，取消注释编译，亲眼看窄化报错；再对比 <code>exercises/init_styles.cpp</code>。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="02-objects-variables.html"><span class="dir">← 上一节</span>1.2 对象与变量</a>
+  <a class="next" href="04-iostream.html"><span class="dir">下一节 →</span>1.4 iostream 与用户输入</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/variable-assignment-and-initialization/">LearnCpp 1.4, 1.6</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8.1 分支进阶：if 块、悬挂 else 与 switch · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter8/01-if-switch.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 8 章</a> / 分支进阶</div>
+<article>
+<h1>8.1 分支进阶：if 块、悬挂 else 与 switch</h1>
+
+<p>4.4 课的 if 语句在真实代码里还有三件事要讲清楚：<strong>块的必要性（悬挂 else）</strong>、<strong>多分支的专用工具 switch</strong>、以及<strong>让分支更安全的写法</strong>。</p>
+
+<h2>悬挂 else：为什么"总是写花括号"再次救你</h2>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 原文案例：缩进骗人</div>
+  <pre class="code">if (x &gt;= 140)
+    std::cout &lt;&lt; "You are tall enough to ride.\n";
+else
+    std::cout &lt;&lt; "You are not tall enough to ride.\n";
+    std::cout &lt;&lt; "Too bad!\n";   // 缩进在 else 里，实际不在！</pre>
+  <p>输入 180 的人也会看到 "Too bad!"——<strong>else 只管辖紧跟的那一条语句</strong>，第二句是无条件的。缩进是给人看的，编译器只认花括号。这正是 4.4 课"总是写花括号"最佳实践的实锤案例。</p>
+</div>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：悬挂 else（dangling else）</div>
+  <p>if 嵌套时不加花括号，else 会<strong>匹配最近的未匹配 if</strong>——你心里的配对可能不是编译器的配对：</p>
+  <pre class="code">if (a)
+    if (b)
+        std::cout &lt;&lt; "a and b\n";
+else
+    std::cout &lt;&lt; "???";  // 这个 else 属于 if(b)，不是 if(a)！</pre>
+  <p>一律写花括号，此类歧义根绝。</p>
+</div>
+
+<h2>switch：多分支的专用工具</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：switch 语句</div>
+  <p>把一个<strong>整型（或枚举）表达式</strong>的值与一组 case 标签比对，命中即从那里开始执行：</p>
+  <ul>
+    <li>命中某 case → 执行其后语句；</li>
+    <li>无命中但有 default → 执行 default 后语句；</li>
+    <li>无命中无 default → 整个 switch 跳过。</li>
+  </ul>
+  <p><strong>限制</strong>：条件只能是整型/枚举——float、std::string 不行（switch 为高效跳转设计，浮点/字符串无法走那条路）。</p>
+</div>
+
+<pre class="code">#include &lt;iostream&gt;
+
+void printDigitName(int x)
+{
+    switch (x)
+    {
+    case 1:
+        std::cout &lt;&lt; "One";
+        return;
+    case 2:
+        std::cout &lt;&lt; "Two";
+        return;
+    default:
+        std::cout &lt;&lt; "Unknown";
+        return;
+    }
+}</pre>
+
+<h3>fallthrough：不加 break 会"跌落"</h3>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 反例：忘记 break</div>
+  <pre class="code">switch (x)
+{
+case 1:
+    std::cout &lt;&lt; "One";
+    // 没有 break/return —— 跌落！
+case 2:
+    std::cout &lt;&lt; "Two";
+    return;
+}</pre>
+  <p>x == 1 时输出 <strong>OneTwo</strong>——命中 case 1 后<strong>继续往下执行</strong>所有 case（fallthrough），直到遇到跳转。这是 C++ 最著名的坑之一（C 语言的遗产）。</p>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践</div>
+  <ul>
+    <li>每个 case 以 <code>break</code>（跳出 switch）或 <code>return</code> 结尾；</li>
+    <li>故意跌落时写显式标记 <code>[[fallthrough]];</code>，告诉读者和编译器"这是故意的"；</li>
+    <li>永远写 default（哪怕只放 assert）——枚举新增值时不会静默漏掉。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>x = 2 时输出什么？</p>
+  <pre class="code">switch (x)
+{
+case 1:
+    std::cout &lt;&lt; "One ";
+case 2:
+    std::cout &lt;&lt; "Two ";
+case 3:
+    std::cout &lt;&lt; "Three ";
+    break;
+default:
+    std::cout &lt;&lt; "? ";
+}</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="case 2 命中后没有 break，跌落到 case 3 打印 Three，遇到 break 才停。" >Two</button>
+    <button data-k="b" data-ok="1" data-why="正确！命中 case 2 → 打印 Two → 无 break 跌落 → 打印 Three → 遇 break 停。这就是 fallthrough：命中点之后的所有 case 顺序执行直到跳转。每个 case 写 break/return 是防它的唯一办法。" >
+      Two Three</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"switch (name)（name 是 std::string）可以像整数那样按值分发。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="不行——switch 条件必须是整型或枚举。字符串分发用 if-else 链（或 C++17 后的其他方案）。这也是 4.11 课'整型家族'清单的又一次现身。" >对 —— string 也能 switch</button>
+    <button data-k="b" data-ok="1" data-why="正确！switch 只收整型/枚举（编译器按跳转表优化）。遇到字符串分支需求，写 if-else 链。" >
+      不对 —— switch 只收整型/枚举</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：工具的"适用域"和它的机制绑在一起</div>
+  <p>switch 为什么只收整型？因为它的实现是<strong>跳转表</strong>——用值直接算出跳转地址，所以必须离散可枚举。这个限制不是随意的，是机制的自然结果。学 C++ 时多问一句"它为什么这样设计"，限制就不再是死记的条款，而是可推导的结论。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter8/01-if-switch/</code> 的 <code>dangling_else.cpp</code>（缩进骗人实测）和 <code>switch_fallthrough.cpp</code>（原文计算器案例 + 故意跌落实验）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 8 章</a>
+  <a class="next" href="02-loops.html"><span class="dir">下一节 →</span>8.2 循环三型</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/if-statements-and-blocks/">LearnCpp 8.2–8.6</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

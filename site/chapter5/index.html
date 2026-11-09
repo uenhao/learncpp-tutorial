@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnCpp 交互式教程 · 第 5 章：常量与字符串</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter5/index.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / 第 5 章</div>
+<article>
+<h1>第 5 章 · 常量与字符串</h1>
+
+<p>第 4 章认识了类型的宽度与解释；本章给它们加上两个关键属性：<strong>可变性</strong>（const/constexpr）与<strong>文本形态</strong>（字面量、进制、std::string）。</p>
+
+<p>本章会正式兑现 2.6 课的承诺（宏常量 → constexpr）和 1.4 课的伏笔（string 与 constexpr 的兼容问题）。核心口诀提前交付：<strong>值的来源决定关键字——编译期已知用 constexpr，运行时才知道用 const</strong>。</p>
+
+<ul class="lesson-list">
+  <li><a data-page="/chapter5/01-constants.html" href="01-constants.html"><span>5.1 · 常量变量：不许变的名字</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter5/02-literals-numbers.html" href="02-literals-numbers.html"><span>5.2 · 字面量与进制（后缀/二进制/十六进制/八进制陷阱）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter5/03-constexpr.html" href="03-constexpr.html"><span>5.3 · 编译期求值与 constexpr（as-if 规则）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter5/04-strings.html" href="04-strings.html"><span>5.4 · std::string 与 string_view（getline 陷阱）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter5/quiz.html" href="quiz.html"><span>5.x · 章综合测验（10 题）</span><span class="mark todo">未开始</span></a></li>
+</ul>
+
+<div class="box story">
+  <div class="box-t">🧭 与前四章的连线</div>
+  <p>const 回收 2.6 课（宏的替代品）；constexpr 回收 0.2 课（Release 编译期优化的机制）；string_view 回收 2.2 课（按值拷贝的成本）。学完本章，你的每个程序都会用 constexpr 定义魔法数字、用 getline 读整行文本——这些习惯从本章养成。</p>
+</div>
+
+<div class="pager">
+  <a class="prev" href="../chapter4/quiz.html"><span class="dir">← 上一章</span>第 4 章</a>
+  <a class="next" href="01-constants.html"><span class="dir">本章开始 →</span>5.1 常量变量</a>
+</div>
+</article>
+<footer class="site">基于 LearnCpp Chapter 5 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1.7 第一个完整程序：身高排序 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter1/07-first-program.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 1 章</a> / 第一个完整程序</div>
+<article>
+<h1>1.7 第一个完整程序：身高排序</h1>
+
+<p>一章的工具已经攒够了，现在是时候<strong>用它们解决一个真实问题</strong>——并在这个过程中体会"问题如何被分解成语句"。</p>
+
+<h2>需求</h2>
+
+<blockquote>一家招聘公司要按身高从高到低给候选人排序。写一个程序：读入若干人的名字与身高，输出排序结果。</blockquote>
+
+<h2>设计：从需求到语句</h2>
+
+<p>learncpp 的方法论是先问三个问题：</p>
+
+<div class="box concept">
+  <div class="box-t">📐 设计三问</div>
+  <ol>
+    <li><strong>输入是什么？</strong>—— 三组 (名字, 身高)</li>
+    <li><strong>输出是什么？</strong>—— 同样六项，按身高降序</li>
+    <li><strong>怎么从输入到输出？</strong>—— 读入 → 排序 → 输出</li>
+  </ol>
+</div>
+
+<p>关键在第三问。"排序"听起来吓人，但我们本章没有数组、没有循环——只有变量、if 和 swap。那就<strong>人肉排序</strong>：三组数据，两两比较交换即可。先看工具，再看完整程序：</p>
+
+<pre class="code">#include &lt;iostream&gt;
+#include &lt;string&gt;    // std::string：存"一串字符"的类型
+#include &lt;utility&gt;   // std::swap：交换两个对象的值
+
+int main()
+{
+    std::cout &lt;&lt; "Enter 3 names and heights (cm), e.g. Tom 180:\n";
+
+    std::string name1{}, name2{}, name3{};
+    int height1{}, height2{}, height3{};
+
+    std::cin &gt;&gt; name1 &gt;&gt; height1 &gt;&gt; name2 &gt;&gt; height2 &gt;&gt; name3 &gt;&gt; height3;
+
+    // 第 1 轮：把三者中最大的换到第 1 位
+    if (height1 &lt; height2) { std::swap(name1, name2); std::swap(height1, height2); }
+    if (height1 &lt; height3) { std::swap(name1, name3); std::swap(height1, height3); }
+    // 第 2 轮：剩下两人中较高的换到第 2 位
+    if (height2 &lt; height3) { std::swap(name2, name3); std::swap(height2, height3); }
+
+    std::cout &lt;&lt; "\nSorted (tallest first):\n";
+    std::cout &lt;&lt; name1 &lt;&lt; ' ' &lt;&lt; height1 &lt;&lt; '\n';
+    std::cout &lt;&lt; name2 &lt;&lt; ' ' &lt;&lt; height2 &lt;&lt; '\n';
+    std::cout &lt;&lt; name3 &lt;&lt; ' ' &lt;&lt; height3 &lt;&lt; '\n';
+    return 0;
+}</pre>
+
+<p class="codecap">if 语句读法："如果条件为真，执行花括号里的语句，否则跳过"——第 4 章正式展开</p>
+
+<h2>设计中的"条件不对称"</h2>
+
+<p>注意排序代码的三条 if <strong>不是</strong>机械地比较 (1,2)(2,3)(1,2)。我们换了一种写法：(1,2)(1,3)(2,3)——先把最大值"顶"到第 1 位，再处理剩下两个。两种都能正确排序，但思考路径不同：</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>用上面程序的策略，4 个人需要几次"比较"？（比较 = 一次 if 中 heightA &lt; heightB 的判断）</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="4 次太少了。4 个人选出最大者要比较 3 次（他要和其余 3 人各比一次），剩下 3 人选最大要 2 次，最后 2 人 1 次。">4 次</button>
+    <button data-k="b" data-why="6 次是 3 个人的量（3+2+1），4 个人会更多。想想'选最大者'的成本怎么随人数增长。">6 次</button>
+    <button data-k="c" data-ok="1" data-why="正确！3 + 2 + 1 = 6 次：选出第 1 名要 3 次比较，剩 3 人选出第 2 名要 2 次，最后两人 1 次。一般地 n 个人需要 n(n-1)/2 次——100 人就是 4950 次！手写 if 排序显然不可持续，这正是'循环'与'容器'存在的意义（第 5、17 章）。">
+      6 次</button>
+    <button data-k="d" data-why="8 次不对。给你个思考工具：每次比较都'淘汰'一个候选者的第一名资格，选出第一名最多需要 n-1 次。">8 次</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 为什么交换必须连名字一起换</div>
+  <p>只换身高不换名字，输出会变成"Tom 170 bob 180"——身高和名字对不上号。<strong>一组相关数据必须作为一个整体被移动</strong>。这个"数据要成组"的痛点，就是结构体（struct，第 15 章）诞生的原因。遇到痛点 → 记住痛点 → 以后遇到解法时你会立刻认出它。这是 learncpp 式学习法的精髓。</p>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：先设计后编码，伪代码是脚手架</div>
+  <p>注意我们写代码之前做了什么：三问 → 分解（读入/排序/输出）→ 为每一步寻找本章工具。如果某一步找不到工具（"排序 100 人"），就<strong>记录痛点</strong>而不是硬写。learncpp 作者的忠告：写程序最难的部分不是敲代码，而是<strong>在敲代码之前想清楚</strong>。伪代码（用中文短句写出每一步）永远值得先写。</p>
+</div>
+
+<div class="predict" data-answer="bob 170 carl 160 amy 150" data-hint="逐步模拟：初始 amy 150, bob 170, carl 160。三条 if 依次判断。" data-explain="模拟三条 if：① 150<170 → 交换得 bob 170, amy 150, carl 160；② 170<160 假 → 不动；③ 150<160 → 交换得 bob 170, carl 160, amy 150。最终输出 bob 170 / carl 160 / amy 150。">
+  <p class="quiz-q">🎯 预测输出：输入是 <code>amy 150 bob 170 carl 160</code>，程序的三行输出是？</p>
+  <div class="prow"><input type="text" placeholder="如: tom 180 bob 170 ..."><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="practice-note">💻 动手验证：编译运行 <code>chapter1/11-first-program/height_sort.cpp</code>，用上面的输入测试；然后挑战 <code>exercises/height_sort4.cpp</code>——扩展到 4 人，亲身体会 if 数量的爆炸。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="06-expressions.html"><span class="dir">← 上一节</span>1.6 表达式</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 1 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/developing-your-first-program/">LearnCpp 1.11</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

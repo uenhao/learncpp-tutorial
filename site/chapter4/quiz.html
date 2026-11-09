@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 4 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter4/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 4 章</a> / 综合测验</div>
+<article>
+<h1>第 4 章综合测验</h1>
+
+<p>10 题覆盖全章（含预测题）。先预测再点选。</p>
+
+<h2>Part A · 概念</h2>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "所有 C++ 基本类型的大小都是固定的，sizeof(int) 恒等于 4。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="标准只保证最小尺寸：int ≥ 16 位。现代 x86-64 上是 32 位，但老平台、嵌入式平台可以不同；long 在 Windows/Linux 上就不同。需要固定宽度请用 &lt;cstdint&gt; 定宽类型。" >对 —— 尺寸是标准定的</button>
+    <button data-k="b" data-ok="1" data-why="正确！C++ 只承诺最小尺寸，实际尺寸由实现决定。这也解释了 sizeof 存在的意义（运行前查真实宽度）和定宽整数（int32_t）诞生的理由。" >
+      不对 —— 标准只保证最小尺寸，具体由实现决定</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "有符号整数溢出会让数值绕回最小值，这是标准保证的行为。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="标准明文：有符号整数溢出是未定义行为。'回绕'只是补码实现下的常见表现，依赖它等于依赖 UB——优化下可能整个逻辑被删。" >对 —— 溢出必然回绕</button>
+    <button data-k="b" data-ok="1" data-why="正确！有符号溢出 = UB，无任何保证。无符号整数的溢出才是定义良好的模运算（但 4.5 课原文仍建议避免无符号整数）。防溢出靠预判范围 + 必要时用更宽类型。" >
+      不对 —— 有符号溢出是未定义行为</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>③ 哪个浮点行为是<strong>标准定义良好</strong>的？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="不——多数十进制小数（包括 0.1）在二进制浮点里无法精确表示，存的是最接近的近似值。" >0.1 被精确存储</button>
+    <button data-k="b" data-ok="1" data-why="正确！IEEE 754 定义良好：x/0.0 → inf（或 -inf），0.0/0.0 → NaN。它们不崩溃、可传播——这也是浮点除零比整数除零（UB）'安静'的原因。危险恰在于此：inf/NaN 混进结果悄悄扩散，打印出 inf 时要回查源头。" >
+      5.0 / 0.0 的结果是 inf（IEEE 754 定义）</button>
+    <button data-k="c" data-why="浮点相等比较不可靠：0.1+0.2 == 0.3 会得到 false（两侧都是近似值的累积误差）。比较浮点要用误差带。" >0.1 + 0.2 == 0.3 成立</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ <code>std::cout &lt;&lt; b;</code>（b 是值为 true 的 bool）打印什么？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="默认打印 1——bool 底层是整数（true=1）。想打印 true/false 需要 std::boolalpha。" >true</button>
+    <button data-k="b" data-ok="1" data-why="正确！默认按整数打印：true→1。加 std::boolalpha 后才打印 true/false。bool 的整数本质是理解'任何非零都算真'的基础。" >
+      1</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "if (n) 和 if (n != 0) 行为相同，所以随便写哪个。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="行为确实相同（0 为假、非 0 为真），但原文最佳实践是写明确的比较——if (n) 让读者回忆'0 是真还是假'，if (n != 0) 自解释。可读性优先。" >对 —— 行为相同就随便</button>
+    <button data-k="b" data-ok="1" data-why="正确！行为等价，但代码首先是写给人读的。明确的比较是自文档的；'任何非零为真'的隐式规则留给别的场景（比如指针判空在学到指针后再说）。" >
+      行为相同，但最佳实践是写明确比较（自解释）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑥ 关于短路求值，<code>a || b</code> 中 a 为 true 时？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="短路：或运算左边为真时结果已定（真），右边不求值。两个操作数都求值是对 && '左边为假'场景的错误迁移。" >b 仍会被求值</button>
+    <button data-k="b" data-ok="1" data-why="正确！|| 左边为真 → 结果已定 → 右边跳过；&& 左边为假 → 同理跳过。短路不只是性能：if (b != 0 && a/b > 10) 用它保证除法安全——顺序是正确性的一部分。" >
+      b 不被求值（结果已确定为 true）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>Part B · 预测题</h2>
+
+<div class="predict" data-answer="3.5" data-hint="static_cast 先转，除法后算——顺序决定结果。" data-explain="输出 3.5。static_cast&lt;double&gt;(7) 先把 7 变成 7.0，然后 7.0 / 2 是浮点除法 = 3.5。对比第⑧题的 static_cast&lt;double&gt;(7/2)：括号里先做整数除法得 3，转换只是给 3 加 .0——晚转无用。判断口诀：转换发生在运算求值之前。">
+  <p class="quiz-q">⑦ <code>std::cout &lt;&lt; static_cast&lt;double&gt;(7) / 2;</code></p>
+  <div class="prow"><input type="text" placeholder="程序输出"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="predict" data-answer="3.5" data-hint="除法发生在转换之前还是之后？" data-explain="3.5。关键在顺序：static_cast 先把 7 变成 7.0，然后 7.0 / 2 是浮点除法 = 3.5。对比错误写法 static_cast&lt;double&gt;(7/2)：先整数除法得 3，再转 double 得 3.0——晚转无用。">
+  <p class="quiz-q">⑧ <code>std::cout &lt;&lt; static_cast&lt;double&gt;(7 / 2);</code></p>
+  <div class="prow"><input type="text" placeholder="程序输出"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="predict" data-answer="A 66" data-hint="c 是 char 'A'（65）。c+1 的结果是什么类型？cout 怎么打印它？" data-explain="A 66。第一个 cout 直接打印 char c，按字符解释输出 A；第二个打印 c + 1——char 提升为 int 参与运算，结果 66 是 int，按整数打印。同一个 65，解释规则不同输出不同——类型即解释规则的活教材。">
+  <p class="quiz-q">⑨ 两次打印：</p>
+  <pre class="code">char c { 'A' };
+std::cout &lt;&lt; c &lt;&lt; ' ';
+std::cout &lt;&lt; c + 1;</pre>
+  <div class="prow"><input type="text" placeholder="如: A 66"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="predict" data-answer="0 1 1||0 1 1 " data-hint="bool 打印成 0/1（无 boolalpha）。b 为 false；!b 翻转；(b || true) 呢？" data-explain="0 1 1。b=false 打 0；!b=true 打 1；b || true——左边 false 但右边 true，或运算结果 true 打 1。注意整行没有 boolalpha，所以全是数字。">
+  <p class="quiz-q">⑩ <code>bool b { false };</code> 然后打印 <code>b &lt;&lt; ' ' &lt;&lt; !b &lt;&lt; ' ' &lt;&lt; (b || true)</code></p>
+  <div class="prow"><input type="text" placeholder="如: 0 1 0"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 4 章全部通过！数据类型的地基已打好——下一章：常量与字符串（const/constexpr、std::string）。</div>
+
+<div class="pager">
+  <a class="prev" href="05-chars-cast.html"><span class="dir">← 上一节</span>4.5 字符与类型转换</a>
+  <a class="next" href="../index.html"><span class="dir">返回 →</span>目录</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-4-summary-and-quiz/">LearnCpp Chapter 4 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

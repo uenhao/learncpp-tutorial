@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 5 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter5/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 5 章</a> / 综合测验</div>
+<article>
+<h1>第 5 章综合测验</h1>
+
+<p>10 题：const/constexpr 选型、进制、字面量、string 选型。先预测再作答。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "const 变量的值必须来自编译期。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="const 只承诺只读。来自用户输入的 const int 完全合法——那叫运行时常量。'编译期已知'是 constexpr 的辖区。" >对 —— const 即编译期</button>
+    <button data-k="b" data-ok="1" data-why="正确！选型口诀：来源是常量表达式 → constexpr；来源是运行时 → const。本测验会反复考这条分界线。" >
+      不对 —— const 允许运行时初始值</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>② 月球与地球的平均距离 384'400 km（永不变化）应声明为？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="距离写在代码里、编译期已知——按最佳实践应升级为 constexpr。const 是给'运行时才确定'的量留的。" >const int moonDistance{ 384'400 };</button>
+    <button data-k="b" data-ok="1" data-why="正确！384'400 是字面量 = 常量表达式 → constexpr。这也是数字分隔符 ' 的实战用法（384400 三个零数起来费劲）。" >
+      constexpr int moonDistance{ 384'400 };</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>③ "给 constexpr 变量赋值和给 const 变量赋值一样，都是编译错误。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！constexpr 隐含 const——两者都不可再赋值。constexpr 的额外约束在'初始化式必须是常量表达式'，而不在可变性。" >
+      对 —— constexpr 隐含 const，赋值均被拒绝</button>
+    <button data-k="b" data-why="constexpr 不是'可变的编译期值'——它比 const 更严而非更松。" >不对 —— constexpr 可变</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ <code>int x { 012 };</code> 里 x 的值是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="前导 0 是八进制前缀！012 = 1×8+2 = 10。十进制字面量永远别写前导零。" >12</button>
+    <button data-k="b" data-ok="1" data-why="正确！八进制陷阱。想表达十进制十二请写 12；想写八进制请自觉加 0o 风格注释或用十六进制 0xC。" >
+      10（八进制）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "3.0f 和 3.0 的类型分别是 float 和 double。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！f 后缀 → float；无后缀小数 → double（默认）。这决定了 float f{ 3.0f } 合法而 float f{ 3.0 } 会因窄化转换被 {} 拒绝（1.4 课机制）。" >
+      对 —— 后缀 f 使字面量成为 float</button>
+    <button data-k="b" data-why="无后缀的 3.0 是 double（不是 float！），3.0f 才是 float。这正是'始终给 float 字面量写 f'的原因。" >不对 —— 都是 double</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑥ 一行代码把二进制 0000'1010 写成十六进制，正确的是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="每位十六进制对应 4 位二进制：0000=0，1010=A。写成 0b0000'1010 == 0x0A == 10。" >0x1010</button>
+    <button data-k="b" data-ok="1" data-why="正确！二进制与十六进制是 4 位对 1 位的映射：0000→0，1010→A。这个换算规则是位运算章（位掩码全是十六进制）的阅读基础。" >
+      0x0A</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑦ "std::string_view 会拷贝它看到的字符串。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="拷贝是 std::string 的行为。view 的全部价值就是'只看不拷'——它是观察窗，不是容器。" >对 —— view 也拷贝一份</button>
+    <button data-k="b" data-ok="1" data-why="正确！view 零拷贝，提供只读访问。代价是它不拥有数据：被看的字符串销毁后 view 悬空（UB）。'省拷贝'与'悬空风险'是同一枚硬币的两面。" >
+      不对 —— view 只读不拷贝</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑧ "读入用户的一整行地址（可能含空格）"，正确写法是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why=">> 遇空格即停——地址里的空格会截断输入，剩余部分留在流里污染后续读取。" >std::cin &gt;&gt; address;</button>
+    <button data-k="b" data-ok="1" data-why="正确！std::getline 读整行；std::ws 先吞掉行首残留空白（比如前面 cin >> int 留下的换行），使 getline 与 >> 混用不出乱子。" >
+      std::getline(std::cin &gt;&gt; std::ws, address);</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑨ 以下哪个声明<strong>无法通过编译</strong>？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="string_view 支持 constexpr（它只是只读视图，不动态分配内存）——这正是它的一个重要卖点。" >constexpr std::string_view v{ "hi" };</button>
+    <button data-k="b" data-ok="1" data-why="正确！5.3 课的最佳实践注释在此兑现：std::string 涉及动态内存分配，与 constexpr 不兼容——编译器拒绝。这类场景用 const std::string 或 constexpr string_view。" >
+      constexpr std::string s{ "hi" };（需 #include &lt;string&gt;）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="c" data-hint="x 的值是十二；std::hex 让 cout 用十六进制打印；hex 输出自带前缀吗？" data-explain="输出 c。0b1100 是十二的另一种写法；std::hex 后按十六进制打印十二得 c（无 0x 前缀——那是 showbase 的功能）。再复习一遍：进制是写法/打印方式，值不变。">
+  <p class="quiz-q">⑩ <code>int x { 0b1100 }; std::cout &lt;&lt; std::hex &lt;&lt; x;</code></p>
+  <div class="prow"><input type="text" placeholder="程序输出"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 5 章全部通过！下一章：运算符全景（优先级、取模、++/--、逻辑运算）。</div>
+
+<div class="pager">
+  <a class="prev" href="04-strings.html"><span class="dir">← 上一节</span>5.4 string 与 string_view</a>
+  <a class="next" href="../chapter6/index.html"><span class="dir">下一章 →</span>第 6 章 · 运算符</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-5-summary-and-quiz/">LearnCpp Chapter 5 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

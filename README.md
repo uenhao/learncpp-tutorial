@@ -1,6 +1,6 @@
-# LearnCpp 交互式学习教程（第 0–13 章）
+# LearnCpp 交互式学习教程（第 0–18 章）
 
-基于 [LearnCpp.com](https://www.learncpp.com/) 第 0–13 章，提供两种学习载体：
+基于 [LearnCpp.com](https://www.learncpp.com/) 第 0–18 章，提供两种学习载体：
 
 ## 🖥️ 交互式网站（推荐）
 
@@ -29,6 +29,11 @@ cd site && python3 -m http.server 8765
 | `chapter11/` | 函数重载与模板：重载解析、默认参数、模板实例化（1 课 + quiz） |
 | `chapter12/` | 引用与指针：值类别、别名、按引用/按地址传递（2 课 + quiz） |
 | `chapter13/` | 枚举与结构体：enum class、struct、聚合初始化（1 课 + quiz） |
+| `chapter14/` | 类入门：封装与访问控制、构造函数、拷贝构造/explicit/constexpr（3 课 + quiz） |
+| `chapter15/` | 类进阶：this 指针、头文件组织、嵌套类型、析构、静态成员、友元（3 课 + quiz） |
+| `chapter16/` | 动态数组：std::vector 创建/遍历/容量、move 语义初见、栈行为（3 课 + quiz） |
+| `chapter17/` | 定长数组：std::array（constexpr/brace elision）、C-style 数组与 decay、多维（3 课 + quiz） |
+| `chapter18/` | 迭代器与算法：选择排序、begin/end、标准库算法、chrono 计时（官方在施工中，覆盖 18.1–18.4）（2 课 + quiz） |
 
 每节含示例代码 + `exercises/`（带 TODO）+ `solutions/`（参考答案）。
 第 3 章练习须在 **Debug 构建 + VS Code 调试器**（F5/F10/F11/断点/监视）下完成。
@@ -36,8 +41,8 @@ cd site && python3 -m http.server 8765
 ### 编译
 
 ```bash
-cmake -S . -B build && cmake --build build     # 全部示例与练习
-./build/chapter3/watch_hunt                    # 例：调试器练习
+cmake -S . -B build && cmake --build build     # 全部示例与练习（统一输出在 build/bin/）
+./build/bin/watch_hunt                         # 例：调试器练习；或直接用 VS Code 打开该文件按 F5
 ```
 
 ## 约定

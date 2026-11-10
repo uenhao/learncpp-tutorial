@@ -5,6 +5,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# 所有可执行文件统一输出到 build/bin/，launch.json 以 "build/bin/源文件名" 定位调试目标
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 add_compile_options(-Wall -Wextra -Wpedantic)
 
 # add_lesson(<section-dir> <sources...>)
@@ -31,3 +34,8 @@ add_subdirectory(chapter10)
 add_subdirectory(chapter11)
 add_subdirectory(chapter12)
 add_subdirectory(chapter13)
+add_subdirectory(chapter14)
+add_subdirectory(chapter15)
+add_subdirectory(chapter16)
+add_subdirectory(chapter17)
+add_subdirectory(chapter18)

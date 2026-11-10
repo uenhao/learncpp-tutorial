@@ -40,7 +40,7 @@
 
 <div class="predict" data-answer="42 1" data-hint="setTo42 的形参是引用还是拷贝？trySet 呢？" data-explain="输出 42 1。setTo42 的 r 是引用——r=42 改的就是 a（2.2 课预言被打破）；trySet 的 v 是按值拷贝——改的是副本，b 仍是 1。两种传参方式在同一程序里的对照。">
   <p class="quiz-q">🎯 预测输出：</p>
-  <pre class="code">void setTo42(int& r) { r = 42; }
+  <pre class="code">void setTo42(int&amp; r) { r = 42; }
 void trySet(int v) { v = 42; }
 
 int main()

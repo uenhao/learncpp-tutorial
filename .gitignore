@@ -1,5 +1,7 @@
 build/
 .cache/
+.mimosa/
+.video_agent/
 *.o
 *.out
 a.out

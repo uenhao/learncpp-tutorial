@@ -2,7 +2,24 @@
     "version": "2.0.0",
     "configurations": [
         {
-            "name": "(g++) 构建并调试当前文件",
+            // 调试目标跟随当前打开的 .cpp：目标名 = 源文件名去扩展名（add_lesson 的约定）
+            // 打开 watch_demo.cpp 按 F5 → 自动增量编译并启动 build/bin/watch_demo
+            "name": "F5: 调试当前打开的文件",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "编译当前文件对应的可执行目标",
+            "program": "${workspaceFolder}/build/bin/${fileBasenameNoExtension}",
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            // 备用：手动在命令面板 "CMake: Set Debug Target" 里切换 CMake 启动目标
+            "name": "调试 CMake 启动目标（手动切换）",
             "type": "cppdbg",
             "request": "launch",
             "program": "${command:cmake.launchTargetPath}",

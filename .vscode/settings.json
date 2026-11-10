@@ -1,0 +1,5 @@
+{
+    // CMake Tools 1.24 默认把状态栏项全部隐藏（默认值就是 hidden），改为完整显示
+    // 备选: "icon" 只显示图标(省空间), "compact" 截断文字
+    "cmake.options.statusBarVisibility": "visible"
+}

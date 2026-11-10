@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>14.3 拷贝、explicit 与 constexpr · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter14/03-copy-explicit.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 14 章</a> / 拷贝、explicit 与 constexpr</div>
+<article>
+<h1>14.3 拷贝、explicit 与 constexpr：对象转手的最后一环</h1>
+
+<p>对象出生即合法（14.2 课）还不够——对象还会被<strong>拷贝</strong>（按值传参/返回）、被<strong>隐式转换</strong>出来、在<strong>编译期</strong>求值。本课补齐这三个"转手"场景，本章收官。（原文 14.14–14.17）</p>
+
+<h2>拷贝构造函数（copy constructor）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：copy constructor</div>
+  <p>用<strong>同类型的已有对象</strong>初始化新对象的构造函数。你不写，编译器自动生成一个 <strong>public 隐式版本</strong>，做 <strong>memberwise initialization</strong>（逐成员用对应成员初始化）——通常这正是你想要的：</p>
+  <pre class="code">Fraction(const Fraction&amp; f)   // 参数必须是 (const) 左值引用
+    : m_numerator{ f.m_numerator }    // per-class 访问：能读 f 的 private
+    , m_denominator{ f.m_denominator }
+{
+}</pre>
+  <ul>
+    <li><strong>按值传参</strong>：实参拷贝进形参 → 隐式调用拷贝构造；<strong>按值返回</strong>：用返回值初始化临时对象 → 同样调用；</li>
+    <li>不想要拷贝？<code>Fraction(const Fraction&amp;) = delete;</code>（比 private 版更好——private 只是外部调不到，类内仍可拷贝）；</li>
+    <li>浅拷贝问题（动态内存的类需要自定义拷贝构造）在第 21 章展开；rule of three：需要自定义拷贝构造/析构/拷贝赋值之一，大概率三个都需要。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>① 拷贝构造函数的参数为什么必须是引用，不能按值 <code>Fraction(Fraction f)</code>？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="不是语义问题，是生存问题：按值传参要拷贝实参 → 拷贝要调拷贝构造函数 → 又要按值拷贝实参 → ……" >按值传参开销太大</button>
+    <button data-k="b" data-ok="1" data-why="正确！按值传参本身就要调用拷贝构造函数来拷贝实参——而那正是这个函数自己，无限递归，编译器直接拒绝。引用不产生拷贝，链条到此为止。" >
+      无穷递归：拷贝参数本身又要调拷贝构造</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "类不写拷贝构造函数时，编译器会自动生成一个 public 的、逐成员拷贝的隐式版本。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！所以前 13 章你一直在'免费'用拷贝构造——swap 交换 struct、按值传 vector…… implicit copy constructor 的 memberwise 拷贝通常正是想要的（原文：除非有具体理由才自己写）。" >
+      对 —— 隐式生成，逐成员拷贝</button>
+    <button data-k="b" data-why="恰恰相反：拷贝构造是唯一<strong>写了别的构造函数也不会消失</strong>的构造函数（默认构造函数一旦写了任何构造函数就消失，见 14.2 课）。" >不对 —— 必须自己写</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>初始化形式与 copy elision（拷贝省略）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：六种初始化形式，三个关键差异</div>
+  <p>class 类型的十种初始化写法（<code>Foo f1;</code> / <code>Foo f2{}</code> / <code>Foo f3 = 3;</code> / <code>Foo f4(4);</code> / <code>Foo f5{ 5 };</code> / <code>Foo f6 = { 6 };</code> / <code>Foo f7 = f3;</code> / <code>Foo f8(f3);</code> / <code>Foo f9{ f3 };</code> / <code>Foo f10 = { f3 };</code>）本质上都在初始化对象、都走构造函数重载解析。三个关键差异值得记住：</p>
+  <ol>
+    <li><strong>List initialization 禁止窄化转换</strong>（10 课：<code>Foo f5{ 4.9 }</code> 若 Foo(int) 则编译错误）；</li>
+    <li><strong>Copy initialization（等号）只考虑非 explicit 构造函数</strong>（下一节）；</li>
+    <li>List initialization 优先匹配 list constructors（16 章容器）；另外成员初始化列表里只能用直接初始化形式。</li>
+  </ol>
+</div>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：copy elision（拷贝省略）</div>
+  <p>编译器<strong>省掉不必要的对象拷贝</strong>的优化——它是 <strong>as-if 规则的唯一例外</strong>（5 课）：即使拷贝构造有副作用（打印）也可以被省略，所以拷贝构造函数不应有拷贝以外的副作用。C++17 起部分场景（如返回纯临时对象、用临时对象初始化同名对象）<strong>强制省略</strong>——连优化开关都不用开；命名返回值（NRVO）则由编译器自行决定。</p>
+  <pre class="code">Something s { Something { 5 } }; // C++17 起等价于 Something s { 5 };
+                                 // 拷贝构造一次都不调用！</pre>
+</div>
+
+<div class="predict" data-answer="0||0次||zero" data-hint="C++17 对'用临时对象初始化同名对象'是什么态度？想想 as-if 规则的唯一例外。" data-explain="0 次！C++17 强制 copy elision：Something{5} 创建的临时对象直接就是 s，'拷贝'根本不存在。这正是'拷贝构造不应有副作用'的原因——你以为会发生的拷贝随时可能被省掉。">
+  <p class="quiz-q"><span class="qtag">预测</span>③ 拷贝构造函数里打印 "Copy constructor called"。执行 <code>Something s { Something { 5 } };</code>（C++17），这句话打印了几次？</p>
+  <div class="prow"><input type="text" placeholder="几次？"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<h2>转换构造函数与 explicit</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：converting constructor 与 explicit</div>
+  <p><strong>默认所有构造函数都是 converting constructors</strong>——可被用于隐式转换。这既是便利也是事故源：</p>
+  <pre class="code">class Dollars
+{
+    int m_dollars{};
+
+public:
+    /* explicit */ Dollars(int d) : m_dollars{ d } {}
+};
+
+void print(Dollars d) { /* ... */ }
+
+print(5);              // 不加 explicit：int 隐式转换成 Dollars——通过！
+print(Dollars{ 5 });   // 加了 explicit：直接构造仍然 OK
+print(5);              // 加了 explicit：编译错误 ✅</pre>
+  <ul>
+    <li><strong>一次隐式转换最多应用一个 user-defined conversion</strong>：<code>printEmployee("Joe")</code> 需要 C 串→string_view→Employee 两跳，编译失败；修法：<code>"Joe"sv</code> 或显式 <code>Employee{ "Joe" }</code>；</li>
+    <li>explicit 构造函数不能用于 copy initialization / 任何隐式转换，但 direct initialization、direct list initialization、<code>static_cast</code> 都可以用。</li>
+  </ul>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践（原文）</div>
+  <p><strong>单参数构造函数默认标 explicit</strong>；仅当"两种类型语义等价且转换高效"时才考虑放开（如 string_view 的 C 串构造函数）。<strong>拷贝/移动构造函数永远不要 explicit</strong>——它们不做类型转换。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ <code>Dollars(int)</code> 标了 explicit 后，下列哪个<strong>能</strong>编译？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="copy initialization 只考虑非 explicit 构造函数——explicit 恰恰把它排除。改成 Dollars d{ 5 }; 就能过。" >Dollars d = 5;</button>
+    <button data-k="b" data-why="隐式转换被 explicit 掐断：int → Dollars 这条路只在'显式构造'时可用。print(Dollars{ 5 }) 才行。" >print(5);（implicit 转换）</button>
+    <button data-k="c" data-ok="1" data-why="正确！direct list initialization 不受 explicit 限制——explicit 禁的是'隐式/拷贝初始化'这条暗门，正门一直开着。static_cast&lt;Dollars&gt;(5) 同理可用。" >
+      print(Dollars{ 5 });（显式构造）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>constexpr 与类</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：literal type 与 constexpr 类</div>
+  <p>成员函数（含构造函数）可以标 <code>constexpr</code>，从而能在编译期求值。对象要 constexpr，其类型必须是 <strong>literal type</strong>：基本类型、引用、多数 aggregate（13 课 struct 天生支持）、以及<strong>有 constexpr 构造函数的类</strong>：</p>
+  <pre class="code">class Pair
+{
+    int m_x {};
+    int m_y {};
+
+public:
+    constexpr Pair(int x, int y) : m_x { x }, m_y { y } {}  // 构造函数 constexpr
+
+    constexpr int greater() const { return (m_x &gt; m_y ? m_x : m_y); }
+};
+
+constexpr Pair p { 5, 6 };        // 编译期构造
+constexpr int g { p.greater() };  // 编译期求值 → 6</pre>
+  <ul>
+    <li>编译期求值链上<strong>每个环节都要 constexpr</strong>：非 aggregate 类的构造函数、被调用的成员函数；</li>
+    <li>C++11 的 constexpr 成员函数隐式 const，<strong>C++14 起不再隐式</strong>——要 const 就显式写；</li>
+    <li>constexpr ≠ const：constexpr 是"能在编译期确定值"，const 是"运行期不可改"。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "想让类对象出现在常量表达式中（如 <code>constexpr Pair p{5,6};</code>），只要成员函数标 constexpr 就够，构造函数不用标。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="对象本身要在编译期创建，创建走构造函数——构造函数不是 constexpr，类型就不是 literal type，constexpr Pair p 直接编译错误（'not a literal type'）。链上每一环都要 constexpr。" >对 —— 成员函数够了</button>
+    <button data-k="b" data-ok="1" data-why="正确！构造函数和被调用的成员函数都必须 constexpr。aggregate（struct）能免掉构造函数这环，但它本来就不能有构造函数——回到 14.2 课的分工。" >
+      不对 —— 构造函数也要 constexpr</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 章末复盘："非法状态无法存在"的完整闭环</div>
+  <p>本章三课合起来是一条完整的防线：<strong>private + 封装</strong>把修改收拢到接口（14.1）→ <strong>构造函数</strong>保证出生合法（14.2）→ <strong>拷贝构造/转换控制</strong>保证转手合法（14.3）。你在 12 章学引用、13 章学 struct 时攒下的所有"痛点"（谁改了我的数据？数据怎么成组？聚合初始化怎么失效了？）都在这里得到了系统性回答。下一章给类装上更高级的部件：this 指针、析构函数、静态成员。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter14/03-copy-explicit/</code> 的 <code>copy_demo.cpp</code>（拷贝构造 + NRVO 实测 + explicit）、<code>exercises/point2d.cpp</code>（struct+自由函数 → class 的官方 Q1 改造）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="02-constructors.html"><span class="dir">← 上一页</span>14.2 构造函数</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 14 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-14-summary-and-quiz/">LearnCpp 14.14–14.17</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

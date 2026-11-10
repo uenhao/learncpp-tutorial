@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnCpp 交互式教程 · 第 14 章：类入门</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter14/index.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / 第 14 章</div>
+<article>
+<h1>第 14 章 · 类入门：面向对象编程</h1>
+
+<p>13 章的 struct 能打包数据，但<strong>守不住纪律</strong>——不变式全靠使用者自觉。本章引入 class：把数据（性质）和操作（行为）打包在一起，让对象自己维护有效性。这是全教程篇幅最大的一章（原文 14.1–14.17），也是"面向对象"真正开始的地方。</p>
+
+<ul class="lesson-list">
+  <li><a data-page="/chapter14/01-classes.html" href="01-classes.html"><span>14.1 · 类与封装（原文 14.1–14.8）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter14/02-constructors.html" href="02-constructors.html"><span>14.2 · 构造函数（原文 14.9–14.13）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter14/03-copy-explicit.html" href="03-copy-explicit.html"><span>14.3 · 拷贝、explicit 与 constexpr（原文 14.14–14.17）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter14/quiz.html" href="quiz.html"><span>14.x · 章综合测验（11 题）</span><span class="mark todo">未开始</span></a></li>
+</ul>
+
+<div class="box story">
+  <div class="box-t">🧭 本章主线</div>
+  <p>一条线索贯穿全章：<strong>struct 守不住 class invariant（类不变式）</strong>。<code>Fraction{5, 0}</code> 能编译，分母为 0 的除法错误要到运行时才炸。解法分三步：① 访问控制——成员设为 private，把"进门"收拢到少数接口（14.1 课）；② 构造函数——对象出生时就合法（14.2 课）；③ 拷贝与转换——对象在每一次"转手"时都合法（14.3 课）。学完你会明白：封装不是"把成员藏起来"这么简单，而是<strong>让非法状态无法被构造出来</strong>。</p>
+</div>
+
+<div class="pager">
+  <a class="prev" href="../chapter13/quiz.html"><span class="dir">← 上一章</span>第 13 章</a>
+  <a class="next" href="01-classes.html"><span class="dir">本章开始 →</span>14.1 类与封装</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-14-summary-and-quiz/">LearnCpp Chapter 14</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

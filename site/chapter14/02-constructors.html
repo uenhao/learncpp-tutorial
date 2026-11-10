@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>14.2 构造函数 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter14/02-constructors.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 14 章</a> / 构造函数</div>
+<article>
+<h1>14.2 构造函数：对象出生的那一刻</h1>
+
+<p>上一课的悬念：成员变成 private 后，聚合初始化失效了——<strong>谁负责给对象一个合法的出生方式？</strong>构造函数（constructor）：对象创建时自动调用的特殊成员函数，让"出生即合法"成为现实。（原文 14.9–14.13）</p>
+
+<h2>构造函数基础</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：constructor（构造函数）</div>
+  <p>非 aggregate 类型的对象创建后自动调用的成员函数。规则：</p>
+  <ul>
+    <li><strong>名字与类同名</strong>，<strong>没有返回类型</strong>（连 void 都不写）；</li>
+    <li>通常 public（属于接口）；编译器按参数匹配：找到匹配的构造函数 → 先分配内存再调用它；找不到 → 编译错误；</li>
+    <li>aggregate 不能有构造函数（加了就不再是 aggregate）。</li>
+  </ul>
+  <pre class="code">class Foo
+{
+    int m_x {};
+    int m_y {};
+
+public:
+    Foo(int x, int y)   // 与类同名、无返回类型
+    {
+        std::cout &lt;&lt; "Foo(" &lt;&lt; x &lt;&lt; ", " &lt;&lt; y &lt;&lt; ") constructed\n";
+    }
+
+    void print() const
+    {
+        std::cout &lt;&lt; "Foo(" &lt;&lt; m_x &lt;&lt; ", " &lt;&lt; m_y &lt;&lt; ")\n";
+    }
+};
+
+Foo foo{ 6, 7 };  // 调用 Foo(int, int)</pre>
+  <p><strong>Key insight：构造函数并不创建对象。</strong>编译器先完成内存分配，构造函数在"未初始化的对象"上被调用；但没有匹配的构造函数，对象根本无法创建。另外构造函数<strong>不能标 const</strong>（它要初始化成员——const 在构造完成后才对对象生效，所以 const 对象也能调构造函数）。</p>
+</div>
+
+<div class="predict" data-answer="Foo(0, 0)||Foo(0,0)" data-hint="构造函数被调用了，但它初始化成员了吗？m_x、m_y 的值从哪来？" data-explain="输出 Foo(0, 0)！构造函数被调用了（先打印 Foo(6, 7) constructed），但它根本没初始化成员——m_x、m_y 是靠默认成员初始化器拿到 0 的。函数体里手动赋值不是正路，正确姿势是下一节的成员初始化列表。">
+  <p class="quiz-q"><span class="qtag">预测</span>① 上面这个类执行 <code>Foo foo{ 6, 7 }; foo.print();</code>，<code>print()</code> 输出什么？</p>
+  <div class="prow"><input type="text" placeholder="如: Foo(6, 7)"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "构造函数不能是 const 成员函数。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！构造函数的工作就是初始化（修改）成员，const 与它天然矛盾。标准规定 const 对'构造中的对象'不生效——所以 const Something s{}; 也能调用非 const 的构造函数，构造结束后 s 才开始是 const。" >
+      对 —— 它要修改成员，const 在构造结束后才生效</button>
+    <button data-k="b" data-why="const 成员函数承诺不改状态，构造函数恰恰要设置状态——两者互斥，标准直接禁止。" >不对 —— 可以标 const 更安全</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>成员初始化列表（member initializer list）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：member initializer list</div>
+  <p>构造函数参数之后、以 <code>:</code> 开头、逗号分隔的成员初始化序列——<strong>这才是真正的初始化</strong>：</p>
+  <pre class="code">Foo(int x, int y)
+    : m_x { x }        // 冒号开头，直接初始化形式
+    , m_y { y }        // 按声明顺序书写；列表末尾没有分号
+{
+    // 函数体：列表执行完才轮到这里（做 setup，不再初始化）
+}</pre>
+  <ul>
+    <li>成员用<strong>直接初始化</strong>形式（推荐花括号）；<strong>等号 copy initialization 在这里不行</strong>；</li>
+    <li>函数体里写 <code>m_x = x;</code> 是<strong>赋值不是初始化</strong>——const 成员、引用成员会直接编译失败；</li>
+    <li>Key insight：<strong>列表执行完 → 对象 initialized；函数体执行完 → 对象 constructed</strong>；</li>
+    <li>优先级：<strong>初始化列表 &gt; 默认成员初始化器（13 课的 <code>int m_x{}</code>）&gt; 无初始化</strong>（fundamental 类型未初始化 = UB，4 课的老朋友）。</li>
+  </ul>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 初始化顺序由声明决定，不由列表书写顺序决定</div>
+  <p><strong>成员永远按类内声明顺序初始化</strong>。下面这个构造函数想先算出 m_y 再用它初始化 m_x——但 m_x 声明在前，先初始化，读到的 m_y 是未初始化的垃圾值：</p>
+  <pre class="code">Foo(int x, int y)
+    : m_y { std::max(x, y) }  // 列表里先写 m_y？
+    , m_x { m_y }             // 实际 m_x 先初始化——m_y 还没值！</pre>
+  <p>所以最佳实践：列表<strong>按声明顺序书写</strong>，并且尽量不用其他成员的值来初始化成员（彻底消除顺序依赖）。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>③ 成员初始化列表里，成员的实际初始化顺序由什么决定？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！永远按类内声明顺序。列表书写顺序只是'文档'——顺序写错编译器甚至可能告警（-Wreorder）。这也是'列表按声明顺序书写'最佳实践的原因。" >
+      类内声明顺序</button>
+    <button data-k="b" data-why="列表的书写顺序不影响实际顺序——这是最容易埋雷的认知盲区（上面的 max 反例）。" >
+      列表书写顺序</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>④ "成员初始化列表支持等号写法：<code>Foo(int x) : m_x = x { }</code>。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="member initializer list 里只允许直接初始化（m_x{ x } 或 m_x(x)），copy initialization（等号）直接编译错误。这与 14.3 课讲的'copy initialization 只考虑非 explicit 构造函数'是同一套初始化规则体系。" >对 —— 等号也行</button>
+    <button data-k="b" data-ok="1" data-why="正确！等号形式在列表里不合法。记住口诀：列表用花括号，末尾没分号，顺序按声明。" >
+      不对 —— 只能直接初始化形式</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>默认构造函数与默认实参</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：default constructor（默认构造函数）</div>
+  <p><strong>不接受任何参数</strong>的构造函数（全部参数都带默认实参的也算）。有它，<code>Foo foo{}</code>（value initialization，推荐）和 <code>Foo foo;</code> 都会调用它。三个要点：</p>
+  <pre class="code">// ① 全默认实参的构造函数 = 默认构造函数
+Foo(int x = 0, int y = 0) : m_x { x }, m_y { y } {}
+
+// ② 一个类只能有一个默认构造函数——否则二义性！
+Foo() {}                      // 无参版
+Foo(int x = 1, int y = 2) {}  // 全默认实参版
+Foo foo{};  // ❌ compile error: ambiguous
+
+// ③ 显式要求编译器生成默认版：= default
+Fraction() = default;   // 成员走各自默认初始化（0/1）</pre>
+  <p><code>= default</code> 与空函数体 <code>{}</code> 的差别：value initialization 时前者先<strong>零初始化</strong>再走默认成员初始化器，后者什么都不做（没写默认初始化器的成员保持未初始化）。只要你给所有成员都写了默认初始化器（一直以来的习惯），差异就不存在。什么时候该有默认构造函数？——"全默认值创建对象有意义"才提供（Fraction 0/1 有意义；Employee 无名无意义，别提供，让编译器替你拦住无效对象）。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑤ 类里同时有 <code>Foo() {}</code> 和 <code>Foo(int x = 1, int y = 2) : ...</code>，执行 <code>Foo foo{}</code>。结果？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="不是'挑一个'：两个构造函数都能以零实参调用，重载解析无法裁决，直接二义性编译错误。" >取无参的那个——先到先得</button>
+    <button data-k="b" data-ok="1" data-why="正确！两个 default constructor 冲突：零实参时两条路都通，编译器拒绝裁决。这就是'默认构造函数与默认实参的冲突'——想省构造函数数量时，用默认实参版替换无参版，而不是并存。" >
+      编译错误——调用二义性</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>委托构造函数（delegating constructors）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：constructor delegation（构造函数委托）</div>
+  <p>构造函数可以在<strong>初始化列表里调用同类另一个构造函数</strong>，把初始化工作委托出去（constructor chaining）。常见模式：参数少的委托给参数多的。</p>
+  <pre class="code">Employee(std::string_view name)
+    : Employee{ name, 0 }   // ✅ 委托：在初始化列表里调用
+{
+}</pre>
+  <p>两条铁律：① <strong>delegate or initialize, not both</strong>——委托的构造函数自己的列表里不能再初始化成员；② 在<strong>函数体里"调用构造函数"不是委托</strong>——那会创建一个临时对象，跟 this 无关。</p>
+</div>
+
+<div class="predict" data-answer="???" data-hint="函数体里的 Employee(name, id) 创建的是谁？它和 e2 是同一个对象吗？" data-explain="是默认值 ???！Employee(name, id) 在函数体里创建了一个临时 Employee（打印 Employee Dave created 后立即销毁），e2 本体的 m_name 没被碰过。初始化列表一执行完，初始化就结束了——函数体里太迟了。正确写法：三参版把列表改成 : Employee{ name, id }（委托）。">
+  <p class="quiz-q"><span class="qtag">预测</span>⑥ 三参构造函数在函数体里写了 <code>Employee(name, id);</code> 想复用两参构造。沿用本课 demo 的 Employee 类（成员默认初始化 <code>m_name{ "???" }</code>、<code>m_id{ 0 }</code>），执行后 <code>e2.m_name</code> 是什么？</p>
+  <pre class="code">Employee(std::string_view name, int id, bool isManager)
+    : m_isManager { isManager }
+{
+    Employee(name, id); // "这行想初始化 m_name 和 m_id"
+}</pre>
+  <div class="prow"><input type="text" placeholder="e2.m_name 的值"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 互相委托 = 无限循环</div>
+  <p>A 委托 B、B 又委托 A → 无限循环直到栈溢出。确保委托链最终落到一个"真正初始化成员"的构造函数上。</p>
+</div>
+
+<h2>临时对象（temporary objects）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：temporary（temporary/anonymous object）</div>
+  <p>没有名字、只存在于<strong>单个 full expression 期间</strong>的对象。创建临时对象的三种写法：</p>
+  <pre class="code">IntPair p { 1, 2 };   // 有名对象
+IntPair { 1, 2 };     // 临时对象（list initialization）
+print({ 7, 8 });      // 编译器把 { 7, 8 } 转换成临时对象（匹配形参类型）</pre>
+  <p>临时对象是 <strong>rvalue</strong>（12 课）：只能在接收 rvalue 的地方使用；在创建点生成，full expression 结束即销毁。函数按值返回（<code>return { 7, 8 };</code>）返回的也是临时对象。</p>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 圆括号的重重陷阱：看到括号 ≠ 看到对象</div>
+  <p>圆括号被太多语法共用（函数调用、直接初始化、C 风格转换、分组、<strong>变量定义</strong>）：</p>
+  <pre class="code">Foo(1, 2);   // ≈ Foo{1, 2}：创建临时对象（然后丢弃）
+Foo();       // value-initialized 临时对象
+Foo(bar);    // ❗ 这不是临时对象——是【定义名为 bar 的 Foo 变量】！
+             //    bar 已存在则重定义错误</pre>
+  <p><strong>看到花括号一定是对象</strong>。那上面的 <code>Employee(name, id);</code> 为什么是真临时对象？——带两个实参的形式解析不成变量声明，只能当表达式求值；而单参形式能被解析成"圆括号包裹声明符的声明"（<code>Foo(bar);</code> ≡ <code>Foo bar;</code>），这正是 most vexing parse 家族。转换选型：转 fundamental 类型用 <code>static_cast</code>；转 class 类型用 list-initialized 临时对象（<code>std::string { sv }</code>）；别用 C 风格转换（<code>std::string(sv)</code> 外观几乎相同但危险）。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑦ 已有变量 <code>Foo bar;</code>，语句 <code>Foo(bar);</code> 做了什么？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="圆括号版本被'变量定义'语法劫持了：Foo(bar); 等价于 Foo bar;——定义一个叫 bar 的新变量（已存在则重定义错误）。想造临时对象请写 Foo{} 或 Foo{bar}。" >
+      创建一个临时 Foo 对象</button>
+    <button data-k="b" data-ok="1" data-why="正确！Foo(bar); 是【定义变量 bar】（most vexing parse 家族）。这条圆括号陷阱是'看到花括号一定是对象'的最佳注脚。" >
+      定义一个名为 bar 的新变量（重定义错误）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：初始化从"步骤"变成"语义"</div>
+  <p>到本课为止，你已经把 C++ 的初始化拼图集齐了大半：默认成员初始化器（13 课）→ 构造函数 → 成员初始化列表（本课）。它们共同保证一件事：<strong>对象在出生点就合法</strong>——而不是"先造出来，再补丁式地 set 成合法"。下一课处理对象"转手"时的最后一环：拷贝与类型转换。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter14/02-constructors/</code> 的 <code>constructor_demo.cpp</code>（初始化列表 + = default + 委托）、<code>exercises/ball_constructors.cpp</code>（把 4 个构造函数压缩成 2 个：委托 + 默认实参——官方 quiz 原型题）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="01-classes.html"><span class="dir">← 上一页</span>14.1 类与封装</a>
+  <a class="next" href="03-copy-explicit.html"><span class="dir">下一页 →</span>14.3 拷贝、explicit 与 constexpr</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-14-summary-and-quiz/">LearnCpp 14.9–14.13</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

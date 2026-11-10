@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 14 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter14/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 14 章</a> / 综合测验</div>
+<article>
+<h1>第 14 章综合测验</h1>
+
+<p>11 题：访问控制、构造函数、拷贝与转换。先预测再作答。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "struct 的成员默认 public，class 的成员默认 private——这是两者在成员访问上唯一的技术差异。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！struct 与 class 技术上几乎相同，唯一默认差异就是访问级别（进阶补充：继承时的默认也不同——struct 公有、class 私有，第 24 章）。选型经验：纯数据集合 + 不变式简单 → struct；需要守护不变式 → class。" >
+      对 —— 默认访问级别不同</button>
+    <button data-k="b" data-why="两者成员函数、访问说明符、构造函数全都支持——别被'OOP 用 class'的印象带偏，技术差异只有默认访问级别这一条。" >不对 —— class 功能更多</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>② <code>class Foo { int m_x{}; int m_y{}; };</code>（全 private），执行 <code>Foo foo{ 6, 7 };</code>。结果？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="聚合初始化要求'无 private 成员'——成员一变 private 就不再是 aggregate。13 课的语法在这里失效，这正是引入构造函数的动机。" >能编译——聚合初始化照常工作</button>
+    <button data-k="b" data-ok="1" data-why="正确！有 private 成员后 Foo 不再是 aggregate，{ 6, 7 } 找不到匹配的构造函数——编译错误 no matching constructor。修复：写一个 Foo(int x, int y) 构造函数。" >
+      编译错误——不再是 aggregate</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>③ "Person 的成员函数 <code>kisses(const Person&amp; p)</code> 里，可以直接访问参数 p 的 private 成员 <code>p.m_name</code>。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！访问级别是 per-class 不是 per-object——同类成员函数可以访问同类任何对象的 private 成员。14.x 官方 quiz 的 distanceTo 直接读 other.m_x，靠的就是这条。" >
+      对 —— 访问级别按类不按对象</button>
+    <button data-k="b" data-why="private 只对'类外的代码'设防；类自己的成员函数之间没有这道墙。" >不对 —— 只能访问隐式对象的</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ <code>const Date today{...}</code>，成员函数 <code>print()</code> 未标 const。调用 <code>today.print()</code>？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！const 对象只能调用 const 成员函数——哪怕函数根本不改成员。最佳实践：不改状态的成员函数一律标 const（否则按 const 引用传参的地方全都会炸）。" >
+      编译错误——const 对象只能调 const 成员函数</button>
+    <button data-k="b" data-why="编译器不做'看起来安全'的推断，只看 const 承诺。print() 真不改？那就标 const 让承诺写进签名。" >能编译——函数没改成员</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "成员初始化列表支持等号写法：<code>Foo(int x) : m_x = x { }</code>。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="member initializer list 只接受直接初始化形式（m_x{ x }）。copy initialization 在这里不合法——顺带记牢：函数体里的 m_x = x 是赋值不是初始化，const/引用成员会编译失败。" >对 —— 等号也可以</button>
+    <button data-k="b" data-ok="1" data-why="正确！列表用花括号、末尾没分号、顺序按类内声明——三句口诀齐了。" >
+      不对 —— 只能直接初始化形式</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="???" data-hint="函数体里 Employee(name, id) 创建的对象，和 e2 是同一个吗？" data-explain="???。Employee(name, id) 在函数体里创建了一个临时对象（打印完 created 就销毁），e2 本体的 m_name 保持默认初始化值。委托必须写在成员初始化列表里：: Employee{ name, id }。">
+  <p class="quiz-q">⑥ 三参构造函数想复用两参构造，在<strong>函数体</strong>里写了 <code>Employee(name, id);</code>（类定义沿用 14.2 课 demo：<code>m_name{ "???" }</code>、<code>m_id{ 0 }</code>）。执行后 <code>e2.m_name</code> 的值是？</p>
+  <div class="prow"><input type="text" placeholder="e2.m_name 的值"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑦ 类里同时定义了 <code>Foo() {}</code> 和 <code>Foo(int x = 1, int y = 2) : ...</code>。执行 <code>Foo foo{};</code>？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="重载解析无法在两条'零实参可行'的路径间裁决——不是运行时选一个，是直接编译错误。" >取无参版本</button>
+    <button data-k="b" data-ok="1" data-why="正确！两个 default constructor 冲突（一个类只能有一个）。用默认实参版替换无参版，或干脆只留一个。" >
+      编译错误——构造调用二义性</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑧ <code>Dollars(int)</code> 已标 explicit。下列哪个<strong>能</strong>编译？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="copy initialization 只考虑非 explicit 构造函数——被 explicit 排除了。" >Dollars d = 5;</button>
+    <button data-k="b" data-why="隐式转换 int → Dollars 被 explicit 掐断；正门（显式构造）还开着：print(Dollars{ 5 }) 或 static_cast&lt;Dollars&gt;(5)。" >print(5);（隐式转换）</button>
+    <button data-k="c" data-ok="1" data-why="正确！direct list initialization 不受 explicit 限制。explicit 禁的是隐式/拷贝初始化的暗门，显式构造与 static_cast 通行。" >
+      print(Dollars{ 5 });</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="0||0次||zero" data-hint="C++17 对'用临时对象初始化同名对象'是什么态度？想想 as-if 规则的唯一例外。" data-explain="0 次！C++17 强制 copy elision：Something{5} 的临时对象直接就是 s，拷贝构造压根不发生（连优化开关都不用开）。这就是'拷贝构造函数不该有副作用'的根源。">
+  <p class="quiz-q">⑨ 拷贝构造函数打印 "Copy constructor called"。C++17 下执行 <code>Something s { Something { 5 } };</code> 打印几次？</p>
+  <div class="prow"><input type="text" placeholder="几次？"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑩ "拷贝构造函数的参数必须按引用传递——按值会无穷递归。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！按值传参要先拷贝实参，拷贝实参又要调拷贝构造函数——自己调自己，编译器直接拒绝。引用不产生拷贝，递归链断掉。（惯例：参数用 const Fraction&amp;，顺便还能读 private 成员。）" >
+      对 —— 无穷递归</button>
+    <button data-k="b" data-why="编译器在参数检查阶段就会拦下这种写法——这不是性能建议，是语法强制。" >不对 —— 只是效率建议</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑪ "想让 <code>constexpr Pair p{ 5, 6 };</code> 成立，Pair 的构造函数必须标 constexpr。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！对象要在编译期创建，创建走构造函数——构造函数不是 constexpr，Pair 就不是 literal type，直接编译错误。编译期求值链上每一环（构造函数 + 被调用的成员函数）都要 constexpr。" >
+      对 —— literal type 要求 constexpr 构造</button>
+    <button data-k="b" data-why="constexpr 对象在编译期构造，构造函数必须 constexpr。只有 aggregate（struct）能跳过这一环——它没有构造函数。" >不对 —— 成员函数 constexpr 就够</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 14 章全部通过！你已经会造"有纪律的类型"了——下一章：类的进阶（this 指针、析构函数、静态成员、友元）。</div>
+
+<div class="pager">
+  <a class="prev" href="03-copy-explicit.html"><span class="dir">← 上一节</span>14.3 拷贝、explicit 与 constexpr</a>
+  <a class="next" href="../index.html"><span class="dir">返回 →</span>目录</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-14-summary-and-quiz/">LearnCpp Chapter 14 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

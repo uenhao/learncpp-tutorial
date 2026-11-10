@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>14.1 类与封装 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter14/01-classes.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 14 章</a> / 类与封装</div>
+<article>
+<h1>14.1 类与封装：从 struct 到 class</h1>
+
+<p>struct 会打包数据（13 课），但打包出来的整体没有"纪律"：分母可以是 0，首字母可以和名字对不上。本课引入 <strong>class</strong>——把数据和操作绑成一个整体，并给成员上访问控制，让非法状态进不来。（原文 14.1–14.8）</p>
+
+<h2>面向对象编程（OOP）：数据自己会"做事"</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：过程式 vs 面向对象</div>
+  <p><strong>过程式编程</strong>：函数（functions）和数据是分离的实体，靠程序员手动组装；<strong>面向对象编程（OOP）</strong>：聚焦"同时包含 properties（性质=数据）与 behaviors（行为=操作）"的自定义类型。两种视野下的同一件事：</p>
+  <pre class="code">eat(you, apple);   // 过程式：函数吃数据，数据被传来传去
+you.eat(apple);    // OOP：对象自己会吃，操作长在类型上</pre>
+  <p>OOP 不取代过程式，而是多一件工具。注意术语："object" 在 C++ 里通常仍指"一段能存值的内存"（1.2 课），OOP 语境下的对象可专称 <strong>class object</strong>。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>① 动物园要新增一种动物 Snake（名字+腿数）。过程式版本用 <code>enum AnimalType</code> + 每个函数里 switch；OOP 版本每个动物一个类型。哪种设计对<strong>已有代码</strong>的改动最小？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="过程式版本：enum 要加 snake，每个依赖 AnimalType 的函数都要加 switch 分支——改动随动物数量线性增长。" >过程式——加一个枚举值就行</button>
+    <button data-k="b" data-ok="1" data-why="正确！OOP 版本只需新增 struct Snake { std::string_view name{ &quot;snake&quot; }; int numLegs{ 0 }; };，已有类型和已有函数一行不用改。新类型扩展、旧代码不动——这就是把'性质+行为'绑在一个类型里的收益。" >
+      OOP——新增一个类型，旧代码不动</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>class invariant：struct 守不住的纪律</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：类不变式（class invariant）</div>
+  <p><strong>类不变式</strong> = 必须在对象的<strong>整个生命周期内为真</strong>、使对象保持有效状态的条件。违反不变式的对象处于 invalid state，继续使用可能得到意外结果甚至未定义行为。</p>
+  <pre class="code">struct Fraction
+{
+    int numerator { 0 };
+    int denominator { 1 }; // 不变式：分母永远不能是 0
+};
+
+Fraction f { 5, 0 };   // ❗ 编译器不拦：struct 只是数据打包
+printFractionValue(f); // 运行时才炸：除以零</pre>
+  <p>更隐蔽的例子：<code>firstInitial</code> 应始终等于 <code>name</code> 的首字符——两个成员的相关性也是一种不变式，靠使用者"记得同步"迟早出事。9 课的 <code>assert</code> 能<strong>文档化</strong>不变式，但正确的做法是在<strong>赋坏值的地方</strong>拦截，而不是在用坏值的地方断言。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "minMax struct 的不变式是 <code>min &lt;= max</code>——这条纪律<strong>不能</strong>只靠使用者自己小心来维护。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！原文的 Key insight 就是这句话：依赖对象的使用者来维护不变式很可能导致问题。使用者会忘、会疏忽、会传错值——纪律必须由类型自己强制执行（这就是本课后面 private + 封装的动机）。" >
+      对 —— 不能依赖使用者自觉</button>
+    <button data-k="b" data-why="struct 对成员完全敞开，任何一处直接赋值都可能破坏 min &lt;= max——编译器不帮你盯。" >不对 —— 自觉就够了</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>成员函数（member functions）：操作长在类型上</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：成员函数与隐式对象</div>
+  <p><strong>成员函数</strong> = 属于某个 class type（struct/class/union 都算）的函数；它必须定义在类型定义内部，并且必须通过该类型的对象来调用。调用时所作用的那个对象叫<strong>隐式对象（implicit object）</strong>：</p>
+  <pre class="code">struct Date
+{
+    int year {};
+    int month {};
+    int day {};
+
+    void print()   // 成员函数
+    {
+        std::cout &lt;&lt; year &lt;&lt; '/' &lt;&lt; month &lt;&lt; '/' &lt;&lt; day; // 未加前缀的成员 → 隐式对象
+    }
+};
+
+Date today { 2020, 10, 14 };
+today.print();      // today 是隐式对象，print 操作的是它</pre>
+  <p>对比：非成员函数（free function）<strong>显式</strong>传对象、<strong>显式</strong>访问成员；成员函数<strong>隐式</strong>传对象（背后是 15 章的 this 指针）、<strong>隐式</strong>访问成员。函数体里没加 <code>.</code> 前缀的成员标识符，全部关联到隐式对象。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>③ 输出什么？（joe 和 kate 都是 Person）</p>
+  <pre class="code">struct Person
+{
+    std::string name{};
+
+    void kisses(const Person&amp; person)
+    {
+        std::cout &lt;&lt; name &lt;&lt; " kisses " &lt;&lt; person.name &lt;&lt; '\n';
+    }
+};
+
+// joe.name == "Joe", kate.name == "Kate"
+joe.kisses(kate);</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="反了——隐式对象是 joe（点号前的那个），kate 是显式参数 person。name（无前缀）读的是 joe，person.name 读的是 kate。" >Kate kisses Joe</button>
+    <button data-k="b" data-ok="1" data-why="正确！joe.kisses(kate) 中 joe 是隐式对象（裸写的 name 属于它），kate 作为参数 person 传入。一道题看清'隐式对象 vs 显式参数'的分工。" >
+      Joe kisses Kate</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 类内可以乱序使用，但成员按声明顺序初始化</div>
+  <p>类定义内部<strong>不要求先声明后使用</strong>：成员变量/函数可以任意顺序互相引用（编译器对类内函数做了隐式前向处理）。但有一条铁律：<strong>数据成员按声明顺序初始化</strong>——若 <code>int m_bad1 { m_data };</code> 写在 <code>m_data</code> 声明之前，读到的是尚未初始化的内存（未定义行为）。所以别在默认成员初始化里引用其他成员。</p>
+</div>
+
+<h2>const 对象与 const 成员函数</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：const member function</div>
+  <p>对象也可以是 const（创建时必须初始化）。const 对象不能改 public 成员，也<strong>不能调用非 const 成员函数</strong>——哪怕那个函数根本不改成员。<strong>const 成员函数</strong> = 在参数列表后、函数体前加 <code>const</code>，承诺不修改对象、不调用任何非 const 成员函数：</p>
+  <pre class="code">struct Date
+{
+    int year {}; int month {}; int day {};
+
+    void print() const   // ← const 成员函数
+    {
+        std::cout &lt;&lt; year &lt;&lt; '/' &lt;&lt; month &lt;&lt; '/' &lt;&lt; day;
+    }
+};
+
+const Date today { 2020, 10, 14 };
+today.print();  // ✅ const 对象可以调用 const 成员函数</pre>
+  <p>最常踩的场景：函数按 const 引用收参数（12 课）——形参被当作 const 对象，里面调非 const 成员函数直接编译错误。所以：<strong>不改对象状态的成员函数一律标 const</strong>（加了以后再摘掉，会破坏所有在 const 对象上调用它的代码）。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ <code>const Date today{...}</code> 调用 <code>today.print()</code>，而 <code>print()</code> 没有 const 后缀。结果？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！const 对象不能调用非 const 成员函数——即使 print() 什么都不改。修复：给 print() 加 const（它确实不该改状态）。这也是 const 重载的由来：const 是函数签名的一部分，const 与非 const 版本可以共存，const 对象选 const 版。" >
+      编译错误——const 对象只能调 const 成员函数</button>
+    <button data-k="b" data-why="编译器不做这种'看起来安全'的推断：它只看成员函数的 const 承诺。没承诺 = 可能改 = 拒绝。" >
+      能跑——print() 没改成员所以没事</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>public / private：访问控制</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：访问级别与 class 的默认行为</div>
+  <p>每个成员都有访问级别：<strong>public</strong>（类外的任何代码都能访问）/ <strong>private</strong>（只有同类成员能访问）。关键差异：</p>
+  <pre class="code">class Date   // class：成员默认 private
+{
+    int m_year {};   // private by default
+    int m_month {};
+    int m_day {};
+
+    void print() const { /* ... */ } // 也默认 private！
+};
+
+Date today { 2020, 10, 14 }; // ❌ 编译错误：有 private 成员后
+                             //    不再是 aggregate，聚合初始化失效</pre>
+  <ul>
+    <li><strong>struct 默认 public，class 默认 private</strong>——这是两者唯一的技术差异；</li>
+    <li>有 private 成员 → 不是 aggregate → 13 课的聚合初始化用不了 → <strong>这正是下一课构造函数的动机</strong>；</li>
+    <li>private 数据成员惯用 <code>m_</code> 前缀（member），区分成员与参数/局部变量；</li>
+    <li>访问级别是 <strong>per-class（按类）而非 per-object（按对象）</strong>。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "Person 的成员函数里，可以直接访问另一个 Person 对象参数的 private 成员（如 <code>p.m_name</code>）。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！访问级别按类划分不按对象——'同类成员函数访问同类任何对象的 private 成员'是合法的。14.x 官方 quiz 的 distanceTo(other) 直接读 other.m_x，靠的就是这条规则。" >
+      对 —— 访问级别是 per-class 的</button>
+    <button data-k="b" data-why="private 拦的是'类外的代码'，不拦同类成员函数。p 和隐式对象是同一个类的两个对象，互相看 private 完全合法。" >不对 —— 只能访问自己的</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>访问函数（access functions）：getter 与 setter</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：getter / setter</div>
+  <p><strong>访问函数</strong> = 只为读/写单个 private 成员而存在的 public 成员函数：<strong>getter</strong>（读，通常 const）与 <strong>setter</strong>（写，必须非 const）：</p>
+  <pre class="code">class Date
+{
+    int m_year { 2020 }; // m_ 前缀还避免了与 getter 同名（C++ 不允许同名）
+
+public:
+    int getYear() const        { return m_year; }
+    void setYear(int year)     { m_year = year; }
+};</pre>
+  <p>getter 返回便宜类型按值返回；返回昂贵类型（如 std::string）按 <code>const std::string&amp;</code> 返回避免拷贝（注意：别返回成员的非 const 引用——外部 <code>f.value() = 5</code> 就绕过了访问控制）。实务建议：<strong>没有不变式却需要大量 getter/setter 的类型，直接用 struct + 公开成员可能更诚实</strong>；优先实现"行为"（如 <code>kill()</code>/<code>revive()</code>）而不是裸的 <code>setAlive(bool)</code>。</p>
+</div>
+
+<h2>数据隐藏（封装）：为什么要藏起来</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：interface 与 implementation</div>
+  <p><strong>接口（interface）</strong> = 类的 public 成员构成的公共契约，改了就破坏使用方；<strong>实现（implementation）</strong> = 成员变量 + 函数体，随便改。<strong>数据隐藏（data hiding）</strong> = 把实现藏进 private、强迫外界只走接口。收益（原文）：</p>
+  <ol>
+    <li><strong>类能自己维护不变式</strong>——所有修改走接口，联动自动完成；</li>
+    <li><strong>更好的错误检测</strong>——在接口内校验参数，坏值进门就被拦；</li>
+    <li><strong>改实现不破坏使用方</strong>——接口不变，成员从单值换成数组都行；</li>
+    <li><strong>更易调试</strong>——修改入口唯一，断点只打一处。</li>
+  </ol>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑥ "一个类型没有不变式，却需要一大堆 getter/setter 才能被外界使用——这时候也许直接用 struct（公开成员）更合适。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！原文的实务建议：无不变式 + 大量 access function → 考虑用 struct。封装的价值在于'守住不变式 + 缩小接口'，两样都占不到时，class 只是给 struct 套了层手续。有不变式（如本章 Employee 的首字母联动）才值得上 class。" >
+      对 —— 封装要有收益才值得</button>
+    <button data-k="b" data-why="为封装而封装会让代码变啰嗦：类外面再包一层访问函数，什么纪律也没守住。" >不对 —— class 永远更规范</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践（原文）</div>
+  <ul>
+    <li>class 的成员变量一般 private、成员函数一般 public；struct 一般不加访问说明符（全员 public）；</li>
+    <li>不改（也永远不会改）对象状态的成员函数 → 标 const；</li>
+    <li><strong>能用非成员函数就别用成员函数</strong>（如 <code>print(const Yogurt&amp;)</code>）：不属于接口、强迫走公共接口、可携带应用特有逻辑；</li>
+    <li>声明顺序：public 在前，private 在后。</li>
+  </ul>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：封装 ≠ "藏起来"，而是"守门"</div>
+  <p>13 课的 struct 是"透明的数据袋"；本课的 class 是"有保安的仓库"：不变式写在类型里，所有修改必须过接口这道门——<strong>非法状态无法被构造出来</strong>，而不是出了错再排查。下一课解决"对象出生"这一步：有 private 成员后聚合初始化失效了，谁给对象一个合法的出生方式？答案是构造函数。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter14/01-classes/</code> 的 <code>class_intro_demo.cpp</code>（private + const 成员函数 + per-class 访问）、<code>exercises/employee_encapsulate.cpp</code>（把破坏不变式的 Employee struct 改造成 class——本课内容的完整实战）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 14 章</a>
+  <a class="next" href="02-constructors.html"><span class="dir">下一页 →</span>14.2 构造函数</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-14-summary-and-quiz/">LearnCpp 14.1–14.8</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

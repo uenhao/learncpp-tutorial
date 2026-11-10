@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 16 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter16/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 16 章</a> / 综合测验</div>
+<article>
+<h1>第 16 章综合测验</h1>
+
+<p>10 题：创建与下标、遍历、容量与栈。先预测再作答。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>① <code>std::vector vowels{ 'a', 'e', 'i', 'o', 'u' };</code>——vowels 的完整类型是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="这是 15.2 课 CTAD 的实战：类模板从 initializer list 的元素类型推导模板参数——字符字面量是 char，推出 vector&lt;char&gt;。" >std::vector&lt;int&gt;</button>
+    <button data-k="b" data-ok="1" data-why="正确！CTAD 从元素值推导出 char。想强制 string_view 等类型得用字面量后缀（如 &quot;Alex&quot;sv）——16.x 官方 quiz 同款考点。" >
+      std::vector&lt;char&gt;（CTAD 推导）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>② 两兄弟：<code>std::vector&lt;int&gt; v1{ 5 };</code> 和 <code>std::vector&lt;int&gt; v2( 5 );</code>。v1 和 v2 的 size 分别是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="反了——非空 initializer list 时 list constructor 优先：{ 5 } 是元素列表（1 个元素 5）；圆括号才走长度构造（5 个 0）。" >都是 5</button>
+    <button data-k="b" data-ok="1" data-why="正确！{ 5 } 走 list constructor（1 个元素，值 5）；( 5 ) 走长度构造（5 个 value-initialized 的 0）。16.2 官方 quiz 头号考点。" >
+      v1 是 1，v2 是 5</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>③ "<code>std::vector prime{2,3,5,7,11};</code> 执行 <code>prime[9]</code>，编译器会报错。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="operator[] 完全不做越界检查（连运行期都不查，更别说编译期）——非法索引是 UB。想要检查用 at()（抛异常）或索引前自查。" >对 —— 越界编译失败</button>
+    <button data-k="b" data-ok="1" data-why="正确！编译能过、运行是未定义行为。合法下标永远只有 0 到 length-1。" >
+      不对 —— 编译通过，运行是 UB</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ C++20 里取 vector 的<strong>有符号</strong>长度，用哪个？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="size() 和 std::size() 都返回 unsigned 的 size_type（≈std::size_t）。有符号版本是 C++20 新增的非成员函数 std::ssize()。" >arr.size()</button>
+    <button data-k="b" data-ok="1" data-why="正确！std::ssize() 返回大号有符号整型（通常 ptrdiff_t）——16.3 课 unsigned 长度问题的官方解药之一。" >
+      std::ssize(arr)</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "把 vector 传给函数时，惯例是按 const 引用——按值会拷贝全部元素。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！传参没有 elision/move 救场（实参是 lvalue，偷走数据原对象就空了），拷贝是真实的。'传参用 const 引用、返回用按值'是 move-capable 类型的官方配方。元素类型要写全（const std::vector&lt;int&gt;&amp;），或用模板/auto&amp;。" >
+      对 —— 按值 = 拷贝全部元素</button>
+    <button data-k="b" data-why="move/elision 只在返回场景（rvalue）救场；传参的实参是 lvalue，按值就是实打实的深拷贝。" >不对 —— 返回值优化也管传参</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="0 1 2 0 0" data-hint="resize 变长时，既有元素保不保留？新元素的初值是什么？" data-explain="0 1 2 0 0！resize(5) 保留原 3 个元素，新槽位 value-initialized（int → 0）。变短再变长时 capacity 够用就不会重新分配。">
+  <p class="quiz-q">⑥ <code>std::vector v{ 0, 1, 2 };</code> 执行 <code>v.resize(5);</code> 后遍历打印，输出？</p>
+  <div class="prow"><input type="text" placeholder="空格分隔的数字"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑦ "capacity 是 5、length 是 3 的 vector，下标 4 是合法访问。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="原文 Warning 原话：A subscript is only valid if it is between 0 and the vector's length (not its capacity)! capacity 只是'已分配格数'，length 才定义'哪些元素存在'。" >对 —— 内存已分配</button>
+    <button data-k="b" data-ok="1" data-why="正确！有效下标基于 length。想用 index 4 先 resize(5) 或 push_back。" >
+      不对 —— 有效下标看 length（0..2）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑧ 栈式用法：预计 push 约 1000 个元素，想全程零 reallocation。开头该写？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="resize 把 length 也设成 1000——1000 个 0 已经占位，push_back 会接在它们后面。栈场景要'容量就绪、长度为零'。" >v.resize(1000);</button>
+    <button data-k="b" data-ok="1" data-why="正确！reserve(1000) 只增 capacity、不动 length，随后 1000 次 push_back 零 reallocation。口诀：索引场景用 resize，栈场景用 reserve。" >
+      v.reserve(1000);</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑨ "<code>back()</code> 返回栈顶元素并把它移除。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="back() 是 peek——只返回末元素引用，不移除；移除是 pop_back()（返回 void）。要'弹出并拿到值'得先 back() 存一份再 pop_back()。" >对 —— 看即删</button>
+    <button data-k="b" data-ok="1" data-why="正确！back() 看、pop_back() 删——栈的 peek 和 pop 是两个操作。" >
+      不对 —— back() 只看不删</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑩ "<code>std::vector&lt;bool&gt;</code> 是为了省空间的好优化，可放心当普通容器用。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="它是类模板特化：不保证连续、不存 bool（存位）、不符合 C++ 容器定义，operator[] 返回代理对象拿不到 bool&amp;。官方 best practice：避免，用 bitset / vector&lt;char&gt; 替代。" >对 —— 标准容器随便用</button>
+    <button data-k="b" data-ok="1" data-why="正确！官方原话级别的警告：avoid std::vector&lt;bool&gt;。唯一豁免场景：不依赖标准容器其他功能时（如官方 quiz 用它做 26 字母命中表）。" >
+      不对 —— 伪容器，官方建议避免</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 16 章全部通过！标准库最常用的容器已入袋——下一章：定长数组 std::array 与 C-style 数组（vector 的静态兄弟）。</div>
+
+<div class="pager">
+  <a class="prev" href="03-capacity-stack.html"><span class="dir">← 上一节</span>16.3 容量与栈行为</a>
+  <a class="next" href="../index.html"><span class="dir">返回 →</span>目录</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-16-summary-and-quiz/">LearnCpp Chapter 16 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

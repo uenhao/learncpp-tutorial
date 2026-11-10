@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>16.3 容量与栈行为 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter16/03-capacity-stack.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 16 章</a> / 容量与栈行为</div>
+<article>
+<h1>16.3 容量与栈行为：vector 的"动"从哪来</h1>
+
+<p>vector 叫<strong>动态数组</strong>：长度能在运行期变。本课拆开"动态"的引擎盖看两件事——<strong>length 与 capacity 为何分开记账</strong>，以及元素个数未知时怎么用<strong>栈行为</strong>优雅地装数据；最后看看 std::vector&lt;bool&gt; 这个著名的"伪容器"。（原文 16.10–16.12）</p>
+
+<h2>length 与 capacity：两本账</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：length vs capacity / reallocation</div>
+  <p><strong>length（size）</strong>= 当前在用的元素数；<strong>capacity</strong> = 已分配存储能容纳的元素数。类比：length 是蛋盒里<b>装了的鸡蛋</b>，capacity 是蛋盒的<b>格数</b>。Key insight：<strong>length 是"在用"，capacity 是"已分配"</strong>——分开记账才能在 length 变化时免于重新分配。</p>
+  <pre class="code">std::vector v{ 0, 1, 2 };
+v.resize(5);        // 变长：保留 0 1 2，新增元素 value-initialized（0）
+                    // → 0 1 2 0 0
+v.resize(3);        // 变短：截断，capacity 不减
+v.resize(5);        // 再变长：capacity 够用 → 零重新分配！</pre>
+  <p><strong>reallocation（重新分配）</strong>：容量不足时的三步——申请新内存、把旧元素拷/移过去、归还旧内存。因为要搬每个元素，<strong>reallocation 是昂贵的，要避免</strong>。缩小不还内存；<code>shrink_to_fit()</code> 只是"请求"（非绑定，实现可不理）。⚠️ 铁律：<strong>有效下标基于 length，不是 capacity</strong>——capacity 5、length 3 时 index 3、4 照样越界！</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "capacity 是 5、length 是 3 的 vector，访问下标 4 合法——毕竟内存已经分配了。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="内存分配了但那是'备用格'——对象尚未构造/被视为空。有效下标只到 length-1，越界照样 UB（原文 Warning 原话：A subscript is only valid if it is between 0 and the vector's length (not its capacity)!）。" >对 —— 分配了就能用</button>
+    <button data-k="b" data-ok="1" data-why="正确！capacity 只是容量储备；length 才定义'哪些元素存在'。想安全使用 index 4，先 resize(5) 或 push_back。" >
+      不对 —— 有效下标看 length</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="0 1 2 0 0" data-hint="resize 变长时，既有元素保不保留？新元素的初值是什么？" data-explain="0 1 2 0 0！resize(5) 保留原 3 个元素，新槽位 value-initialized（int → 0）。变短再变长时 capacity 够用就不会重新分配。">
+  <p class="quiz-q"><span class="qtag">预测</span>② <code>std::vector v{ 0, 1, 2 };</code> 执行 <code>v.resize(5);</code> 后遍历打印 v，输出什么？</p>
+  <div class="prow"><input type="text" placeholder="空格分隔的数字"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<h2>栈行为：元素个数未知时的正确姿势</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：stack（LIFO）与 vector 的栈接口</div>
+  <p>"用户会输多少个数"事先不知道——预设上限（30 个？太少太多都尴尬）、先问个数再建（让用户数数？）、动态扩容逻辑（和业务逻辑搅在一起）都是坏方案。正确姿势：<strong>栈（stack）</strong>——插入删除都在同一端、<strong>后进先出（LIFO）</strong>。C++ 不造独立栈容器，而是给 vector 这类容器加栈操作：</p>
+  <pre class="code">std::vector&lt;int&gt; stack{};
+
+stack.push_back(1);   // push：压入尾部（length +1，必要时 reallocation）
+stack.push_back(2);
+stack.push_back(3);
+stack.back();         // peek/top：看栈顶（3），不移除
+stack.pop_back();     // pop：弹出栈顶（返回 void）
+
+// 标准场景：读到 -1 为止，全程无计数、无索引、无长度管理
+while (true) {
+    int x{}; std::cin &gt;&gt; x;
+    if (x == -1) break;
+    stack.push_back(x);
+}</pre>
+  <ul>
+    <li><strong>reallocation 增长策略因编译器而异</strong>：GCC/Clang 翻倍，VS2022 ×1.5——多分一点，避免下次 push 立刻再分配；</li>
+    <li><strong>reserve(n)</strong>：只增 capacity、<strong>不动 length</strong>。栈场景先 reserve 预估容量，push 全程零 reallocation；</li>
+    <li>⚠️ <strong>resize 不是为栈准备的</strong>：括号定长初始化（和 resize()）会同时设置 capacity <strong>和</strong> length——<code>std::vector&lt;int&gt; stack(3)</code> 让栈底压着 3 个 0，之后 push 全排在它们上面（经典错误）；</li>
+    <li>口诀：<strong>用索引访问 → resize（length 得变）；用栈操作 → reserve（只要容量）</strong>。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>③ 预计要 push 约 1000 个数进空 vector，想避免反复 reallocation。该用？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="resize(1000) 会把 length 设为 1000——1000 个 0 已经在容器里了，push_back 是接在它们后面。栈场景要的是'容量就绪、长度为零'。" >v.resize(1000);</button>
+    <button data-k="b" data-ok="1" data-why="正确！reserve(1000) 一次性分配容量、length 保持 0，之后 1000 次 push_back 零 reallocation。resize 管 length（必要时动 capacity），reserve 只管 capacity。" >
+      v.reserve(1000);</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>④ "<code>back()</code> 返回栈顶元素并把它从 vector 里移除。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="back() 是 peek（偷看），不移除；移除栈顶是 pop_back()（返回 void）。一把钥匙开一把锁：back 看，pop_back 删。" >对 —— 看即删</button>
+    <button data-k="b" data-ok="1" data-why="正确！back() 只返回末元素的引用（不移除）；pop_back() 才移除（返回 void，想要弹出的值得先 back() 存一份）。" >
+      不对 —— back() 只看不删，pop_back() 才删</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：push_back vs emplace_back</div>
+  <pre class="code">Foo f{ "a", 2 };
+stack.push_back(f);     // 已有对象：两者等价，prefer push_back
+stack.emplace_back(f);
+
+stack.push_back({ "a", 2 });  // 需要临时对象：先造临时再移入
+stack.emplace_back("a", 2);   // 把参数转发进容器【就地构造】，免拷贝更高效
+
+stack.push_back({ 2 });  // ❌ 编译错误：Foo(int) 是 explicit
+stack.emplace_back(2);   // ✅ emplace_back 会用 explicit 构造函数</pre>
+  <p>Best practice：<strong>要新建临时对象入容器（或需要 explicit 构造函数）→ emplace_back；其余 → push_back</strong>。emplace_back 更高效也更危险（容易意外触发转换构造），已有对象时没必要用它。</p>
+</div>
+
+<h2>std::vector&lt;bool&gt;：最著名的"伪容器"</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：vector&lt;bool&gt; 特化（specialization）</div>
+  <p><code>std::vector&lt;bool&gt;</code> 是类模板<strong>特化</strong>：可能把 8 个 bool 压进 1 个字节省空间。听着美好，代价三连：</p>
+  <ol>
+    <li>vector 对象自身开销不小（sizeof 约 40 字节）——bool 少于几十个根本省不到；</li>
+    <li>性能高度依赖实现（规范不强制优化做好）；</li>
+    <li>最要命：<strong>它不是 vector、不存 bool、不符合 C++ 容器定义</strong>——返回的是代理对象而非真正的 <code>bool&amp;</code>，对其他元素类型成立的代码（<code>T&amp; first = v[0];</code>）到它这里直接编译失败。</li>
+  </ol>
+  <p><strong>Best practice：避免 std::vector&lt;bool&gt;</strong>。替代：编译期已知位数 → (constexpr) <code>std::bitset</code>；要可变长 bool → <code>std::vector&lt;char&gt;</code>；要动态位集 → 第三方（如 boost::dynamic_bitset）。例外：官方 quiz 里用 <code>std::vector&lt;bool&gt;(26)</code> 做"26 字母猜没猜过"表——不依赖标准容器其他功能时可用。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "<code>std::vector&lt;bool&gt;</code> 与其他 vector 用法完全兼容——能拿到元素的真正引用。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="它是特化：operator[] 返回代理对象，bool&amp; first = v[0] 编译不过。'兼容容器'的假设正是它最坑的地方。" >对 —— 就是普通 vector</button>
+    <button data-k="b" data-ok="1" data-why="正确！压位存储的代价：不是 vector、不存 bool、不是 C++ 定义的 container。官方 best practice 明确建议避免（bitset / vector&lt;char&gt; / 第三方动态位集替代）。" >
+      不对 —— 伪容器，拿不到 bool&amp;</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 第 16 章收官：你已经在读标准库的设计了</div>
+  <p>回看一章：vector 的创建（list constructor）用到 14 章构造函数（14.2）知识；按 const 引用传参、按值返回（move）复用 12/14 章的引用与拷贝语义；遍历与枚举索引把 8 章循环和 13 章枚举串起来；length/capacity 分账是 14 章"不变式"（14.1）思想的工程化。<strong>std::vector 不是黑魔法，是你亲手学过的每个部件的合体</strong>。下一章：定长数组 std::array 与 C-style 数组——vector 的"静态兄弟"，也是 C 遗产的最后一课。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter16/03-capacity-stack/</code> 的 <code>capacity_demo.cpp</code>（resize/reserve/capacity 实测）、<code>exercises/score_stack.cpp</code>（定长 3 槽 → push_back 直到 -1，官方 16.11 场景）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="02-loops-range.html"><span class="dir">← 上一页</span>16.2 循环遍历与 for-each</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 16 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/stdvector-resizing-and-capacity/">LearnCpp 16.10–16.12</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

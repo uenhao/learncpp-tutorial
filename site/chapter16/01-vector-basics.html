@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>16.1 vector 基础 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter16/01-vector-basics.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 16 章</a> / vector 基础</div>
+<article>
+<h1>16.1 std::vector 基础：给"一堆变量"一个容器</h1>
+
+<p>要存 30 个考试分数，难道定义 testScore1 到 testScore30？——1.7 课"数据要成组"的终极形态来了：本章的主角 <strong>std::vector</strong>，你亲手学过的类模板（15 章）造出的标准库动态数组。（原文 16.1–16.4）</p>
+
+<h2>容器（container）与数组（array）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：container / elements / length</div>
+  <p><strong>容器</strong> = 为一批<strong>未命名对象（elements，元素）</strong>提供存储的类型。与 struct 的本质区别：<strong>元素没有名字</strong>——所以想装多少装多少，不必给每个元素起名。元素个数叫 <strong>length（长度）</strong>（C++ 里也常被叫 size——不幸的术语，sizeof 的 size 指字节数；本教程约定：元素个数 = length，存储量 = size）。容器是<strong>同质的</strong>（homogenous）：元素类型必须一致。</p>
+  <p><strong>数组</strong> = 把元素<strong>连续</strong>存储、支持快速直接访问的容器。C++ 三种主要数组：</p>
+  <ul>
+    <li><strong>C-style arrays</strong>：语言核心、源自 C，行为怪异且危险（17 章再会）；</li>
+    <li><strong>std::vector</strong>：最灵活、长度可变（本章主角）；</li>
+    <li><strong>std::array</strong>：C-style array 的现代替代，定长（17 章）。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "容器比 struct 强在：元素没有名字，所以容器想装多少个元素都行。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="struct 成员必须各有唯一名字——加一个成员要改类型定义。容器元素无名，长度想是多少就多少，这正是'装 30 个分数'的正确解法。" >对 —— 无名元素可扩展</button>
+    <button data-k="b" data-why="方向反了：无名不是缺陷而是容器的立身之本。13 课 struct 解决'相关数据打包'，容器解决'同质数据成批'——各有分工。" >不对 —— 元素必须有名字</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>创建 vector 与下标访问</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：list constructor 与 operator[]</div>
+  <pre class="code">std::vector&lt;int&gt; empty{};         // 0 个元素（value initialization）
+std::vector primes{ 2, 3, 5, 7, 11 }; // CTAD 推导出 vector&lt;int&gt;（15.2 课）
+std::vector vowels{ 'a', 'e', 'i', 'o', 'u' }; // CTAD 推导出 char
+
+std::cout &lt;&lt; primes[0];  // 下标从 0 开始（zero-based）
+primes[2] = 13;          // operator[] 返回元素的【引用】——可直接赋值</pre>
+  <p>方括号里的整数叫 <strong>subscript（下标）/ index（索引）</strong>。Key insight：索引的本义是<strong>"距首元素的偏移距离"</strong>——走 0 步还在第一个元素。所以长度 5 的合法下标是 0..4，<strong>没有下标 5</strong>。⚠️ <code>operator[]</code> <strong>完全不做越界检查</strong>——非法索引直接未定义行为（4 课老朋友）；越界检查靠你自己"索引前先查"。</p>
+</div>
+
+<div class="predict" data-answer="28" data-hint="合法下标只有 0 到 4——五个质数加起来是多少？" data-explain="28！2+3+5+7+11 = 28。注意最后一个合法下标是 4（= 长度 - 1）——下标 5 已经越界。">
+  <p class="quiz-q"><span class="qtag">预测</span>② <code>std::vector primes{ 2, 3, 5, 7, 11 };</code>，打印 <code>primes[0] + primes[1] + primes[2] + primes[3] + primes[4]</code> 是多少？</p>
+  <div class="prow"><input type="text" placeholder="数值"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ { 5 } 和 ( 5) 是两个世界：list constructor 的优先规则</div>
+  <p>容器有特殊的 <strong>list constructor</strong>（接受 initializer list：分配存储、设长度为列表元素个数、按序初始化元素）。匹配规则：<strong>initializer list 非空时，list constructor 优先于其他构造函数</strong>；列表为空时默认构造优先：</p>
+  <pre class="code">std::vector&lt;int&gt; v1 { 5 };  // 列表 { 5 } → list constructor → 1 个元素，值 5
+std::vector&lt;int&gt; v2 ( 5 );  // 不是列表 → 长度构造函数 → 5 个元素，全部 0
+std::vector&lt;int&gt; v3(365);   // 想要"365 个格子"就用直接初始化（括号）</pre>
+  <p>所以给容器"非元素值"的初始化（比如长度）要用<strong>直接初始化</strong>。另外：<code>std::vector</code> 可以 const 但<strong>不能 constexpr</strong>（要编译期数组 → 17 章 std::array）；元素类型不能是 const（const 性由容器本身提供）。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>③ <code>std::vector&lt;int&gt; v2( 5 );</code> 执行后 <code>v2.size()</code> 和 <code>v2[0]</code> 是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="反了——花括号才是元素值初始化（1 个元素 5）。圆括号匹配的是'长度构造函数'（explicit std::vector(std::size_t)）。" >1 个元素，值 5</button>
+    <button data-k="b" data-ok="1" data-why="正确！圆括号走长度构造：5 个元素全部 value-initialized（int → 0）。{ 5 } 与 ( 5) 语义天差地别——16.2 官方 quiz 的头号考点。" >
+      5 个元素，v2[0] == 0</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>unsigned 长度问题：size_type 的祸根</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：size_type / size() / std::size() / std::ssize()</div>
+  <p>每个容器类定义了嵌套别名 <code>size_type</code>（几乎总是 <code>std::size_t</code> 的别名，unsigned）作为长度与索引的类型。取长度的三种方式：</p>
+  <pre class="code">std::vector prime{ 2, 3, 5, 7, 11 };
+
+prime.size()            // 成员函数，返回 unsigned 的 size_type
+std::size(prime)        // C++17 非成员函数（对容器就是调 size()）
+std::ssize(prime)       // C++20！返回【有符号】大整型（通常 ptrdiff_t）</pre>
+  <p>为什么要纠结？10 课的窄化规则回来了：<code>operator[]</code> 的形参是 unsigned 的 size_type，<strong>非 constexpr 的 signed 索引</strong>（<code>int index{3}; prime[index]</code>）会触发 sign conversion 警告（GCC 需显式开 <code>-Wsign-conversion</code> 才可见）；而 <strong>constexpr 索引可以无损转换、不算窄化</strong>（这就是为什么本章到处能用字面量做下标）。历史原因：90 年代设计者想让"下标非负 + 多一位表达力 + 一次比较做范围检查"，事后公认是错误决定——负 int 隐式转成巨大 unsigned 让非负保证失效，而 operator[] 本来就不做范围检查。现实只能接受。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>④ "<code>std::vector prime{2,3,5,7,11};</code> 执行 <code>prime[9]</code> 会得到编译错误。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="编译器不查 operator[] 的越界——它是运行期索引，检查成本太高。越界是未定义行为：可能打印垃圾、可能崩溃、可能'看起来正常'。" >对 —— 越界直接编译报错</button>
+    <button data-k="b" data-ok="1" data-why="正确！编译能过、运行是 UB。想要运行期检查用 <code>at()</code>（越界抛 std::out_of_range，异常见 27 章），但更推荐在索引前自己做边界判断。" >
+      不对 —— 编译通过，运行是 UB</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>传递 std::vector：按 const 引用</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：pass by const reference + 函数模板</div>
+  <p>vector 按值传递会拷贝<strong>全部元素</strong>——昂贵。惯例：按 (const) 引用传。元素类型是类型的一部分，形参必须写全 <code>const std::vector&lt;int&gt;&amp;</code>；<strong>CTAD 不能用于函数形参</strong>。想让函数接受任意元素类型的 vector：</p>
+  <pre class="code">// 方案一：函数模板（11.1 课的实战）
+template &lt;typename T&gt;
+void passByRef(const std::vector&lt;T&gt;&amp; arr) { std::cout &lt;&lt; arr[0]; }
+
+// 方案二：C++20 缩写函数模板
+void passByRef(const auto&amp; arr) { std::cout &lt;&lt; arr[0]; }</pre>
+  <p>若函数假定"至少 4 个元素"，编译器拦不住调用者传 2 个元素的 vector → <code>arr[3]</code> 是 UB。对策：运行期 <code>assert(arr.size() &gt;= 4)</code>（9 课）——vector 的 size() 不是 constexpr，static_assert 用不了（17 章的 std::array 可以）。更好的对策：一开始就别写依赖调用者保证长度的函数。</p>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：从"给每个值起名"到"按位置寻址"</div>
+  <p>1.7 课的身高排序曾用"名字和身高必须一起移动"的笨办法；13 课 struct 让数据成组；本课 vector 让<strong>同质数据成批</strong>——不再给每个值起名，而是给"位置"（下标）编号。下一课用循环消化"成批"：循环变量当索引，30 个分数的和只占三行。unsigned 长度的坑先记住结论：<strong>能不用整数索引就不用</strong>（16.7 课的最终答案）。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter16/01-vector-basics/</code> 的 <code>vector_demo.cpp</code>（创建/下标/{5} vs (5) 对照）、<code>exercises/three_ints.cpp</code>（三个变量 → vector 化，官方 16.2 Q4）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 16 章</a>
+  <a class="next" href="02-loops-range.html"><span class="dir">下一页 →</span>16.2 循环遍历与 for-each</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-stdvector-and-list-constructors/">LearnCpp 16.1–16.4</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

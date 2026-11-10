@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>16.2 循环遍历与 for-each · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter16/02-loops-range.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 16 章</a> / 循环遍历与 for-each</div>
+<article>
+<h1>16.2 循环遍历与 for-each：让"成批"真正可扩展</h1>
+
+<p>上一课的 vector 解决了"不必给每个元素命名"；本课用<strong>循环</strong>解决"不必逐个列出元素"，再把 16.3 的 unsigned 索引问题一并了断——答案是<strong>尽量别用索引</strong>。（原文 16.5–16.9）</p>
+
+<h2>按值返回 vector？OK！——移动语义初见</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：move semantics（移动语义）</div>
+  <p>传 vector 进函数按引用省拷贝，但<strong>按值返回 vector 反而是推荐的</strong>。为什么待遇不同？——<strong>移动语义</strong>：当初始化器是<strong>即将销毁的 rvalue 临时对象</strong>时，与其"深拷贝再销毁原件"，不如把数据所有权<strong>偷</strong>过来（通常只是两三次指针赋值，成本微不足道）。</p>
+  <pre class="code">std::vector&lt;int&gt; generate()
+{
+    std::vector arr1{ 1, 2, 3, 4, 5 };
+    return arr1;   // 按值返回：NRVO 省略（14.3 课）或移动
+}
+
+std::vector arr2{ generate() };  // 返回值是 rvalue → 移动进 arr2，几乎免费</pre>
+  <p>move 自动发生的条件（三选三）：①类型支持 move（<code>std::vector</code>、<code>std::string</code> 都支持）；②初始化器是同类型 rvalue；③拷贝没被 elision 省掉。结论（原文）：<strong>move-capable 类型传参用 const 引用、返回用按值</strong>。⚠️ 别对 lvalue 乱用 move——把实参的数据偷走后，原对象变成空壳，再用就是 UB。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "std::vector 按值返回必然触发整包元素的深拷贝，所以返回 vector 要用输出参数或指针。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="返回值是 rvalue —— elision（C++17 强制场景）或 move semantics 会接手，成本接近零。'传参用 const 引用、返回用按值'是 move-capable 类型的官方配方。" >对 —— 返回即深拷贝</button>
+    <button data-k="b" data-ok="1" data-why="正确！copy elision（14.3 课）+ move semantics（本课）双保险：按值返回 vector 是安全且高效的。输出参数语法丑、限制多，不必用。" >
+      不对 —— elision 或移动接手，近乎免费</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>数组与循环：索引变量当"数数器"</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：traversal（遍历）与模板的三重奏</div>
+  <p>下标可以是<strong>运行期表达式</strong>——用循环变量做索引，就不再需要逐个列出元素（8 章的 for 循环派上大用场）。按顺序访问每个元素叫<strong>遍历（traversal / iteration）</strong>：</p>
+  <pre class="code">template &lt;typename T&gt;
+T calculateAverage(const std::vector&lt;T&gt;&amp; arr)
+{
+    std::size_t length{ arr.size() };
+
+    T average{};
+    for (std::size_t index{ 0 }; index &lt; length; ++index)  // 0 到 length-1
+        average += arr[index];
+    average /= static_cast&lt;int&gt;(length);  // 个数本质是整数
+
+    return average;
+}</pre>
+  <p><strong>模板 + 数组 + 循环 = scalability</strong>：数组免命名、循环免列举、模板免写死类型。⚠️ <strong>off-by-one 错误</strong>：遍历条件是 <code>index &lt; length</code>——写成 <code>&lt;=</code> 就会在 <code>index == length</code> 时越界（UB）。容器的四大遍历用途：算新值（平均/和）、搜索（找值/计数/最大）、逐个操作（打印/×2）、重排（排序，交给标准库算法）。</p>
+</div>
+
+<div class="predict" data-answer="77" data-hint="和是多少？整数除法会怎么处理小数部分？" data-explain="77！84+92+76+81+56 = 389，389 / 5 = 77.8 → 整数除法截断为 77（6 课）。循环从 0 跑到 length-1，一个下标都不多。">
+  <p class="quiz-q"><span class="qtag">预测</span>② <code>{ 84, 92, 76, 81, 56 }</code> 走上面的 calculateAverage，输出多少？</p>
+  <div class="prow"><input type="text" placeholder="数值"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<h2>符号挑战：unsigned 索引的六种活法</h2>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 反向遍历的死亡陷阱</div>
+  <pre class="code">for (std::size_t index{ arr.size() - 1 }; index &gt;= 0; --index)  // index 是 unsigned
+    std::cout &lt;&lt; arr[index] &lt;&lt; ' ';</pre>
+  <p>两个致命伤：① <strong>unsigned 永远 &gt;= 0</strong>——条件恒真，循环永不终止；② index 减到 0 再 <code>--index</code> 会<strong>回绕成巨大正值</strong>，下一次迭代越界（UB）。空 vector 更惨：<code>size() - 1</code> 一开始就是巨大值。改用 signed 索引能救命，但每处 <code>arr[index]</code> 都要 <code>static_cast&lt;std::size_t&gt;</code>——"安全"换"刷屏的转换"。</p>
+</div>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：六种方案速览（从差到好）</div>
+  <ol>
+    <li><strong>关警告</strong>——省事但连有用的警告一起杀，不推荐；</li>
+    <li><strong>unsigned 循环变量</strong>（<code>std::size_t</code> 或冗长的 <code>std::vector&lt;int&gt;::size_type</code>）——一致但反向遍历仍危险；</li>
+    <li><strong>signed 循环变量</strong>（int / ptrdiff_t）+ <code>static_cast</code> 或短名 <code>toUZ()</code> 助手——符合 best practice 但 clutter；C++20 取 signed 长度用 <code>std::ssize()</code>；</li>
+    <li><strong>自定义视图类</strong>（SignedArrayView 包装 signed 索引）——能做但复杂；</li>
+    <li><strong>索引底层 C-style 数组</strong>：<code>arr.data()[signedIndex]</code>——data() 返回的裸数组接受 signed/unsigned 索引，无警告、无性能损失，<strong>官方认证"索引方案中最好"</strong>；</li>
+    <li><strong>彻底避免索引</strong>——range-based for（下节）与迭代器（18 章）。</li>
+  </ol>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>③ <code>for (std::size_t index{ arr.size() - 1 }; index &gt;= 0; --index)</code> 遍历非空 vector，会发生什么？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！条件恒真（unsigned 没有'小于 0'），且 index 回绕后越界——先打出全部元素再 UB。反向遍历要用 signed 索引（for (int index{...}; index >= 0; --index)）或干脆倒着看的 range 视图。" >
+      死循环 + 越界 UB（回绕成巨大下标）</button>
+    <button data-k="b" data-why="unsigned 的 >= 0 永远为真——这不是'刚好停在下标 0'，是停不下来。" >正常打印一遍</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>Range-based for（for-each）：没有索引的遍历</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：for (declaration : array)</div>
+  <pre class="code">std::vector fibonacci{ 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
+
+for (int num : fibonacci)   // 每轮把当前元素【拷贝】给 num
+    std::cout &lt;&lt; num &lt;&lt; ' ';
+
+for (const auto&amp; num : fibonacci)  // 只读 → const 引用，零拷贝
+    std::cout &lt;&lt; num &lt;&lt; ' ';
+
+for (auto&amp; num : fibonacci)        // 要修改原元素 → 非 const 引用
+    num *= 2;</pre>
+  <ul>
+    <li>Key insight：<code>num</code> 不是索引，是<strong>当前元素值的拷贝</strong>；</li>
+    <li>元素类型声明用 <code>auto</code> 系（和容器同步）；<strong>只看不改就 <code>const auto&amp;</code></strong>——官方反例：元素从 string_view 换成 std::string 后，<code>auto</code> 会<strong>静默</strong>产生昂贵拷贝；</li>
+    <li>空容器：循环体一次都不执行；</li>
+    <li>拿不到当前索引（std::list 等结构不支持索引）——要索引就自己维护计数器，但那说明该用普通 for；</li>
+    <li>C++20 反向遍历：<code>for (const auto&amp; word : std::views::reverse(words))</code>（需要 &lt;ranges&gt;）。</li>
+  </ul>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践（原文）</div>
+  <p>遍历容器<strong>优先 range-based for</strong>；元素类型用推导；取值：<code>auto</code>（要改副本）/ <code>auto&amp;</code>（要改原元素）/ <strong><code>const auto&amp;</code>（其余全部）</strong>。16.7 课的终审判词也在此兑现：<strong>只在遍历时才用索引变量的话，就别用索引</strong>。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>④ "<code>for (auto word : words)</code> 中 word 绑定的是容器里的元素本身，零拷贝。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="auto 是值拷贝——每个元素都复制一份。零拷贝写法是 const auto&amp;（只读）或 auto&amp;（要改）。元素便宜时无感，元素换成 std::string 就是静默性能坑。" >对 —— word 就是元素</button>
+    <button data-k="b" data-ok="1" data-why="正确！auto 声明的是新变量，每轮拷贝当前元素。原文的最佳实践：不需要改元素就一律 const auto&amp;。" >
+      不对 —— auto 是拷贝，只读应写 const auto&amp;</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>用枚举器做索引：给下标以含义</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：枚举索引 + count enumerator</div>
+  <p><code>testScores[2] = 76;</code> 里那个 2 是谁？——<strong>unscoped 枚举器做索引</strong>，下标立刻可读（枚举器隐式 constexpr，转 unsigned 不算窄化，符号问题自动绕开）：</p>
+  <pre class="code">namespace Students
+{
+    enum Names { kenny, kyle, stan, butters, cartman, max_students };
+}
+
+std::vector testScores{ 78, 94, 66, 77, 14 };
+testScores[Students::stan] = 76;  // 一眼看懂：改 stan 的分
+
+// count enumerator：列表末尾多放一个，值 = 前面枚举器个数（5）
+std::vector&lt;int&gt; testScores2(Students::max_students);  // 自动 5 个格子
+assert(std::size(testScores) == Students::max_students); // 长度断言（9 课）</pre>
+  <ul>
+    <li><strong>count enumerator</strong>：新增枚举器时长度/断言自动跟随——"忘了同步"这类 bug 被 struct 级消除；</li>
+    <li>非 constexpr 枚举变量做索引时，底层类型可能是 signed → 警告；显式指定 <code>enum Names : unsigned int</code> 解决；</li>
+    <li><strong>enum class 不能直接当索引</strong>（无隐式转换）——要么每处 static_cast，要么重载一元 operator+（原文 16.9 的 helper，本站未展开），要么退回"namespace 包普通 enum"。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "枚举器列表末尾的 count enumerator（如 max_students）在新增枚举器后会自动 +1。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="前面都用默认值时，count 枚举器的值 = 前面枚举器的个数。加一个 wendy，max_students 自动变 6——所有用它的数组长度、断言全部自动更新。" >对 —— 自动跟随</button>
+    <button data-k="b" data-why="反了——count 枚举器的值就是'前面枚举器的个数'，加一个 wendy 它自动变 6，无需手动维护。这正是它存在的意义：把元素个数从魔法数字变成派生值。" >不对 —— 要手动维护</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 本课一条主线：消灭下标</div>
+  <p>16.3 揭示下标是 unsigned 的历史包袱，16.6 用循环消化下标，16.7 列出六种活法后宣判"避免索引"，16.8 给出免索引的遍历，16.9 给下标注入含义。全章的态度是一致的：<strong>索引是不得已的工具，不是默认写法</strong>。下一课回到 vector 的"动态"二字——长度怎么变、容量怎么管、栈行为怎么用。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter16/02-loops-range/</code> 的 <code>loops_demo.cpp</code>（模板 + 平均分）、<code>range_demo.cpp</code>（auto / auto&amp; / const auto&amp; 三态）、<code>exercises/find_max.cpp</code>（修一个"全负数组返回 0"的经典 bug）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="01-vector-basics.html"><span class="dir">← 上一页</span>16.1 vector 基础</a>
+  <a class="next" href="03-capacity-stack.html"><span class="dir">下一页 →</span>16.3 容量与栈行为</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/arrays-and-loops/">LearnCpp 16.5–16.9</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 17 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter17/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 17 章</a> / 综合测验</div>
+<article>
+<h1>第 17 章综合测验</h1>
+
+<p>10 题：std::array 的编译期能力、decay 与指针算术、多维陷阱。先预测再作答。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>① 哪个<strong>不能</strong>作 std::array 的长度实参？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="整数字面量、constexpr 变量、unscoped 枚举器都合法（官方 16.9 课 count 枚举器的用武之地）。" >constexpr int len{ 8 }; 里的 len</button>
+    <button data-k="b" data-why="枚举器隐式 constexpr——合法。" >枚举器 max_colors</button>
+    <button data-k="c" data-ok="1" data-why="正确！长度必须是常量表达式；函数形参是运行期值（哪怕标了 const）——元素个数运行期才定就该用 std::vector。官方 17.x Q1c 同考点（函数形参例见官方 17.1）。" >
+      函数形参 const int length</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "<code>std::get&lt;9&gt;(prime)</code>（5 元素数组）是运行时抛异常，程序还能救回来。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="抛异常的是 at()（运行期检查）。std::get 的索引是模板参数，内部 static_assert——越界直接编译失败，程序根本诞生不了。" >对 —— at 家族都是运行期</button>
+    <button data-k="b" data-ok="1" data-why="正确！std::get 是编译期检查（仅限 constexpr 索引）；operator[] 无检查；at() 才是运行期抛 std::out_of_range。" >
+      不对 —— std::get 越界是编译错误</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>③ "函数模板 <code>template &lt;typename T, int N&gt; void f(const std::array&lt;T, N&gt;&amp;)</code> 能接收 std::array&lt;int, 5&gt;。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="模板实参推导不做隐式转换：std::array 的 N 是 std::size_t，int 形参类型不匹配——no matching function。N 必须声明为 std::size_t（或 C++20 auto）。" >对 —— 5 自动转成 int</button>
+    <button data-k="b" data-ok="1" data-why="正确！non-type 模板参数的类型必须严格匹配（std::size_t），这是 17.3 的 Best practice 级细节。" >
+      不对 —— 模板不做转换，匹配失败</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ <code>std::array&lt;House, 3&gt; houses { {13,1,7}, {14,2,5}, {15,2,4} };</code>（单层括号，未写元素类型）？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="{13,1,7} 被当成内部 C-style array 成员的初始化器——多余 initializer 报错。修复：双括号 {{ ... }} 或每个元素写 House{...}（brace elision 生效）。" >能编译</button>
+    <button data-k="b" data-ok="1" data-why="正确！类类型元素且不写元素类型 → 必须双花括号。官方 17.4 quiz Q2 原题。" >
+      编译错误——需要双花括号或写明 House</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑤ <code>int arr[5]{...}; auto ptr{ arr };</code>——ptr 的类型是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！数组在求值语境中 decay 成首元素指针，auto 推导出 int*。长度类型信息丢失——'decay'一词的本义。按引用写 auto&amp; 才能保住数组类型。" >
+      int*（decay 发生了）</button>
+    <button data-k="b" data-why="auto 推导用的是 decay 后的类型——想保住数组类型要用 auto&amp;（引用绑定不 decay）。" >int[5]（数组类型）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="7" data-hint="ptr[-1] ≡ *(ptr + (-1))——ptr 所指对象（元素 3）的上一个对象是？" data-explain="7！ptr 指向元素 3（值 6），ptr[-1] 是上一个对象 = 元素 2 = 7。下标就是指针算术：ptr[n] ≡ *(ptr+n)，负索引完全合法。">
+  <p class="quiz-q">⑥ <code>const int arr[] { 9, 8, 7, 6, 5 };</code>，<code>const int* ptr{ &amp;arr[3] };</code>。<code>ptr[-1]</code> 是多少？</p>
+  <div class="prow"><input type="text" placeholder="数值"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑦ "C++ 里数组就是指针——把数组传给函数就是把数组对象本身传过去。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="两层误解：数组与指针是不同类型（int[5] 带长度信息）；传参时发生 decay——传的是首元素地址，数组本身不被拷贝也不被传递。原文 Key insight：C-style arrays are passed by address, even when it looks like they are passed by value." >对 —— 数组即指针</button>
+    <button data-k="b" data-ok="1" data-why="正确！数组是元素序列，指针是地址；传参按地址（decayed），长度信息丢失。sizeof 在函数内因此返回指针大小——老 hack 的翻车点。" >
+      不对 —— 传的是 decay 后的首元素地址</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑧ <code>char str[255]{ "string" };</code>——<code>std::size(str)</code> 和 <code>std::strlen(str)</code> 分别返回？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！std::size 看数组（255 个 char），strlen 数到 '\0'（6 个字符，且要逐字符走——慢）。decayed 后 std::size 编译错误、strlen 仍工作。" >
+      255 和 6</button>
+    <button data-k="b" data-why="反了——std::size 从不数 '\0'；strlen 才是'字符串长度'。两个长度函数各管一头。" >
+      6 和 255</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑨ "在接收 C-style 数组的函数里，<code>sizeof(arr)</code> 返回整个数组的字节数。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="形参早就 decay 成指针了——sizeof 返回指针大小（8），与数组长度无关。'sizeof(arr)/sizeof(arr[0])' 的老 hack 在函数内全错；std::size(ptr) 会编译错误（这是保护）。" >对 —— 完整数组大小</button>
+    <button data-k="b" data-ok="1" data-why="正确！decay 之后 arr 只是 int*。17.8 的 sizeof 陷阱是 decay 课的招牌案例。" >
+      不对 —— 返回指针大小</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑩ "全局 constexpr 程序数据（如查找表）用 C-style array 是可接受的现代用法。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！'Avoid C-style arrays whenever practical' 有一个官方豁免：全局（或 constexpr static local）程序数据——无需传参（不怕 decay）、语法更简洁、索引无符号转换问题。constexpr std::array 也行，两者皆可。" >
+      对 —— 官方豁免场景</button>
+    <button data-k="b" data-why="豁免是官方原文给的：不传参就不 decay，作为全局 constexpr 数据语法还更省事。当然 std::array 也是合法选择。" >不对 —— 一律禁止</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 17 章全部通过！三种数组的选型表已刻进脑中——下一章：迭代器与标准库算法（begin/end 遍历的完全体）。</div>
+
+<div class="pager">
+  <a class="prev" href="03-multidim.html"><span class="dir">← 上一节</span>17.3 多维数组</a>
+  <a class="next" href="../index.html"><span class="dir">返回 →</span>目录</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-17-summary-and-quiz/">LearnCpp Chapter 17 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

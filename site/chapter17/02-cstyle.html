@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17.2 C-style 数组与退化 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter17/02-cstyle.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 17 章</a> / C-style 数组与退化</div>
+<article>
+<h1>17.2 C-style 数组与退化：语言内置的原始数组</h1>
+
+<p>std::array、std::vector 的地基是 <strong>C-style arrays</strong>——C++ 语言核心内置、无需头文件、从 C 继承的原始数组。它怪异且危险（原文原话），但老代码遍地都是，而且 12 课的指针要在这里补完最后一课。<strong>数组退化（decay）</strong>是理解它的钥匙。（原文 17.7–17.11）</p>
+
+<h2>C-style 数组基础</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：内置数组语法</div>
+  <pre class="code">int testScore[30] {};   // 30 个 value-init 的 int——不需要 #include 任何东西
+
+const int prime[] { 2, 3, 5, 7, 11 }; // 全部元素给了初始化器 → 长度可省略
+
+// 与 std::array 的差异：
+// - 索引：operator[] 接受【任何整型】（signed/unsigned/枚举）→ 没有
+//   官方 16.3 的符号转换索引问题；同样无越界检查
+// - 不能 CTAD：元素类型必须显式写
+// - 不能整体赋值：arr = { 5, 6, 7 }; 是编译错误（数组不是可赋值 lvalue）
+// - sizeof(prime) 返回整个数组的字节数（5 × 4 = 20），无额外开销</pre>
+  <p>长度必须 ≥ 1 的常量表达式；全量初始化时<strong>省略长度</strong>让编译器数（原文 Best practice）。部分编译器允许非常量长度——那是 C99 VLA 扩展，<strong>不是合法 C++</strong>，别用。取长度用 <code>std::size()</code>（C++17）/ <code>std::ssize()</code>（C++20），需要 &lt;iterator&gt;。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>① 相比 std::vector/std::array，C-style 数组的索引有个"优势"是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！内置 operator[] 接受任何整型——signed 索引不触发 sign conversion 警告（官方 16.7 课 data() 方案的原理正是'索引底层 C-style 数组'）。但越界照样 UB，这个'优势'不包含安全。" >
+      接受有符号索引，无符号转换问题</button>
+    <button data-k="b" data-why="恰恰相反：C-style 数组的越界检查、类型推导（无 CTAD）、整体赋值全面落后于 std::array。" >有越界检查更安全</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>数组退化（array decay）：数组会"变成"指针</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：decay——长度信息的丢失</div>
+  <p>在大多数表达式语境中，C-style 数组被<strong>隐式转换成指向首元素的指针</strong>：</p>
+  <pre class="code">int arr[5]{ 9, 7, 5, 3, 1 };
+
+auto ptr{ arr };                    // ptr 的类型是 int*（decay 发生了！）
+std::cout &lt;&lt; (typeid(ptr) == typeid(int*));  // true
+std::cout &lt;&lt; (&amp;arr[0] == ptr);               // true：指向首元素</pre>
+  <ul>
+    <li><strong>不 decay 的少数场景</strong>：sizeof、typeid、&amp;取数组地址、类成员、按引用传递；</li>
+    <li>Key insight：<strong>decayed 指针不知道数组多长</strong>——"decay"这个词说的就是长度类型信息的丢失；</li>
+    <li><strong>传参真相</strong>：看似按值传数组，实际传的是首元素地址（天然免拷贝）。<code>void f(int arr[])</code> 与 <code>void f(int* arr)</code> 编译器看来一样（原文 Best practice：形参用数组语法 <code>int arr[]</code>，向人表明"这是退化数组"）；</li>
+    <li><strong>sizeof 陷阱</strong>：函数内 <code>sizeof(arr)</code> 返回<strong>指针大小</strong>（8）而非数组大小——<code>sizeof(arr)/sizeof(arr[0])</code> 的老 hack 因此危险；<code>std::size(ptr)</code> 对指针<strong>直接编译错误</strong>——这是保护不是缺陷！</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "C++ 里数组就是指针——arr 和 int* 是一回事。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="常见误解！数组对象是元素的序列（int[5] 携带长度信息），指针对象只是地址（int* 不携带）。'变成指针'只在多数表达式语境发生（decay），sizeof/typeid/&amp;/按引用传参时不发生。" >对 —— 数组就是首元素指针</button>
+    <button data-k="b" data-ok="1" data-why="正确！数组与指针是不同类型的对象；decay 是语境相关的隐式转换，转换后长度信息丢失。这也是'数组按引用传参不 decay'能保住长度的原因。" >
+      不对 —— 数组是数组，退化才是指针</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>指针算术：下标的真面目</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：ptr[n] 就是 *(ptr + n)</div>
+  <p><strong>指针算术</strong>：<code>ptr + 1</code> 返回<strong>下一个对象</strong>的地址（按所指类型步进，int* 即 +4 字节）——不是下一个内存地址。而下标的真相：</p>
+  <pre class="code">ptr[n]  ≡  *(ptr + n)     // 下标就是指针算术的简写！
+arr[0]  ≡  *arr           // 加 0 步还是首元素——数组从 0 开始的真正原因
+
+const int arr[] { 9, 8, 7, 6, 5 };
+const int* ptr{ arr };        // 指向元素 0
+ptr[1];   // 元素 1 → 8
+ptr = &amp;arr[3];                // 现在指向元素 3
+ptr[1];   // "ptr 所指对象的下一个对象" → 元素 4 → 5
+ptr[-1];  // 负索引合法：上一个对象 → 元素 2 → 7</pre>
+  <ul>
+    <li>Key insight：<strong>索引是相对位置不是绝对位置</strong>——ptr 指到哪，ptr[1] 就是"它下一个"；</li>
+    <li>Best practice：<strong>从头（元素 0）索引用下标；从某元素出发的相对定位用指针算术</strong>；</li>
+    <li>遍历模式：<code>begin</code> 指首元素、<code>end</code> 指尾后（one-past-the-end），<code>for (; begin != end; ++begin)</code>——持有尾后地址合法（不可解引用）；18 章迭代器正是这个模式；</li>
+    <li>官方 16.8 的 range-based for 底层就是这么展开的：<code>arr</code> 到 <code>arr + std::size(arr)</code>。</li>
+  </ul>
+</div>
+
+<div class="predict" data-answer="7" data-hint="ptr[-1] ≡ *(ptr + (-1))——ptr 所指对象（元素 3）的上一个对象是？" data-explain="7！ptr[-1] ≡ *(ptr + (-1)) = ptr 所指对象（元素 3，值 6）的上一个对象 = 元素 2 = 7。负索引完全合法——下标就是指针算术。">
+  <p class="quiz-q"><span class="qtag">预测</span>③ <code>const int arr[] { 9, 8, 7, 6, 5 };</code>，<code>const int* ptr{ &amp;arr[3] };</code>。<code>ptr[-1]</code> 是多少？</p>
+  <div class="prow"><input type="text" placeholder="数值"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<h2>C-style 字符串：null terminator 的故事</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：C-style string = char 数组 + '\0'</div>
+  <p>字符串字面量 <code>"Hello, world!"</code> 的类型是 <code>const char[14]</code>——13 个字符 + 1 个<strong>隐藏的 null terminator（'\0'）</strong>。为什么要有它？——数组传参会 decay、丢长度，<strong>没有终止符函数就不知道字符串到哪结束</strong>（17.8 官方 quiz Q2 的答案）：</p>
+  <pre class="code">const char str[]{ "string" };  // 6 字符 + '\0'，数组长度 7
+
+std::cout &lt;&lt; str;              // 一直打印直到 '\0'（没有它 = UB！）
+std::size(str);                // 7 —— 数组长度（不是字符串长度！）
+std::strlen(str);              // 6 —— 字符串长度（&lt;cstring&gt;，慢：遍历到 '\0'）
+
+char rolls[255] {};
+std::cin.getline(rolls, std::size(rolls));  // 安全读入：最多 254 字符</pre>
+  <ul>
+    <li><code>std::size()</code> 返回<strong>数组</strong>长度（<code>char str[255]{ "string" }</code> 得 255！）；<code>std::strlen()</code> 返回<strong>字符串</strong>长度且对 decayed 指针有效，但要逐字符数到 '\0'——慢；</li>
+    <li>历史包袱：C++20 之前 <code>std::cin &gt;&gt; rolls</code> 不限长度——<strong>buffer overflow</strong>，安全漏洞的经典来源；</li>
+    <li>Best practice：<strong>非 const 的 C-style string 对象用 std::string 替代</strong>；符号常量（下一节）用 string_view 替代。C-style string 只在"全局 constexpr 数据"和"底层互操作"还值得出现。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>④ "<code>char str[255]{ "string" };</code> 的 <code>std::size(str)</code> 返回 6（字符串长度）。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="std::size 返回的是数组长度 255；6 是 std::strlen(str) 的结果（要遍历到 '\0'，慢）。两个'长度'别混。" >对 —— 6</button>
+    <button data-k="b" data-ok="1" data-why="正确！std::size 看<b>数组</b>（255），strlen 看<b>字符串</b>（6）。decayed 之后 std::size 直接编译错误，strlen 仍可用——代价是慢。" >
+      不对 —— std::size 返回数组长度 255</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>字符串符号常量：该退役的老写法</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：两种写法与 cout 的"智能"</div>
+  <pre class="code">const char name[] { "Alex" };         // 写法一：拷贝一份到数组（两份 "Alex"）
+const char* const color{ "Orange" };  // 写法二：指针指向只读内存中的字面量
+
+auto s1{ "Alex" };    // const char*（decay！）
+auto&amp; s3{ "Alex" };   // const char(&amp;)[5]（按引用：连长度都保住）</pre>
+  <ul>
+    <li>相同内容的字面量可被编译器<strong>合并</strong>成一份（省内存）；</li>
+    <li>cout 对 <code>char*</code>/<code>const char*</code> 特殊对待：打印<strong>字符串</strong>而非地址；其他指针打印地址。陷阱：<code>char c{ 'Q' }; std::cout &lt;&lt; &amp;c;</code>——&amp;c 是 char* 但不是 null-terminated → <strong>UB</strong>（打印 'Q' 加一堆垃圾直到撞见 0）；想打印地址用 <code>static_cast&lt;const void*&gt;(ptr)</code>；</li>
+    <li>Best practice：<strong>字符串符号常量用 <code>constexpr std::string_view</code> 替代 C-style 写法</strong>（5 章的工具在这里正式接班）。</li>
+  </ul>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 本章最佳实践汇总（原文）</div>
+  <ul>
+    <li>能不用 C-style 数组就不用（<strong>全局 constexpr 数组除外</strong>——语法简、索引无符号问题）；</li>
+    <li>只读字符串 → std::string_view；可变字符串 → std::string；非 constexpr 数组 → std::vector；</li>
+    <li>从头索引优先下标；相对定位优先指针算术；</li>
+    <li>C-style 数组形参用 <code>int arr[]</code> 语法而非 <code>int* arr</code>（对人是文档）。</li>
+  </ul>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter17/02-cstyle/</code> 的 <code>decay_demo.cpp</code>（typeid 证明 + sizeof 20/8 对照）、<code>cstring_demo.cpp</code>（size vs strlen）、<code>exercises/ptr_walk.cpp</code>（纯指针算术倒着打印字符串——官方 17.10 quiz）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="01-stdarray.html"><span class="dir">← 上一页</span>17.1 std::array：定长与编译期</a>
+  <a class="next" href="03-multidim.html"><span class="dir">下一页 →</span>17.3 多维数组</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-c-style-arrays/">LearnCpp 17.7–17.11</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

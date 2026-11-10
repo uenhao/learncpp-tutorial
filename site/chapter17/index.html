@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnCpp 交互式教程 · 第 17 章：std::array 与 C-style 数组</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter17/index.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / 第 17 章</div>
+<article>
+<h1>第 17 章 · 定长数组：std::array 与 C-style arrays</h1>
+
+<p>vector 的静态兄弟登场。<strong>std::array</strong> 把长度写进类型——错误检查、断言、遍历全部搬进编译期；<strong>C-style arrays</strong> 是语言内置的原始数组——退化（decay）、指针算术、null terminator 的老故事都在这章，也是 12 课指针的补完。（原文 17.1–17.13）</p>
+
+<ul class="lesson-list">
+  <li><a data-page="/chapter17/01-stdarray.html" href="01-stdarray.html"><span>17.1 · std::array：定长与编译期（原文 17.1–17.6）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter17/02-cstyle.html" href="02-cstyle.html"><span>17.2 · C-style 数组与退化（原文 17.7–17.11）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter17/03-multidim.html" href="03-multidim.html"><span>17.3 · 多维数组（原文 17.12–17.13）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter17/quiz.html" href="quiz.html"><span>17.x · 章综合测验（10 题）</span><span class="mark todo">未开始</span></a></li>
+</ul>
+
+<div class="box story">
+  <div class="box-t">🧭 选型速查（本章最终答案）</div>
+  <p><strong>要 constexpr → std::array；其余 → std::vector；C-style 尽量避免</strong>（官方豁免：全局 constexpr 数据）。学完本章你应该能一眼认出：<code>sizeof</code> 在函数内为什么撒谎（decay）、<code>arr[0]</code> 为什么等价 <code>*arr</code>（指针算术）、<code>{ {1,2}, {3,4} }</code> 为什么要两层括号（brace elision）。</p>
+</div>
+
+<div class="pager">
+  <a class="prev" href="../chapter16/quiz.html"><span class="dir">← 上一章</span>第 16 章</a>
+  <a class="next" href="01-stdarray.html"><span class="dir">本章开始 →</span>17.1 std::array：定长与编译期</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-17-summary-and-quiz/">LearnCpp Chapter 17</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

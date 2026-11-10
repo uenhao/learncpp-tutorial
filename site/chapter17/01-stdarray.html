@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17.1 std::array：定长与编译期 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter17/01-stdarray.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 17 章</a> / std::array：定长与编译期</div>
+<article>
+<h1>17.1 std::array：把数组搬进编译期</h1>
+
+<p>16 章的 vector 是<strong>动态</strong>数组；本章是它的静态兄弟：<strong>std::array</strong>（定长、支持 constexpr）与 C-style arrays（17.2 课）。选 std::array 的核心理由只有一条：<strong>它能进编译期</strong>。（原文 17.1–17.6）</p>
+
+<h2>定长数组与常量表达式长度</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：std::array&lt;T, N&gt;</div>
+  <p><strong>定长数组</strong>：长度在实例化时必须已知且不可改。std::array 有两个模板参数——元素类型 + 长度（<strong>integral non-type template argument</strong>）：</p>
+  <pre class="code">#include &lt;array&gt;
+
+std::array&lt;int, 5&gt; a {};   // 5 个 int
+
+constexpr int len { 8 };
+std::array&lt;int, len&gt; b {};  // constexpr 变量也行
+std::array&lt;int, max_colors&gt; c {};  // 枚举器也行（官方 16.9 课 count 枚举器）</pre>
+  <ul>
+    <li><strong>长度必须是常量表达式</strong>——非 const 变量、运行期常量（如函数形参 <code>const int length</code>）都不行；这是"长度进类型"的代价与力量；</li>
+    <li>长度 0 合法（<code>std::array&lt;int, 0&gt;</code>），但访问任何元素都是 UB，用 <code>empty()</code> 判断；</li>
+    <li>std::array 是 <strong>aggregate</strong>（无构造函数，13 课）——用聚合初始化；不给初始化器时元素 default-initialized（多数未初始化！）→ <strong>永远写 <code>{}</code> value-initialize</strong>；</li>
+    <li><strong>CTAD</strong>（15 章老朋友）能同时推导类型和长度：<code>constexpr std::array a1 { 9, 7, 5, 3, 1 };</code> → <code>std::array&lt;int, 5&gt;</code>。</li>
+  </ul>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践（原文）</div>
+  <p><strong>constexpr 数组用 std::array，非 constexpr 数组用 std::vector</strong>；std::array 能 constexpr 就 constexpr（若不打算 constexpr，考虑干脆用 vector）；用 CTAD 让编译器从初始化器推导类型和长度。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "std::array 的长度可以是运行期才确定的变量（比如用户输入的个数）。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="长度是 non-type 模板参数——它必须编译期已知（这是 constexpr 能力的来源）。元素个数运行期才定 → 用 std::vector。官方 17.x quiz Q1c 考的正是这个。" >对 —— vector 能它也能</button>
+    <button data-k="b" data-ok="1" data-why="正确！长度在类型里（std::array&lt;int, 5&gt; 和 &lt;int, 6&gt; 是两个类型），必须是常量表达式。运行期定长 → std::vector。" >
+      不对 —— 长度必须是常量表达式</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>取长度与三种下标</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：size() / std::size() / std::ssize() / std::get&lt;&gt;</div>
+  <pre class="code">constexpr std::array prime{ 2, 3, 5, 7, 11 };
+
+prime.size()        // 成员函数（unsigned size_type）
+std::size(prime)    // C++17 非成员
+std::ssize(prime)   // C++20，有符号
+
+std::get&lt;3&gt;(prime)   // 编译期下标：越界 = 编译错误！
+std::get&lt;9&gt;(prime);  // ❌ static_assert 失败（operator[] 可不会拦）</pre>
+  <ul>
+    <li><strong>长度是 constexpr</strong>——即使在非 constexpr 的数组对象上，这三个函数也返回 constexpr 值（<code>constexpr int length{ std::size(arr) };</code> 合法）；</li>
+    <li>⚠️ 语言缺陷：数组作为<strong>函数的 (const) 引用形参</strong>时上述性质失效（C++23 P2280 才修复）——workaround 是函数模板把长度做成模板参数 <code>template &lt;auto Length&gt;</code>；</li>
+    <li>下标三法：<code>operator[]</code>（无检查，越界 UB——索引前自查）、<code>at()</code>（运行期检查，原文建议避免——要么提前查要么编译期查）、<code>std::get&lt;I&gt;</code>（<strong>编译期</strong>检查，仅限 constexpr 索引）。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>② 想让"下标 9 越界"在<strong>编译期</strong>就被抓住，用哪个？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="operator[] 完全不检查（和 vector 一样，越界 UB）。at() 是运行期检查（抛异常），也拦不住编译期。" >prime[9]</button>
+    <button data-k="b" data-why="at() 是运行期检查——等到跑起来才炸，且原文建议避免用它（要检查就在索引前自己查，或用编译期方案）。" >prime.at(9)</button>
+    <button data-k="c" data-ok="1" data-why="正确！std::get 的索引是 non-type 模板参数，内部 static_assert 兜底——越界直接编译失败。代价：索引必须是 constexpr。" >
+      std::get&lt;9&gt;(prime)</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>传参与返回：长度也是类型的一部分</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：函数模板 + static_assert 断言长度</div>
+  <pre class="code">template &lt;typename T, std::size_t N&gt;   // N 必须是 std::size_t，不是 int！
+void passByRef(const std::array&lt;T, N&gt;&amp; arr)
+{
+    static_assert(N != 0);  // 拒绝零长数组
+    std::cout &lt;&lt; arr[0] &lt;&lt; '\n';
+}
+
+template &lt;typename T, std::size_t N&gt;
+void printElement3(const std::array&lt;T, N&gt;&amp; arr)
+{
+    static_assert(N &gt; 3);   // 前置条件进类型系统：长度不够 = 编译错误
+    std::cout &lt;&lt; arr[3] &lt;&lt; '\n';
+}</pre>
+  <ul>
+    <li>按值传参会<strong>拷贝整个数组</strong> → 按 const 引用；元素类型+长度都得写全（CTAD 对形参无效，官方 16.4 课同款）；</li>
+    <li><strong>N 必须声明为 std::size_t</strong>——模板不做转换，<code>std::array&lt;int, 5&gt;</code> 匹配不上 <code>std::array&lt;int, int N&gt;</code>；C++20 可写 <code>auto N</code> 让编译器推导；</li>
+    <li>16 章只能运行期 assert 的"长度前置条件"，在这里升级成 <strong>static_assert</strong>（9 课的承诺兑现）；</li>
+    <li><strong>返回</strong>：std::array 不可 move（没有自己管理的数据），按值返回 = 拷贝整个数组——数组大就别按值返回；数组若不需要 constexpr，本就该用 vector（可 move）。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>③ "函数模板里长度参数写 int 也行：<code>template &lt;typename T, int N&gt; void f(const std::array&lt;T, N&gt;&amp;)</code> 能接收 std::array&lt;int, 5&gt;。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="模板实参推导不做隐式转换（官方 17.3 的细节，同 17.x 测验 ③）：std::array&lt;int, 5&gt; 的 N 是 std::size_t 类型，int 形参匹配失败——no matching function。" >对 —— 5 会转成 int</button>
+    <button data-k="b" data-ok="1" data-why="正确！模板不做转换，N 的类型必须严格是 std::size_t（或 C++20 的 auto）。这是官方 Best practice 级别的细节。" >
+      不对 —— 类型不匹配，编译失败</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>类类型元素与 brace elision（花括号省略）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：双花括号的由来</div>
+  <p>std::array 的实现本质是<strong>包着一个 C-style array 成员的 struct</strong>（<code>T __impl[N]</code>）。元素是类类型时不写元素类型，就得替这个内部成员补一层括号：</p>
+  <pre class="code">// ✅ 写明元素类型（brace elision 生效）+ CTAD：
+constexpr std::array houses{
+    House{ 13, 1, 7 }, House{ 14, 2, 5 }, House{ 15, 2, 4 } };
+
+// ✅ 不写元素类型 → 必须双花括号（外层给 struct 成员，内层给元素）：
+constexpr std::array&lt;House, 3&gt; houses2 {{
+    { 13, 1, 7 }, { 14, 2, 5 }, { 15, 2, 4 } }};
+
+// ❌ 单层括号又不写类型：
+constexpr std::array&lt;House, 3&gt; bad { { 13, 1, 7 }, { 14, 2, 5 }, { 15, 2, 4 } };
+// 编译器把 {13,1,7} 当成内部 C-style array 的初始化器 → 报错</pre>
+  <p>Key insight：<strong>初始化 std::array 的元素为 struct/class/array 且不逐个写元素类型时，需要额外一层花括号</strong>。标量元素的单层括号（<code>std::array&lt;int, 5&gt; a { 1, 2, 3, 4, 5 };</code>）其实是 brace elision 在帮你省——等价于 <code>{{ 1, 2, 3, 4, 5 }}</code>。其他有 list constructor 的标准库容器（vector）没有这个问题。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ <code>std::array&lt;House, 3&gt; houses { {13,1,7}, {14,2,5}, {15,2,4} };</code>（单层括号，没写 House）——结果？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="编译器把 {13,1,7} 当作内部 C-style array 成员的初始化器（给元素 0 塞了 3 个子值），然后发现多余的 initializer——报错。修复：双括号或逐个写 House{...}。" >能编译——聚合初始化自动展开</button>
+    <button data-k="b" data-ok="1" data-why="正确！必须双花括号 <code>{{ {13,1,7}, ... }}</code>，或每个元素写明 House{...}（让 brace elision 生效）。17.4 官方 quiz Q2 考点。" >
+      编译错误——需要双花括号或写明类型</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>引用数组不存在，枚举索引要设防</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：std::reference_wrapper 与 static_assert 设防</div>
+  <p><strong>引用数组不存在</strong>：元素必须是可赋值的 object，引用不是（12 课三铁律）。<code>std::array&lt;int&amp;, 2&gt;</code> 直接编译错误。想要"装引用的数组"用 <code>std::reference_wrapper&lt;int&gt;</code>（&lt;functional&gt;）：行为像引用，<code>arr[1].get() = 5</code> 改被引用对象（裸 <code>arr[1] = 5</code> 有歧义——改 wrapper 还是改值？），读取时隐式转换无需 get()。便捷工厂：<code>std::ref(x)</code> / <code>std::cref(x)</code>。</p>
+  <p>枚举索引的编译期设防（官方 16.9 的 static_assert 升级版）：</p>
+  <pre class="code">constexpr std::array testScores { 78, 94, 66, 77 };
+static_assert(std::size(testScores) == max_students); // 编译期抓住漏加的分数！</pre>
+  <p>vector 版只能运行期 assert；constexpr 数组把"枚举器与数组失配"整个推进了编译期——加枚举器忘加 initializer，编译直接失败。</p>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：长度从"数据"变成"类型"</div>
+  <p>vector 的长度是运行期数据；std::array 的长度是<strong>类型的一部分</strong>——所以长度能 static_assert、下标能编译期检查、越界能在编译期被抓住。代价是长度必须是常量表达式、不能动态伸缩。一句话选型（原文）：能 constexpr 就 std::array，否则 vector。下一课：C-style arrays——语言内置的"原始数组"，std::array 的地基。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter17/01-stdarray/</code> 的 <code>array_demo.cpp</code>（CTAD + std::get + brace elision）、<code>exercises/enum_guard.cpp</code>（亲手体验 static_assert 拦下漏加的初始化器）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 17 章</a>
+  <a class="next" href="02-cstyle.html"><span class="dir">下一页 →</span>17.2 C-style 数组与退化</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-stdarray/">LearnCpp 17.1–17.6</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

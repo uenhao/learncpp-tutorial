@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17.3 多维数组 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter17/03-multidim.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 17 章</a> / 多维数组</div>
+<article>
+<h1>17.3 多维数组：数组的数组</h1>
+
+<p>井字棋的棋盘、Minecraft 的区块、乘法表——都是二维结构。C++ 没有"二维数组类型"，只有<strong>元素本身也是数组的数组</strong>。本章看 C-style 与 std::array 两种写法，以及一个反直觉的坐标陷阱。（原文 17.12–17.13）</p>
+
+<h2>多维 C-style 数组</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：dimension 与 row-major 布局</div>
+  <p><strong>维数（dimension）</strong>= 选中一个元素所需的下标个数。<code>int a[3][5]</code> 读作"3 元素数组，每个元素是 5 元素 int 数组"——习惯上第一个下标选<strong>行（row）</strong>，第二个选<strong>列（col）</strong>：</p>
+  <pre class="code">int array[3][5]
+{
+  {  1,  2,  3,  4,  5 },  // row 0
+  {  6,  7,  8,  9, 10 },  // row 1
+  { 11, 12, 13, 14, 15 }   // row 2
+};
+array[2][3] = 7;   // a[row][col]
+
+int array2[][5] { ... };   // 只能省略最左维（编译器数行数）
+// int array2[][] 是编译错误</pre>
+  <ul>
+    <li><strong>内存是线性的</strong>：按 <strong>row-major order</strong>（行优先）存放——[0][0] [0][1]…[2][4] 连续排布；初始化与遍历都按这个顺序最快；</li>
+    <li>遍历用双层循环：外层行、内层列（匹配内存顺序）；<code>std::size(arr)</code> 给行数、<code>std::size(arr[0])</code> 给列数；</li>
+    <li>range-based for 也行：<code>for (const auto&amp; arow : arr) for (const auto&amp; e : arow)</code>。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "笛卡尔坐标 {x, y}（x 选列、y 选行）对应数组访问 <code>arr[y][x]</code>——第一个下标是行。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！顺序与直觉相反：{x, y} → arr[y][x]。写成 arr[x][y] 是官方 17.12 quiz 点名的顺序陷阱——这也是本章练习 cart_grid 的主题。" >
+      对 —— 行在前、列在后</button>
+    <button data-k="b" data-why="习惯上第一个下标选 row（y），第二个选 col（x）——笛卡尔顺序在这里翻转。" >不对 —— 直接 arr[x][y]</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="10" data-hint="y=2 选第几行？x=1 选该行第几列？" data-explain="10！y=2 选第 2 行 {9,10,11,12}，x=1 选其中第 1 列 → 10。先行后列，笛卡尔顺序翻转。">
+  <p class="quiz-q"><span class="qtag">预测</span>② <code>int carray[3][4]{ {1,2,3,4}, {5,6,7,8}, {9,10,11,12} };</code>，笛卡尔坐标 {x=1, y=2} 处的值（即 <code>carray[2][1]</code>）是多少？</p>
+  <div class="prow"><input type="text" placeholder="数值"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<h2>多维 std::array：嵌套与"反直觉的维度"</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：嵌套 std::array 与别名模板</div>
+  <p>标准库没有专门的多维数组类——规范做法是<strong>嵌套</strong>。三个坑：</p>
+  <pre class="code">// 3 行 4 列：模板维度是反的！（外层数组 3 个元素，每个是 4 元素数组）
+std::array&lt;std::array&lt;int, 4&gt;, 3&gt; arr {{   // 双花括号（17.1 课）
+    { 1, 2, 3, 4 },
+    { 5, 6, 7, 8 },
+    { 9, 10, 11, 12 }}};
+
+// 别名模板拯救可读性：
+template &lt;typename T, std::size_t Row, std::size_t Col&gt;
+using Array2d = std::array&lt;std::array&lt;T, Col&gt;, Row&gt;;
+
+Array2d&lt;int, 3, 4&gt; arr2 {{ ... }};   // 传参也用它：Array2d&lt;T, Row, Col&gt;&amp;
+
+// 各维长度：arr.size() 给行数；arr[0].size() 给列数（第一维为 0 时 UB！）
+// 更稳的做法：从模板参数直接取——constexpr int rowLength(...) { return Row; }</pre>
+  <ul>
+    <li><strong>必须双花括号</strong>（17.1 课 brace elision 的规则）；</li>
+    <li><strong>维度是反的</strong>：想要 arr[3][4] 的直觉，模板要写 <code>&lt;std::array&lt;int, 4&gt;, 3&gt;</code>；</li>
+    <li>进阶：C++23 的 <code>std::mdspan</code> 提供多维视图（<code>mdView[row, col]</code> 多下标访问），C++26 将有 owning 的 std::mdarray——知道即可。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>③ 想要"3 行 4 列的 int 二维数组"，正确的 std::array 类型是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="维度反了——那是 4 行 3 列。外层 std::array 的长度是行数，内层是列数：array&lt;array&lt;int, 4&gt;, 3&gt;。" >std::array&lt;std::array&lt;int, 3&gt;, 4&gt;</button>
+    <button data-k="b" data-ok="1" data-why="正确！外层 = 行数 3，内层 = 列数 4。记住'维度与直觉相反'，或者干脆用别名模板 Array2d&lt;int, 3, 4&gt; 把顺序掰回来。" >
+      std::array&lt;std::array&lt;int, 4&gt;, 3&gt;</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 第 17 章收官：三种数组，一张选型表</div>
+  <p>C++ 的三种数组各有领地：<strong>C-style</strong>——全局 constexpr 数据、语言底层（会 decay、有 null-terminator 的老故事）；<strong>std::array</strong>——定长且要 constexpr（长度进类型、错误进编译期）；<strong>std::vector</strong>——其余一切（可变长、可 move）。原文的判词值得背下来：constexpr → array，否则 → vector，C-style 尽量避免。下一章换挡：迭代器与标准库算法——你已经在 17.2 见过 begin/end 遍历的雏形了。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter17/03-multidim/</code> 的 <code>multidim_demo.cpp</code>（row-major + Array2d 别名模板）、<code>exercises/cart_grid.cpp</code>（修笛卡尔坐标反转 bug）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="02-cstyle.html"><span class="dir">← 上一页</span>17.2 C-style 数组与退化</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 17 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/multidimensional-c-style-arrays/">LearnCpp 17.12–17.13</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

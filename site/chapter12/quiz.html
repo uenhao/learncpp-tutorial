@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 12 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter12/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 12 章</a> / 综合测验</div>
+<article>
+<h1>第 12 章综合测验</h1>
+
+<p>10 题：值类别、引用三铁律、指针机制、按引用/按地址选型。先预测再作答。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "字面量 5 是 lvalue。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="5 是 rvalue——临时的值，没有持久地址。变量 x 才是 lvalue（有身份、可放赋值号左边）。" >对 —— 5 可以放左边</button>
+    <button data-k="b" data-ok="1" data-why="正确！rvalue 是临时值；lvalue 是有地址的对象。判据简单：能不能取地址（&amp;5 非法，&amp;x 合法）。" >
+      不对 —— 5 是 rvalue（临时值）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "非 const 引用可以绑定到 const 对象。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="若允许，通过引用修改 const 对象就违反了它的常量性——语义矛盾，编译器直接拒绝。const 引用才能绑 const 对象。" >对 —— 绑上再说</button>
+    <button data-k="b" data-ok="1" data-why="正确！三条铁律之二：非 const 引用只绑可修改 lvalue。这是保护 const 承诺的机制设计。" >
+      不对 —— 会破坏 const 承诺，编译器拒绝</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="42 1" data-hint="setTo42 的形参是引用还是拷贝？trySet 呢？" data-explain="输出 42 1。setTo42 的 r 是引用——r=42 改的就是 a（2.2 课预言被打破）；trySet 的 v 是按值拷贝——改的是副本，b 仍是 1。两种传参方式在同一程序里的对照。">
+  <p class="quiz-q">🎯 预测输出：</p>
+  <pre class="code">void setTo42(int& r) { r = 42; }
+void trySet(int v) { v = 42; }
+
+int main()
+{
+    int a{ 1 };
+    int b{ 1 };
+    setTo42(a);
+    trySet(b);
+    std::cout << a << ' ' << b;
+}</pre>
+  <div class="prow"><input type="text" placeholder="如: 1 1"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>④ "引用绑定后可以改指向别的对象——只要再赋值一次。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="对引用赋值改的是被引用对象，不是引用本身。引用绑定后终身不渝——'改指向'是指针的专利。" >对 —— 再赋值就重绑了</button>
+    <button data-k="b" data-ok="1" data-why="正确！int&amp; r{a}; r = b; 是把 b 的值赋给 a（通过引用），r 依然绑定 a。可重指向是指针的专属能力（上一课预测题）。" >
+      不对 —— 引用不可重绑，赋值改的是被引用对象</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "指针自己不占内存——它只是地址的'记号'。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="指针是真正的对象：占内存（64 位平台上 8 字节）、有自己的地址（可以对指针再取地址 &amp;ptr——那是二重指针的事，后续章节）。'别名'是引用，指针是对象。" >对 —— 指针只是记号</button>
+    <button data-k="b" data-ok="1" data-why="正确！指针存地址，本身就是对象——这就是它与引用的本质区别（引用不是对象、不占内存）。" >
+      不对 —— 指针是对象，自己占内存</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑥ "解引用空指针一定会崩溃。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="解引用空指针是未定义行为——可能崩溃，也可能静默'正常'。'一定崩溃'是常见错觉。UB 的定义就是无保证（3.1 课层级分析）。" >对 —— 必崩</button>
+    <button data-k="b" data-ok="1" data-why="正确！UB 无保证。防法：解引用前判空 if (ptr)。判空语句 4.4 课的'非零即真'正好适用（空指针为假）。" >
+      不对 —— UB，行为无保证，必须判空</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑦ 函数需要"可选的输出参数"（调用者可能传也可能不传），最合适的形参是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="引用不能为空——调用者必须总传一个对象，'可选'语义无法表达。" >int&amp; out</button>
+    <button data-k="b" data-ok="1" data-why="正确！指针可为 nullptr——调用者不关心输出就传 nullptr，函数内判空跳过。'可空 + 可重指向'正是按地址传递的两大存在理由。" >
+      int* out（函数内判空使用）</button>
+    <button data-k="c" data-why="按值传递拿不到调用者的变量——输出无从写回。" >int out</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑧ 接收一个"只读的大字符串"，最佳参数类型是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="拷贝整个字符串——纯读场景白白付出分配+复制成本。" >std::string s</button>
+    <button data-k="b" data-ok="1" data-why="正确！const 引用：零拷贝 + 保护原值 + 能绑 rvalue（字面量实参也行）。5.4 课选型表在这里机制化。" >
+      const std::string&amp; s</button>
+    <button data-k="c" data-why="非 const 引用承诺'可能修改'——纯读场景给了多余的权限，且绑不了字面量。" >std::string&amp; s</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="10 20" data-hint="指针可以重绑。第一段改的是谁？第二段改的是谁？" data-explain="输出 10 20。ptr 先绑 a（*ptr=10 → a=10），再重绑 b（*ptr=20 → b=20）。'可重指向'是指针的核心理由之一——引用绑定后终身固定。">
+  <p class="quiz-q">⑨ 指针重绑：</p>
+  <pre class="code">int a{ 5 };
+int b{ 6 };
+int* ptr{ &amp;a };
+*ptr = 10;
+ptr = &amp;b;
+*ptr = 20;
+std::cout &lt;&lt; a &lt;&lt; ' ' &lt;&lt; b;</pre>
+  <div class="prow"><input type="text" placeholder="如: 1 2"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑩ "引用比指针更安全——所以指针应该淘汰。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="淘汰不了：'可空语义'（链表终点、可选参数）、'可重指向'（迭代器、动态结构）都是指针的专属能力。正确姿势是场景选型（本课选型表）。" >对 —— 全用引用就好</button>
+    <button data-k="b" data-ok="1" data-why="正确！两者是分工不是替代：引用管'必选且固定'，指针管'可空可变'。现代 C++ 还给指针配了智能指针（第 22 章）解决生命周期管理。" >
+      不对 —— 指针有专属场景（可空/可重指向）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 12 章全部通过！C++ 分水岭已跨越——下一章：枚举与结构体（自定义类型的开始）。</div>
+
+<div class="pager">
+  <a class="prev" href="02-pointers.html"><span class="dir">← 上一节</span>12.2 指针</a>
+  <a class="next" href="../chapter13/index.html"><span class="dir">下一章 →</span>第 13 章 · 枚举与结构体</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-12-summary-and-quiz/">LearnCpp Chapter 12 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

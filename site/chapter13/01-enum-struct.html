@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>13.1 枚举与结构体 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter13/01-enum-struct.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 13 章</a> / 枚举与结构体</div>
+<article>
+<h1>13.1 枚举与结构体：自定义类型的开始</h1>
+
+<p>基本类型装不下"业务"——颜色、状态、一个员工。本章开始<strong>造自己的类型</strong>：枚举管"有限的取值集合"，结构体管"相关数据的打包"。1.7 课"数据要成组"的痛点在此兑付。</p>
+
+<h2>枚举（enum）：受限的取值集合</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：枚举（enumeration）</div>
+  <p>定义一个类型，它的值<strong>只能是指定的几个常量（枚举器）</strong>：</p>
+  <pre class="code">enum Color
+{
+    red,     // 枚举器：逗号分隔
+    green,
+    blue,
+};           // 注意分号
+
+Color apple{ red };   // ✅
+Color hat{ 2 };       // ❌ 编译错误：2 不是 Color 的枚举器</pre>
+  <p>价值：类型即文档——<code>Color</code> 类型的变量只可能装三种值，读代码的人一眼看懂取值空间。</p>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 非限定枚举（unscoped enum）的两大问题</div>
+  <ol>
+    <li><strong>枚举器泄漏到外层作用域</strong>：Color 的 red 和 Fruit 的 red 不能共存（重名冲突）——2.9 课命名空间要手动包一层；</li>
+    <li><strong>可以和整数隐式比较</strong>：<code>color == fruit</code>（不同枚举类型）居然编译通过还可能为真——底层都是整数在比较，类型安全形同虚设。</li>
+  </ol>
+</div>
+
+<h2>解法：限定枚举（enum class / scoped enum）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：enum class（C++11）</div>
+  <pre class="code">enum class Color
+{
+    red,
+    green,
+    blue,
+};
+
+Color color{ Color::red };  // 枚举器必须加 Color:: 前缀（作用域内）</pre>
+  <p>三大改善：<strong>① 枚举器不泄漏</strong>（在 Color 的作用域内，不同 enum 可同名）；<strong>② 不与整数隐式比较/转换</strong>（color == fruit 直接编译错误）；<strong>③ 需要整数值时显式 static_cast</strong>。</p>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践（原文）</div>
+  <p><strong>优先 enum class，避免非限定 enum</strong>。枚举器的典型用途：游戏状态（loading/playing/paused）、选项集合、错误码。</p>
+</div>
+
+<h2>结构体（struct）：数据打包</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：struct 与成员变量</div>
+  <p><strong>结构体</strong>：把多个相关变量打包成一个自定义类型：</p>
+  <pre class="code">struct Employee
+{
+    int id{};
+    int age{};
+    double wage{};
+};  // 分号！
+
+Employee joe{ 1, 25, 50000.0 };  // 聚合初始化（按成员顺序）
+joe.age = 26;                    // 成员选择运算符 . 访问</pre>
+  <p>1.7 课身高排序"名字和身高必须一起移动"的痛点在此解决：<strong>一个 Employee 就是一个整体</strong>，swap 一次全带走。</p>
+</div>
+
+<h2>struct + 函数：按引用传递自定义类型</h2>
+
+<pre class="code">void printEmployee(const Employee&amp; e)   // const 引用：只读不拷贝
+{
+    std::cout &lt;&lt; e.id &lt;&lt; " is " &lt;&lt; e.age &lt;&lt; '\n';
+}
+
+void promote(Employee&amp; e)               // 非 const 引用：要改它
+{
+    ++e.age;
+    e.wage *= 1.05;
+}</pre>
+
+<div class="box best">
+  <div class="box-t">✅ 选型规则（原文）</div>
+  <ul>
+    <li>struct 通常<strong>按 const 引用传递</strong>（避免拷贝整个结构）；</li>
+    <li>需要修改就按非 const 引用；</li>
+    <li>特别小的 struct（两三个基本类型成员）按值也可以。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "两个不同的非限定枚举，它们的枚举器如果同名会冲突。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！枚举器泄漏到枚举所在的作用域——Color::red 和 Fruit::red 在同一作用域里就是重名冲突。这也是 enum class 存在的理由之一（枚举器收进类型作用域）。" >
+      对 —— 枚举器泄漏作用域导致冲突</button>
+    <button data-k="b" data-why="不会自动隔离——这正是非限定枚举的缺陷之一。enum class 才有作用域隔离。" >不对 —— 各自独立</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "enum class 的枚举器可以直接和整数比较。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="恰好相反——不与整数隐式比较/转换正是 enum class 的核心改进。需要整数值时显式 static_cast。" >对 —— 可以</button>
+    <button data-k="b" data-ok="1" data-why="正确！非限定枚举的 'color == fruit 意外相等' 问题被 enum class 根治：类型间不隐式转换。" >
+      不对 —— 不与整数隐式比较（需 static_cast）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>③ 输出什么？</p>
+  <pre class="code">struct Point { int x{}; int y{}; };
+
+void move(Point&amp; p, int dx, int dy)
+{
+    p.x += dx;
+    p.y += dy;
+}
+
+int main()
+{
+    Point pos{ 1, 2 };
+    move(pos, 3, 4);
+    std::cout &lt;&lt; pos.x &lt;&lt; ',' &lt;&lt; pos.y;
+}</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="p 是 pos 的引用（非 const），p.x += 3 直接改了 pos.x——按引用传递修改结构体成员。" >1,2</button>
+    <button data-k="b" data-ok="1" data-why="正确！引用形参 p 绑定 pos，函数内的修改直接作用在 pos 上：4,6。1.7 课'想通过函数修改调用者数据'在这里自然实现。" >
+      4,6</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：从"基本类型的搬运工"到"类型的作者"</div>
+  <p>前 11 章你是基本类型的使用者；本章起你是<strong>类型的作者</strong>。枚举把"魔法数字"（0/1/2 表示状态）变成有名字的合法值集合；struct 把散落的相关变量聚合成有意义的整体。两者都是 1.5 课"名字要达意"在类型层面的延伸——<strong>类型即文档</strong>。下一章的类会进一步把"数据+操作"打包；但 struct 打包数据的能力在纯数据场景永远是首选（原文：数据成员聚合，行为很少时用 struct）。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter13/01-enum-struct/</code> 的 <code>enum_class_demo.cpp</code>（enum class vs unscoped 对比）、<code>exercises/employee_struct.cpp</code>（Employee 排序——1.7 课身高排序的结构体升级版）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 13 章</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 13 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/unscoped-enumerations/">LearnCpp 13.1–13.10</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

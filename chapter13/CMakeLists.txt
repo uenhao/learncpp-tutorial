@@ -1,0 +1,5 @@
+add_executable(enum_class_demo 01-enum-struct/enum_class_demo.cpp)
+add_executable(employee_struct 01-enum-struct/employee_struct.cpp)
+add_executable(employee_sort 01-enum-struct/exercises/employee_sort.cpp)
+add_executable(employee_sort_answer 01-enum-struct/solutions/employee_sort_answer.cpp)
+add_executable(ch13_quiz_enum quiz/exercises/quiz_enum_print.cpp)

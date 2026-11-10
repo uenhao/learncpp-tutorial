@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12.1 引用：给对象起第二个名字 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter12/01-references.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 12 章</a> / 引用</div>
+<article>
+<h1>12.1 引用：给对象起第二个名字</h1>
+
+<p>第 12 章是 C++ 的分水岭。它回答的问题你早已遇过：2.2 课"形参是拷贝，改它不影响实参"——那时说"想影响得学引用"；5.4 课"string 拷贝很贵"——那时说"只读场景用 view"。<strong>引用（reference）</strong>就是这一切的机制核心。</p>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：值类别（value category）——lvalue 与 rvalue</div>
+  <p>表达式除了类型（4.1 课），还有一个属性：<strong>值类别</strong>。</p>
+  <ul>
+    <li><strong>lvalue（左值）</strong>：有身份、有持久地址的对象——变量是典型 lvalue。可以出现在赋值号左边。</li>
+    <li><strong>rvalue（右值）</strong>：临时的值——字面量、<code>x + y</code> 的结果、函数返回的临时对象。只能出现在右边。</li>
+  </ul>
+  <p>类比：lvalue 是"房子"（有地址），rvalue 是"包裹"（在流转中）。引用绑房子，绑不了包裹（const 引用例外，后面讲）。</p>
+</div>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：左值引用（lvalue reference，&amp;）</div>
+  <p><strong>引用 = 已有对象的别名（alias）</strong>。声明时加 <code>&amp;</code>：</p>
+  <pre class="code">int x { 5 };
+int&amp; ref { x };   // ref 绑定到 x —— ref 就是 x 的另一个名字
+
+ref = 7;          // 通过引用改 x！
+std::cout &lt;&lt; x &lt;&lt; '\n'; // 7
+std::cout &lt;&lt; &amp;x &lt;&lt; ' ' &lt;&lt; &amp;ref; // 地址相同——同一个对象！</pre>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 引用的三条铁律</div>
+  <ol>
+    <li><strong>必须初始化</strong>（绑定到某个 lvalue）——没有"空引用"；</li>
+    <li><strong>非 const 引用只能绑定到可修改的 lvalue</strong>——<code>int&amp; r{ 5 };</code>（rvalue）和 <code>int&amp; r{ c };</code>（const 对象）都非法，否则通过引用改它们就违反了常量性；</li>
+    <li><strong>绑定后不可重绑</strong>——对引用赋值改的是被引用对象，引用本身永远指向初次绑定的那个对象。</li>
+  </ol>
+</div>
+
+<h2>引用的三大用途之一：按引用传递（pass by reference）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：pass by reference</div>
+  <p>把形参声明为引用类型，函数收到的就是<strong>实参本尊</strong>（别名），无拷贝、可修改：</p>
+  <pre class="code">void addOne(int&amp; y)   // y 是实参的别名
+{
+    ++y;              // 直接修改调用者的变量！
+}
+
+int main()
+{
+    int a{ 5 };
+    addOne(a);        // a 变成 6
+    std::cout &lt;&lt; a &lt;&lt; '\n';
+}</pre>
+</div>
+
+<p>5.4 课 string_view 解决"只读不拷贝"；引用解决"要改不拷贝"。两者合起来：</p>
+
+<table class="cmp">
+  <tr><th>意图</th><th>参数类型</th><th>2.2 课预言的兑现</th></tr>
+  <tr><td>只读不拷贝</td><td><code>const std::string&amp;</code> 或 <code>std::string_view</code></td><td>"引用传递"登场</td></tr>
+  <tr><td>修改实参</td><td><code>std::string&amp;</code>（非 const 引用）</td><td>"函数无法影响调用者变量"被打破</td></tr>
+  <tr><td>只读且小</td><td>按值即可</td><td>int 等基本类型拷贝极便宜</td></tr>
+</table>
+
+<div class="box best">
+  <div class="box-t">✅ 原文最佳实践：优先 const 引用</div>
+  <p><strong>除非函数需要修改实参，否则优先按 const 引用传递</strong>（pass by const lvalue reference）。const 引用还有一项特权：<strong>能绑定 rvalue</strong>——<code>printRefConst(5)</code>（字面量）、<code>printRefConst(c)</code>（const 对象）都合法（绑定到临时对象）。而非 const 引用绑不了这些。这让 const 引用参数来者不拒。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>输出什么？</p>
+  <pre class="code">void change(int&amp; ref)
+{
+    ref = 99;
+}
+
+int main()
+{
+    int a{ 5 };
+    change(a);
+    std::cout &lt;&lt; a;
+}</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="按值传递才是拷贝（2.2 课）。引用形参 ref 是 a 的别名——ref = 99 就是 a = 99。" >5</button>
+    <button data-k="b" data-ok="1" data-why="正确！ref 绑定到 a（别名），ref = 99 直接改了 a。这正是 2.2 课'函数永远无法影响调用者变量'的那个'永远'被打破的时刻——靠的就是引用。" >
+      99</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>"<code>int&amp; r{ 5 };</code> 合法——把引用绑定到字面量而已。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="非法！5 是 rvalue，非 const 引用只能绑定可修改 lvalue。若允许，改 r 就等于改字面量——违反常量性。const int&amp; r{ 5 }; 才合法（绑定临时对象）。" >对 —— 字面量也能绑</button>
+    <button data-k="b" data-ok="1" data-why="正确！非 const 引用绑 rvalue 会允许'修改临时值'——语义矛盾。三条铁律之二。" >
+      不对 —— 非 const 引用只绑可修改 lvalue</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：引用是"别名"不是"副本"</div>
+  <p>1.2 课的模型"名字是标签，对象是盒子"在这里升级：<strong>一个盒子可以贴多张标签</strong>。ref 和 x 是同一盒子的两张标签——通过任何一张操作的都是同一个盒子。这也把 5.4 课 string_view 的"视图"思想接上了：view 是只读的眼镜，非 const 引用是可读写的遥控器。记住"别名不拥有对象"（对象销毁，别名悬空——7.4 课 string_view 悬空的教训同样适用），下一课的指针会更彻底地暴露这一点。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter12/01-references/</code> 的 <code>ref_demo.cpp</code>（别名实验：改引用、比地址）和 <code>exercises/swap_by_ref.cpp</code>（把 1.7 课的 swapPair 改造成引用版——不再需要手写三个交换）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 12 章</a>
+  <a class="next" href="02-pointers.html"><span class="dir">下一节 →</span>12.2 指针</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/lvalue-references/">LearnCpp 12.2–12.6</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

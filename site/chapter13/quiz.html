@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 13 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter13/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 13 章</a> / 综合测验</div>
+<article>
+<h1>第 13 章综合测验</h1>
+
+<p>10 题：枚举两型、struct 机制、按引用传递。先预测再作答。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "枚举器的值默认从 0 开始递增。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！未指定时第一个枚举器是 0，后续依次 +1（red=0, green=1, blue=2）。也可以显式指定值：enum { a = 5, b = 8 }。" >
+      对 —— 从 0 递增（可显式指定）</button>
+    <button data-k="b" data-why="从 1 开始是某些语言的习惯，C++ 从 0 开始。" >不对 —— 从 1 开始</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "enum class 的枚举器可以不写前缀直接用。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="必须写 Color::red——枚举器收进类型作用域内正是 enum class 的核心特性之一（防泄漏、防冲突）。" >对 —— 直接用</button>
+    <button data-k="b" data-ok="1" data-why="正确！enum class 的枚举器限定在枚举作用域内，必须 Color::red。这是它的防冲突设计与它的代价（多打几个字）。" >
+      不对 —— 必须带类型前缀 Color::</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>③ struct 定义结尾缺了什么？（struct Employee { int id{}; int age{}; }）</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="类型定义以分号结尾——struct 结尾的分号是最常漏的字符之一（漏了会报一大堆莫名其妙的后续错误）。" >右花括号</button>
+    <button data-k="b" data-ok="1" data-why="正确！struct 定义结尾必须有分号 };。漏分号会让编译器以为后面的代码都是声明的一部分——报错位置远离真实错误处。" >
+      分号 };（最容易漏！）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ "printEmployee(const Employee&amp; e)" 的 const 引用参数主要为了？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="对 Employee 这种多成员结构体，按值拷贝成本高；const 保证函数不改它。两者兼得——这就是最佳实践选型。" >允许函数修改 e</button>
+    <button data-k="b" data-ok="1" data-why="正确！零拷贝 + 只读保护。小结构体（两三个基本成员）按值也无妨——成本考量是'值不值得'而非'必须'。" >
+      避免拷贝整个结构体 + 保证函数不修改</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "struct 成员变量的名字可以与全局变量同名——成员在 struct 的作用域里。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！成员属于 struct 的作用域（用 e.age 访问），与全局同名不冲突——成员选择运算符 . 已经指明了查找路径。" >
+      对 —— 成员在 struct 作用域内</button>
+    <button data-k="b" data-why="成员名与全局名是两个作用域的东西，不冲突。冲突发生在'同一作用域内重复定义'。" >不对 —— 会冲突</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="4,6" data-hint="p 是引用还是拷贝？" data-explain="输出 4,6。p 绑定 pos（引用），p.x += 3 与 p.y += 4 直接修改 pos——按引用传递修改结构体成员，1.7 课'数据要成组'后第一次让函数修改整体。">
+  <p class="quiz-q">🎯 预测输出：</p>
+  <pre class="code">struct Point { int x{}; int y{}; };
+
+void move(Point& p, int dx, int dy)
+{
+    p.x += dx;
+    p.y += dy;
+}
+
+int main()
+{
+    Point pos{ 1, 2 };
+    move(pos, 3, 4);
+    std::cout << pos.x << ',' << pos.y;
+}</pre>
+  <div class="prow"><input type="text" placeholder="如: 1,2"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑦ "enum class Color 里，Color::red 的值是 0，可以直接打印。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="enum class 不与整数隐式转换——cout 不会自动把它打成数字，需要 static_cast&lt;int&gt;(Color::red) 才能打印 0。" >对 —— 直接打印 0</button>
+    <button data-k="b" data-ok="1" data-why="正确！red 内部值是 0，但打印需要显式转换。这一'不便'正是类型安全的代价与收益——你不会意外把它当数字运算。" >
+      不对 —— 需 static_cast&lt;int&gt; 才能按数字打印</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑧ 员工的"部门"（研发/市场/财务 三选一），最佳类型是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="魔法数字：0/1/2 的含义全靠注释，误用无警告。1.5 课'名字要达意'的类型版失败。" >int department;（0=研发 1=市场 2=财务）</button>
+    <button data-k="b" data-ok="1" data-why="正确！取值集合有限且固定 → 枚举。enum class Department { rAndD, marketing, finance }; 类型即文档，非法值编译器拦下。枚举器的典型用途（原文）。" >
+      enum class Department { ... }</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑨ "struct 的成员变量必须在定义 struct 时全部初始化。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="成员可以带默认成员初始化（int id{}; 的 {} 就是默认值 0），聚合初始化时也可逐个覆盖。'必须'谈不上——未提供的成员用默认值。" >对 —— 必须全部手动初始化</button>
+    <button data-k="b" data-ok="1" data-why="正确！13.9 课的默认成员初始化（int id{}）让未指定的成员自动取默认值——与 1.4 课'定义即初始化'口诀一脉相承。" >
+      不对 —— 默认成员初始化可以兜底</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="编译错误||compile error||error" data-hint="enum class 不隐式转整数——cout 知道怎么打印它吗？" data-explain="编译错误！enum class 的枚举器不能被 cout 直接打印（不隐式转 int），需要 static_cast&lt;int&gt;(Color::blue) 才输出 2。若换成非限定 enum 则能直接打印 2——两型差异的终极对比题（g++ 实测）。">
+  <p class="quiz-q">⑩ <code>enum class Color { red, green, blue }; Color c{ Color::blue }; std::cout &lt;&lt; c;</code> 能编译吗？</p>
+  <div class="prow"><input type="text" placeholder="输出 或 填'编译错误'"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 12–13 章全部通过！引用/指针/自定义类型三件套齐了——下一章：类（把数据和行为打包）。</div>
+
+<div class="pager">
+  <a class="prev" href="01-enum-struct.html"><span class="dir">← 上一节</span>13.1 枚举与结构体</a>
+  <a class="next" href="../index.html"><span class="dir">返回 →</span>目录</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-13-summary-and-quiz/">LearnCpp Chapter 13 quiz</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

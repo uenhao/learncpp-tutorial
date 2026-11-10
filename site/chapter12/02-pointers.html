@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12.2 指针：存地址的变量 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter12/02-pointers.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 12 章</a> / 指针</div>
+<article>
+<h1>12.2 指针：存地址的变量</h1>
+
+<p>引用是"别名"——它自己不是对象。指针（pointer）则是<strong>真正存地址的对象</strong>：有自己的内存、自己的地址，还能改变指向。它是引用的"重型兄弟"。</p>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：指针（pointer）</div>
+  <p><code>int* ptr</code> 声明一个"指向 int 的指针"。指针存的是<strong>另一个对象的内存地址</strong>。三个核心操作：</p>
+  <pre class="code">int x{ 5 };
+int* ptr{ &amp;x };      // ① 取地址 &amp;x，存进指针
+
+std::cout &lt;&lt; ptr &lt;&lt; '\n';  // 打印地址（十六进制，如 0x7ffe...）
+std::cout &lt;&lt; *ptr &lt;&lt; '\n'; // ② 解引用 *：取出地址处的值 → 5
+
+*ptr = 7;                  // ③ 通过指针修改 x！
+std::cout &lt;&lt; x &lt;&lt; '\n';    // 7</pre>
+  <p><strong>&amp;（取地址）与 *（解引用）是一对逆操作</strong>：&amp;x 得到地址，*ptr 从地址取值。</p>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ &amp; 和 * 的多义性（原文 Tip）</div>
+  <ul>
+    <li><strong>跟在类型名后</strong>：<code>int* ptr</code> → 声明指针；</li>
+    <li><strong>一元表达式前</strong>：<code>&amp;x</code> → 取地址；<code>*ptr</code> → 解引用；</li>
+    <li><strong>二元运算</strong>：<code>x * y</code> → 乘法。</li>
+  </ul>
+  <p>同一个符号三种身份——判据是语境（位置）。</p>
+</div>
+
+<h2>空指针（null pointer）：没指向任何东西的指针</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念</div>
+  <p><strong>空指针</strong>：不指向任何对象的指针。C++ 用关键字 <code>nullptr</code> 表示空值：</p>
+  <pre class="code">int* ptr{};          // 值初始化 → 空指针（最佳实践）
+int* ptr2{ nullptr }; // 显式置空
+
+ptr = &amp;x;            // 之后可以再指向有效对象</pre>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 解引用空指针/悬空指针 = UB</div>
+  <p>对空指针解引用（<code>*ptr</code> 当 ptr 为空时）是未定义行为——通常崩溃，但"通常"不是保证（3.1 课层级 3）。<strong>解引用前必须检查</strong>：</p>
+  <pre class="code">if (ptr)          // 指针非空时为 true（4.4 课：非零即真）
+    std::cout &lt;&lt; *ptr;</pre>
+</div>
+
+<h2>引用 vs 指针：一张表定乾坤</h2>
+
+<table class="cmp">
+  <tr><th></th><th>引用（int&amp;）</th><th>指针（int*）</th></tr>
+  <tr><td>本质</td><td>别名（不是对象）</td><td>存地址的对象（自己占内存）</td></tr>
+  <tr><td>必须初始化</td><td>✅ 否则编译错误</td><td>可后置（但建议即初始化）</td></tr>
+  <tr><td>能否重绑</td><td>❌ 绑定后固定</td><td>✅ 可随时改指向</td></tr>
+  <tr><td>能否为空</td><td>❌ 没有空引用</td><td>✅ nullptr</td></tr>
+  <tr><td>访问语法</td><td>直接用（像普通变量）</td><td>解引用 <code>*ptr</code></td></tr>
+  <tr><td>悬挂风险</td><td>有（对象销毁后悬空）</td><td>有（+ 空指针 + 野指针）</td></tr>
+</table>
+
+<div class="box best">
+  <div class="box-t">✅ 选型规则（原文）</div>
+  <ul>
+    <li><strong>能用引用就用引用</strong>——更安全（无空值）、更简洁（无解引用符号）；</li>
+    <li>需要"<strong>能改变指向</strong>"或"<strong>表示不存在</strong>（空）"时才用指针——比如链表的 next、可选对象。</li>
+  </ul>
+</div>
+
+<h2>按地址传递（pass by address）</h2>
+
+<pre class="code">void printByAddress(int* ptr)
+{
+    if (!ptr)          // 按地址传参允许"没有对象"
+        return;
+    std::cout &lt;&lt; *ptr &lt;&lt; '\n';
+}
+
+int main()
+{
+    int x{ 5 };
+    printByAddress(&amp;x);   // 传地址
+    printByAddress(nullptr); // 合法：表示"没有"——引用做不到
+}</pre>
+
+<p>按地址传递让"可选参数"成为可能——调用者可以传 nullptr 表示"这项没有"。代价：函数内要解引用、要判空。**原文最佳实践：优先按引用；需要"可空/可重指向"语义时才按地址。**</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">预测</span>输出什么？</p>
+  <pre class="code">int a{ 5 };
+int b{ 6 };
+int* ptr{ &amp;a };
+*ptr = 10;
+ptr = &amp;b;
+*ptr = 20;
+std::cout &lt;&lt; a &lt;&lt; ' ' &lt;&lt; b;</pre>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="指针可重绑！先指向 a 改成 10，再重绑到 b 改成 20。引用做不到重绑（7.4 课引用三铁律之三）。" >5 20</button>
+    <button data-k="b" data-ok="1" data-why="正确！ptr 先绑 a（*ptr=10 → a=10），再重绑 b（*ptr=20 → b=20）。结果 10 20。'可重指向'是指针存在的核心理由——引用绑定后永远固定。" >
+      10 20</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：地址成了"一等公民"</div>
+  <p>4.1 课说"每个内存地址对应 1 字节"——那时地址只是背景知识。现在地址成了<strong>可以存储、传递、解引用的一等公民</strong>。指针的本质是"把地址当数据用"，这解锁了：数据结构（链表 next）、动态内存（第 19 章）、可选语义（nullptr / std::optional）。同时它把安全责任全交给你：空指针、悬空指针、野指针三大 UB 源。**引用是"有保镖的指针"**——功能受限但安全；理解两者的机制差异，才能在正确场景选对工具。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter12/02-pointers/</code> 的 <code>pointer_demo.cpp</code>（取地址/解引用/重绑）、<code>exercises/null_check.cpp</code>（空指针判空实验）和 <code>exercises/pass_by_address.cpp</code>（可选参数实战）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="01-references.html"><span class="dir">← 上一节</span>12.1 引用</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 12 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-pointers/">LearnCpp 12.7–12.11</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

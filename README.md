@@ -1,6 +1,6 @@
-# LearnCpp 交互式学习教程（第 0–11 章）
+# LearnCpp 交互式学习教程（第 0–13 章）
 
-基于 [LearnCpp.com](https://www.learncpp.com/) 第 0–11 章，提供两种学习载体：
+基于 [LearnCpp.com](https://www.learncpp.com/) 第 0–13 章，提供两种学习载体：
 
 ## 🖥️ 交互式网站（推荐）
 
@@ -27,6 +27,8 @@ cd site && python3 -m http.server 8765
 | `chapter9/` | 错误处理：测试、错误策略、cin 恢复、assert（1 课 + quiz） |
 | `chapter10/` | 类型转换与推导：提升/转换/协商、auto、别名（1 课 + quiz） |
 | `chapter11/` | 函数重载与模板：重载解析、默认参数、模板实例化（1 课 + quiz） |
+| `chapter12/` | 引用与指针：值类别、别名、按引用/按地址传递（2 课 + quiz） |
+| `chapter13/` | 枚举与结构体：enum class、struct、聚合初始化（1 课 + quiz） |
 
 每节含示例代码 + `exercises/`（带 TODO）+ `solutions/`（参考答案）。
 第 3 章练习须在 **Debug 构建 + VS Code 调试器**（F5/F10/F11/断点/监视）下完成。

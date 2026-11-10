@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 18 章综合测验 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter18/quiz.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 18 章</a> / 综合测验</div>
+<article>
+<h1>第 18 章综合测验</h1>
+
+<p>10 题：排序、迭代器、算法、计时。先预测再作答。</p>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>① 选择排序的外层循环为什么只到 <code>length - 1</code>？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="走到最后一个下标时，剩余未排序部分只剩它自己——比较必然是和自己比，交换必然是自己换自己（冗余）。少跑一轮，结果不变。" >最后一次是自交换，冗余</button>
+    <button data-k="b" data-why="最后一个元素在前面每一轮结束时都已被'挤'到正确位置——不缺那轮比较。" >最后一个元素不用排序</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="10 60 20 50 40 30" data-hint="第一轮找的是全数组的最小值——它会被换到哪里？" data-explain="10 60 20 50 40 30！第一轮找出全数组最小值 10，与下标 0 交换。每轮把一个最小值换到前部，前缀逐步有序（官方 18.1 quiz Q1 手推题）。">
+  <p class="quiz-q">② <code>{ 30, 60, 20, 50, 40, 10 }</code> 走完第一轮外层循环后，数组是什么？</p>
+  <div class="prow"><input type="text" placeholder="空格分隔的数字"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>③ "end 迭代器指向最后一个元素，遍历到它时解引用它就结束了。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="end 是 one-past-the-end——最后一个元素'再来一个'会在的位置，那里没有元素，解引用是 UB。循环条件用 != end，到 end 之前就停。" >对 —— end 是最后一个元素</button>
+    <button data-k="b" data-ok="1" data-why="正确！end 只是边界标记（永不解引用）；真正最后一个元素在 end 的前一个位置。" >
+      不对 —— end 在最后一个元素之后，永不解引用</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ 迭代器循环条件惯用 <code>!=</code> 而非 <code>&lt;</code>，因为？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="数值循环惯例用 <（for 循环的通行写法）没错，但迭代器不同：链表/map 等结构的迭代器往往不做关系比较。!= 是所有迭代器都支持的最小公分母。" >!= 更快</button>
+    <button data-k="b" data-ok="1" data-why="正确！有些迭代器类型不支持关系比较——!= 对所有迭代器可用，一套写法通吃。" >
+      有些迭代器不支持 &lt;，!= 通吃</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "range-based for 的底层就是调用容器的 begin()/end() 然后推进迭代器。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="官方 16.8 课给出的展开式正是：begin-expr 到 end-expr，每次 ++ 后把 *it 赋给循环变量。所以'有 begin()/end()'就能 range-for；decayed 的 C 风格数组不行（类型里没长度信息，没有 end 可求）。" >对 —— 语法糖</button>
+    <button data-k="b" data-why="它不是什么独立机制——编译器把它翻译成 begin/end 迭代器循环。这也解释了为什么 decayed C 风格数组不能用 range-for。" >不对 —— 是独立的循环类型</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑥ "遍历 std::vector 的同时往里面 push_back，是安全的——vector 会自己处理扩容。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="push_back 可能触发重分配，所有迭代器（含 range-for 内部用的那个）全部失效——继续遍历是 UB。改容器的操作要么放在遍历外，要么用 erase/push 返回的新信息。" >对 —— vector 自己搞定</button>
+    <button data-k="b" data-ok="1" data-why="正确！容器扩容会搬家，所有迭代器（含 range-for 内部用的那个）全部失效——继续遍历是 UB（16 章容量与重分配知识的直接后果）。改容器的操作要么放在遍历外，要么用 erase/push 返回的新信息。" >
+      不对 —— 可能重分配，迭代器全失效（UB）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑦ "<code>std::find</code> 找不到目标时返回 end 迭代器。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！算法库的统一约定：找不到 = end()。所以判定'找到没有'永远写 found == arr.end()，先于解引用。" >
+      对 —— 与 end() 比较判定</button>
+    <button data-k="b" data-why="空指针/异常都不是算法库约定——统一是 end 迭代器。" >不对 —— 返回空指针</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑧ <code>std::sort(arr.begin(), arr.end(), std::greater{});</code> 中 <code>{}</code> 的作用是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="恰恰相反——greater 是类型不是函数——必须实例化出对象才能当可调用物传给 sort。忘了 {} 编译错误（C++17 前还要写全 std::greater&lt;int&gt;{}）。" >凑语法，可有可无</button>
+    <button data-k="b" data-ok="1" data-why="正确！It's a type, and in order to use it, we need to instantiate an object of that type.（原文）" >
+      实例化 greater 类型的对象</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑨ "<code>std::for_each</code> 比手写 range-based for 更稳：忘写 <code>&amp;</code>、传错变量这类手误不可能发生。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="函数体固定接收元素引用（如 void f(int& i)），不存在'忘写 & 改了拷贝'或'把错误变量传进去'的空间；还能用 std::next 跳元素、支持并行化。原文列出这三大优势。" >对 —— 三类手误免疫</button>
+    <button data-k="b" data-why="for_each 的可调用物签名写死'收元素引用'，想错都没地方错——这正是原文推荐它的理由之一。" >不对 —— 该错的还是错</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑩ "给代码计时应该用 debug 构建——能看到最坏情况。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="debug 关优化，测出来的是'构建的慢'不是'代码的慢'（官方例子慢 33 倍）。计时用 release；且至少测 3 次、只做同机相对比较。" >对 —— 最坏情况才有参考价值</button>
+    <button data-k="b" data-ok="1" data-why="正确！release 构建才代表真实性能。方法论全套：release、≥3 次、别计输入等待、绝对时间不跨机器比、sanity check。" >
+      不对 —— release（debug 关优化，慢 33 倍）</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="done-banner" hidden>🏆 第 18 章全部通过！（官方本章仍在施工，你已学完其发布的全部 4 节。）下一章：动态内存分配 new/delete（官方同样在施工中）。</div>
+
+<div class="pager">
+  <a class="prev" href="02-algorithms-timing.html"><span class="dir">← 上一节</span>18.2 标准库算法与计时</a>
+  <a class="next" href="../index.html"><span class="dir">返回 →</span>目录</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/sorting-an-array-using-selection-sort/">LearnCpp 18.1 quiz + 18.2–18.4</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

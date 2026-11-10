@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18.1 选择排序与迭代器 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter18/01-sort-iterators.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 18 章</a> / 选择排序与迭代器</div>
+<article>
+<h1>18.1 选择排序与迭代器：从手写算法到统一遍历</h1>
+
+<p>先亲手写一个最直观的排序算法（选择排序），看清"算法"长什么样；再引入<strong>迭代器</strong>——让"遍历"这件事对所有容器长一个样，为下一课的标准库算法铺路。（原文 18.1–18.2）</p>
+
+<h2>选择排序（selection sort）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：排序与选择排序</div>
+  <p><strong>排序</strong> = 把数组元素按特定顺序排列。价值：①按序展示；②让查找更快（有序数组用简单算法搜 100 万元素只需约 20 次比较——二分查找的直觉）；③让某些查找变得不必要（最大值必然在端点）。但排序本身昂贵——<strong>只为了搜一两次而排序通常不划算</strong>。</p>
+  <p><strong>选择排序</strong>（最好理解、也最慢的排序之一）：①从头扫描找最小值；②与当前位置交换；③从下一个位置重复：</p>
+  <pre class="code">for (int startIndex{ 0 }; startIndex &lt; length - 1; ++startIndex)
+{
+    int smallestIndex{ startIndex };  // 先假设本轮第一个元素最小
+
+    for (int currentIndex{ startIndex + 1 }; currentIndex &lt; length; ++currentIndex)
+    {
+        if (array[currentIndex] &lt; array[smallestIndex])
+            smallestIndex = currentIndex;   // 发现更小的，记下下标
+    }
+
+    std::swap(array[startIndex], array[smallestIndex]); // 换到正确位置
+}</pre>
+  <p>两个细节：<code>std::swap</code>（&lt;utility&gt;）交换两个值；外层循环<strong>只走到 length - 1</strong>——走到最后一个元素时它必然已在正确位置，再比较就是<strong>自己和自己交换（冗余）</strong>。排序 std::string 数组同理，只换元素类型。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "为了把查找提速，先给数组排个序总是值得的。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="排序本身昂贵（原文：it often isn't worth sorting an array in order to make searching fast unless you're going to be searching it many times）——只有要反复查找时才划算。" >对 —— 有序查找更快</button>
+    <button data-k="b" data-ok="1" data-why="正确！提速收益要摊过'多次查找'才回得了排序的本钱。一次查找就直接搜。" >
+      不对 —— 排序贵，反复查找才值得</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="predict" data-answer="10 60 20 50 40 30" data-hint="第一轮找的是全数组的最小值——它会被换到哪里？" data-explain="10 60 20 50 40 30！第一轮找到全数组最小值 10（下标 5），与下标 0 交换。之后每轮在前缀已有序的剩余部分里重复——官方 18.1 quiz Q1 的手推题。">
+  <p class="quiz-q"><span class="qtag">预测</span>② <code>{ 30, 60, 20, 50, 40, 10 }</code> 走完<strong>第一轮</strong>外层循环（startIndex = 0）后，数组是什么？</p>
+  <div class="prow"><input type="text" placeholder="空格分隔的数字"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<h2>迭代器（iterators）：统一遍历的接口</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：iterator 与 one-past-the-end</div>
+  <p>官方定义：<strong>迭代器</strong>是一个设计用来遍历容器（数组元素、字符串字符……）并在途中提供每个元素访问的对象。C++ 迭代器用统一接口：<code>operator++</code> 移到下一元素、<code>operator*</code> 访问当前元素。<strong>指针就是最简单的迭代器</strong>（17.2 课指针算术的续集）：</p>
+  <pre class="code">std::array arr{ 0, 1, 2, 3, 4, 5, 6 };
+
+auto begin{ &amp;arr[0] };
+auto end{ begin + std::size(arr) };  // one-past-the-end：最后一个元素
+                                     // '再来一个'会在的位置——永不解引用！
+
+for (auto ptr{ begin }; ptr != end; ++ptr)
+    std::cout &lt;&lt; *ptr &lt;&lt; ' ';</pre>
+  <ul>
+    <li>遍历所需的最小集合：<strong>begin 点、end 点、operator++、operator*</strong>；</li>
+    <li>迭代器循环条件惯用 <code>!=</code> 而非 <code>&lt;</code>——<strong>有些迭代器类型不支持关系比较，但 != 对所有迭代器都可用</strong>；</li>
+    <li>所有标准库容器提供 <code>begin()</code>/<code>end()</code> 成员；&lt;iterator&gt; 还有泛型 <code>std::begin</code>/<code>std::end</code>（C-style 数组也能用）；</li>
+    <li><strong>range-based for 的底层就是它们</strong>：任何"有 begin()/end() 成员或可用于 std::begin/std::end"的类型都能用于 range-for（decayed 的 C 风格数组不行——类型里没长度信息）；</li>
+    <li>⚠️ 求 end 别写 <code>&amp;arr[std::size(arr)]</code>——那会解引用越界元素（UB）；用 <code>begin + std::size(arr)</code> 或 <code>arr.data() + std::size(arr)</code>。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>③ "end 迭代器指向的是'最后一个元素再往后一个位置'，永远不应该解引用它。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="对——end 是 one-past-the-end 标记，只用来表示'遍历到此为止'。解引用它是未定义行为（那里没有元素）。17.2 课'持有尾后地址合法、不可解引用'的完全体。" >对 —— end 只是边界标记</button>
+    <button data-k="b" data-why="恰恰相反——end 位置没有元素，解引用是 UB。它是循环的'终点哨兵'，不是元素。" >不对 —— end 指向最后一个元素</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ 迭代器循环的条件为什么惯用 <code>!=</code> 而不是 <code>&lt;</code>？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="反了——数值循环确实惯例用 <（for 循环的通行写法），但迭代器世界不同：链表、map 等结构的迭代器往往不支持关系比较。" >&lt; 更高效</button>
+    <button data-k="b" data-ok="1" data-why="正确！原文：some iterator types are not relationally comparable. operator!= works with all iterator types. 统一用 != 让同一套循环写法通吃所有容器。" >
+      有些迭代器不支持 &lt;，!= 通吃</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>迭代器失效（iterator invalidation）</h2>
+
+<div class="box concept">
+  <div class="box-t">⚠️ 容器一变，迭代器作废</div>
+  <p>迭代器内部依赖"元素在哪儿"。元素换地址或被销毁时，既有迭代器<strong>悬空（dangling）</strong>，继续使用是 UB——这正是 16 章 vector 重分配知识的直接后果：</p>
+  <pre class="code">// 反例：遍历中 push_back → 可能重分配 → 全部迭代器失效（UB）
+for (auto num : v)
+    if (num % 2 == 0)
+        v.push_back(num + 1);
+
+// 反例：erase 之后继续用旧迭代器（UB）
+auto it{ v.begin() };
+++it;
+v.erase(it);
+++it;   // ❌ it 已失效
+
+// 正解（对比上面：这次接住 erase() 的返回值，而不是继续用旧 it）
+it = v.erase(it);   // ✅ it 现在指向原第二个元素之后的元素</pre>
+  <p>好的文档（如 cppreference 的 std::vector "Iterator invalidation" 小节）会列出哪些操作会失效哪些迭代器——改容器的操作后，要么重新拿迭代器，要么用返回值。</p>
+</div>
+
+<div class="predict" data-answer="3" data-hint="erase 的返回值指向哪儿？" data-explain="3！it 原指向元素 2，erase(2) 之后返回指向'原第二个位置'（现在是 3）的迭代器。接住返回值 = 免疫失效。若写成 erase(it) 后直接 ++it 用旧 it，就是 UB。">
+  <p class="quiz-q"><span class="qtag">预测</span>⑤ <code>std::vector v{1,2,3,4,5,6,7};</code>，<code>auto it{ v.begin() }; ++it;</code> 后执行 <code>it = v.erase(it);</code>。之后 <code>*it</code> 是多少？</p>
+  <div class="prow"><input type="text" placeholder="数值"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：循环变量从"下标"变成"位置标记"</div>
+  <p>17.2 课你已经用 begin/end 遍历过数组；本课把它升格为通用思想：<strong>迭代器把"位置"从"数据"里抽象出来</strong>——下标是"第几个"，迭代器是"在哪儿、怎么到下一个"。这就是为什么 std::list（链表）没有下标却有迭代器。下一课：标准库拿这个统一接口造了一整柜子现成算法。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter18/01-iterators-algorithms/</code> 的 <code>sort_demo.cpp</code>（选择排序）、<code>iterator_demo.cpp</code>（begin/end + erase 返回值）、<code>exercises/descending_sort.cpp</code>（改造成降序——官方 18.1 quiz Q2）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 18 章</a>
+  <a class="next" href="02-algorithms-timing.html"><span class="dir">下一页 →</span>18.2 标准库算法与计时</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-iterators/">LearnCpp 18.1–18.2</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

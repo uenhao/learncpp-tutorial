@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18.2 标准库算法与计时 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter18/02-algorithms-timing.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 18 章</a> / 标准库算法与计时</div>
+<article>
+<h1>18.2 标准库算法与计时：别手写了，库里有</h1>
+
+<p>上一课你手写了选择排序——现在把它扔进历史的垃圾桶。标准库算法<strong>预测试、高效、跨容器、可并行</strong>；本课示范最常用的几个，再用 <code>&lt;chrono&gt;</code> 计时器量化"标准库 vs 手写"的差距。（原文 18.3–18.4）</p>
+
+<h2>算法库速览</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：迭代器区间 [begin, end) 与常用算法</div>
+  <p>算法都在 <code>&lt;algorithm&gt;</code>（std::greater 在 <code>&lt;functional&gt;</code>），统一接受 <code>[begin, end)</code> 迭代器区间（end 是 one-past-the-end）。三大类：<strong>检查者</strong>（只读：搜索、计数）、<strong>变更者</strong>（修改：排序、洗牌）、<strong>辅助者</strong>（生成结果：比较对象等）。</p>
+  <pre class="code">std::array arr{ 13, 90, 99, 5, 40, 80 };
+
+// find：返回首个匹配的迭代器；找不到返回 end()！
+auto found{ std::find(arr.begin(), arr.end(), 99) };
+if (found == arr.end())
+    std::cout &lt;&lt; "Could not find\n";
+else
+    *found = 42;   // 迭代器可读写元素
+
+// find_if：第一个满足谓词（callable）的元素
+auto nut{ std::find_if(words.begin(), words.end(), containsNut) };
+
+// count_if：统计满足谓词的个数
+auto nuts{ std::count_if(words.begin(), words.end(), containsNut) };
+
+// sort：默认升序（按 operator&lt;）；传比较函数自定义
+std::sort(arr.begin(), arr.end(), greater);  // 降序
+
+// for_each：对每个元素施加同一函数
+std::for_each(arr.begin(), arr.end(), doubleNumber);</pre>
+  <ul>
+    <li>谓词/比较都是<strong>可调用对象</strong>：函数名（不带括号的函数指针）或 lambda（20 章）；</li>
+    <li>比较函数语义：<strong>"第一个参数应排在第二个参数之前"时返回 true</strong>；</li>
+    <li>降序常用 <code>std::sort(arr.begin(), arr.end(), std::greater{});</code>——<strong>必须加大括号</strong>：greater 是类型不是函数，{} 实例化一个对象；</li>
+    <li>C++20 的 ranges 版不必再传区间：<code>std::ranges::for_each(arr, doubleNumber);</code>。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "<code>std::find</code> 找不到目标时返回 <code>end()</code> 迭代器——所以判'找到没有'就是拿结果和 end() 比。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！'找不到返回 end 迭代器'是算法库的统一约定（区间本来就是 [begin, end)）。先比 end 再解引用——反过来的顺序就是 UB。" >
+      对 —— found == arr.end() 判定</button>
+    <button data-k="b" data-why="返回空指针/抛异常都不是算法库的做法——统一约定是 end 迭代器。" >不对 —— 返回空指针</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>② <code>std::sort(arr.begin(), arr.end(), std::greater{});</code> 里的 <code>{}</code> 为什么必须写？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="恰恰相反——greater 不是函数而是类型（原文：It's a type, and in order to use it, we need to instantiate an object of that type），{} 实例化对象后才是可调用物。C++17 前还得写全 std::greater&lt;int&gt;{}。" >语法习惯，可省略</button>
+    <button data-k="b" data-ok="1" data-why="正确！std::greater 是类型不是可调用函数，{} 实例化一个对象。忘了 {} 就是把类型当函数传——编译错误。" >
+      greater 是类型，{} 实例化出对象</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：for_each 相比 range-based for 的优势</div>
+  <pre class="code">void doubleNumber(int&amp; i) { i *= 2; }
+
+std::for_each(arr.begin(), arr.end(), doubleNumber);   // ✅ 推荐
+
+for (auto i : arr)          // ❌ 忘写 &amp;：改的是拷贝！
+    doubleNumber(i);
+for (auto&amp; i : arr)         // ✅ 但全靠手写对
+    doubleNumber(i);</pre>
+  <ul>
+    <li><strong>意图清晰</strong>：一看到 for_each 就知道"对每个元素做同一件事"；</li>
+    <li><strong>防三类手误</strong>：忘写 <code>&amp;</code>（改拷贝不生效）、元素类型隐式转换、把错误变量传进函数——for_each 都不可能发生；</li>
+    <li><strong>能跳元素</strong>：<code>std::for_each(std::next(arr.begin()), arr.end(), f);</code> 跳过首元素（range-for 做不到）；</li>
+    <li><strong>可并行化</strong>：标准库算法多支持并行执行；</li>
+    <li>⚠️ 顺序保证：<strong>std::for_each 保证逐个按前向顺序访问</strong>；多数算法只有性能保证——依赖"第 i 个乘 i"这种顺序逻辑时，只用有顺序保证的算法（for_each / copy / move 等）。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>③ "能用标准库算法就别手写同功能代码——但用之前要确认它的性能与执行顺序保证符合你的场景。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="两个 Best practice 的合体：Favor using functions from the algorithms library over writing your own functionality + 用前确认性能与执行顺序保证（比如依赖访问顺序时只用有顺序保证的算法）。" >对 —— 两条 Best practice</button>
+    <button data-k="b" data-why="算法虽好也有前提：性能特性、顺序保证都要匹配场景（原文第一条 Best practice 专门提醒这个）。" >不对 —— 库的无脑用就行</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>计时你的代码（&lt;chrono&gt;）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：Timer 类（steady_clock）</div>
+  <p><code>&lt;chrono&gt;</code> 的用法有点绕，但可以全部封装进一个小类（本站 14–17 章的类知识正好用上——构造函数记录起点、成员函数算经过）：</p>
+  <pre class="code">class Timer
+{
+private:
+    using Clock = std::chrono::steady_clock;
+    using Second = std::chrono::duration&lt;double, std::ratio&lt;1&gt;&gt;; // 秒（double）
+
+    std::chrono::time_point&lt;Clock&gt; m_beg{ Clock::now() }; // 构造即起表
+
+public:
+    void reset() { m_beg = Clock::now(); }
+
+    double elapsed() const
+    {
+        return std::chrono::duration_cast&lt;Second&gt;(Clock::now() - m_beg).count();
+    }
+};
+
+Timer t;
+sortArray(array);   // 要计时的代码
+std::cout &lt;&lt; t.elapsed() &lt;&lt; " seconds\n";</pre>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 计时方法论（原文要点）</div>
+  <ul>
+    <li><strong>用 release 构建测</strong>：debug 关优化影响巨大——官方同一代码 debug 慢 33 倍；</li>
+    <li><strong>至少测 3 次</strong>：结果相似才可信；方差大 = 有干扰（后台 CPU 任务、杀毒扫描、"无辜的"空闲浏览器都能把 CPU 打满）；</li>
+    <li><strong>别把等待用户输入计进去</strong>；随机数序列也影响计时——固定 seed 可复现，但也可能误导；</li>
+    <li><strong>绝对时间不可跨机器比较</strong>；单机上的相对比较才有意义（版本 A 10s vs 版本 B 8s）；</li>
+    <li>Sanity check：测完变体 B 后<strong>重测变体 A</strong>，结果对得上才可比。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>④ 要给代码计时，应该用哪种构建？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="debug 构建关掉了优化——官方同一例子 debug 慢 33 倍。测出来的'慢'是构建的锅，不是代码的锅。" >debug——能看到最差情况</button>
+    <button data-k="b" data-ok="1" data-why="正确！release 构建带优化才是真实性能。官方例子：手写选择排序约 0.05 秒，std::sort 约 0.0007 秒——快约 100 倍。" >
+      release——优化开启才是真实性能</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "在你的机器上测出代码 A 花 10 秒，就能断定它在任何机器上都比花 8 秒的 B 慢 25%。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="绝对时间因机器（CPU/内存/负载）而异，跨机器比较无意义；同机相对比较（A 比 B 快/慢）才有价值。" >对 —— 测出来就是硬事实</button>
+    <button data-k="b" data-ok="1" data-why="正确！官方原文：绝对时间不可比，单机相对比较才有意义。换台机器比例可能完全不同。" >
+      不对 —— 只有同机相对比较有意义</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 本章收官：18.1 的手写排序，死得其所</div>
+  <p>本章的叙事弧很完整：手写选择排序（理解算法）→ 迭代器（统一遍历接口）→ 标准库算法（现成的 find/count/sort/for_each）→ chrono 实测（手写选择排序比 std::sort 慢两三个数量级，本站与官方机器实测一致；具体数值因机器与构建类型而异）。<strong>你亲手写它的唯一价值，是从此看得懂 std::sort 在替你做什么</strong>。官方 18 章还在施工（官方将在后续章节深入迭代器；旧版 STL 迭代器概览已列入待废弃附录），但"优先标准库、手写需理由"的审美已经立住了。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter18/01-iterators-algorithms/</code> 的 <code>algorithm_demo.cpp</code>（find/find_if/count_if/sort/for_each）、<code>timer_demo.cpp</code>（实测选择排序 vs std::sort——试试 debug 和 release 构建各跑一次）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="01-sort-iterators.html"><span class="dir">← 上一页</span>18.1 选择排序与迭代器</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 18 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-standard-library-algorithms/">LearnCpp 18.3–18.4</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

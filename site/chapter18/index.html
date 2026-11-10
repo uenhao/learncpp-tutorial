@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnCpp 交互式教程 · 第 18 章：迭代器与算法</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter18/index.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / 第 18 章</div>
+<article>
+<h1>第 18 章 · 迭代器与算法</h1>
+
+<p>手写循环易错难维护；标准库算法"预测试、高效、跨容器、可并行"。本章先解决"统一遍历各种容器"的问题（<strong>迭代器</strong>），再把常用工作交给标准库（<strong>算法库</strong>与 <code>&lt;chrono&gt;</code> 计时）。⚠️ 官方本章标注 <em>under construction</em>——本站覆盖其已发布的 18.1–18.4 四节。（原文 18.1–18.4）</p>
+
+<ul class="lesson-list">
+  <li><a data-page="/chapter18/01-sort-iterators.html" href="01-sort-iterators.html"><span>18.1 · 选择排序与迭代器（原文 18.1–18.2）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter18/02-algorithms-timing.html" href="02-algorithms-timing.html"><span>18.2 · 标准库算法与计时（原文 18.3–18.4）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter18/quiz.html" href="quiz.html"><span>18.x · 章综合测验（10 题）</span><span class="mark todo">未开始</span></a></li>
+</ul>
+
+<div class="box story">
+  <div class="box-t">🧭 本章主线</div>
+  <p>三节咬合的一条链：<strong>选择排序</strong>（手写算法的样子）→ <strong>迭代器</strong>（begin/end 统一遍历——17.2 课 begin/end 遍历的完全体）→ <strong>算法库</strong>（拿迭代器区间的现成函数，18.3 还回引选择排序做进阶演示）→ <strong>chrono 计时</strong>（实测手写选择排序比 std::sort 慢两三个数量级——"优先用标准库"的量化证据）。学完你会本能地写 <code>std::sort(arr.begin(), arr.end())</code> 而不是嵌套循环。</p>
+</div>
+
+<div class="pager">
+  <a class="prev" href="../chapter17/quiz.html"><span class="dir">← 上一章</span>第 17 章</a>
+  <a class="next" href="01-sort-iterators.html"><span class="dir">本章开始 →</span>18.1 选择排序与迭代器</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-iterators/">LearnCpp Chapter 18（under construction，覆盖 18.1–18.4）</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

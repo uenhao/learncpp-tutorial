@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>15.3 友元与进阶 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter15/03-friend.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 15 章</a> / 友元与进阶</div>
+<article>
+<h1>15.3 友元与进阶：给封装开一扇受控的门</h1>
+
+<p>private 是墙（14 章）。但有时墙太严：两个类天生要配合（点与向量、存储与显示器），隔着墙只能堆 getter。<strong>friend</strong> 让类自己决定把钥匙发给谁——门还是那扇门，名单由类掌控。（原文 15.8–15.10）</p>
+
+<h2>友元非成员函数（friend non-member functions）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：friend declaration</div>
+  <p><strong>friend（友元）</strong> = 被授予"完全访问另一类 private/protected 成员"权限的类或函数。在类体内用 <code>friend</code> 声明：</p>
+  <pre class="code">class Accumulator
+{
+    int m_value{ 0 };
+
+public:
+    void add(int value) { m_value += value; }
+
+    friend void print(const Accumulator&amp; accumulator); // friend 声明
+};
+
+void print(const Accumulator&amp; accumulator)  // 普通非成员函数
+{
+    std::cout &lt;&lt; accumulator.m_value;  // ✅ friend：可访问 private
+}</pre>
+  <ul>
+    <li>Key insight：<strong>friendship 由"被访问成员的类"授予</strong>，不是谁想要就能拿——访问控制 + 发证权都在类手里，数据隐藏没有被破坏；</li>
+    <li>friend 声明<strong>不受访问级别影响</strong>（放 private 区也一样生效）；</li>
+    <li>friend 非成员函数<strong>没有隐式对象</strong>——对象必须显式传参（它是普通函数！）；甚至可以在类体内定义（仍然是<strong>非成员函数</strong>）；</li>
+    <li>一个函数可以是多个类的 friend；声明里用到未定义的类需要<strong>类的前置声明</strong>（<code>class Humidity;</code>）。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "print() 成了 Accumulator 的 friend，调用它时也有隐式对象——<code>acc.print()</code> 这种写法合法。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="friend 非成员函数依然是普通函数：没有隐式对象，必须 print(acc) 显式传参。能写 acc.print() 的只有真正的成员函数。" >对 —— friend 就是半个成员</button>
+    <button data-k="b" data-ok="1" data-why="正确！friend ≠ 成员：没有隐式对象、没有 this，对象只能当参数传（acc.print() 直接编译错误）。'friendship' 只改变访问权限，不改变函数的类别。" >
+      不对 —— 它仍是非成员函数，对象要显式传</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践（原文）</div>
+  <p>friend 函数<strong>能走类接口就别直访成员</strong>；<strong>能不当 friend 就不当</strong>（加一个合理的 access function 常常就够了）。friend 直接触碰实现 → 类一改实现，friend 跟着遭殃。friendship 的正当场景：两个类紧密协作（如容器与它的迭代器）、为运算符重载铺路（21 章）。</p>
+</div>
+
+<h2>友元类（friend classes）</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：friend class</div>
+  <p>把<strong>整个类</strong>设为 friend——它的所有成员函数都能访问本类的 private：</p>
+  <pre class="code">class Storage
+{
+    int m_nValue{};
+    double m_dValue{};
+
+public:
+    Storage(int nValue, double dValue)
+        : m_nValue{ nValue }, m_dValue{ dValue } {}
+
+    friend class Display;  // Display 的所有成员函数获得访问权
+};
+
+class Display
+{
+    bool m_displayIntFirst{};
+
+public:
+    void displayStorage(const Storage&amp; storage)
+    {
+        std::cout &lt;&lt; storage.m_nValue &lt;&lt; ' ' &lt;&lt; storage.m_dValue; // ✅
+    }
+};</pre>
+  <p>三条纪律（原文要点）：<strong>friendship 不互惠</strong>（Display 是 Storage 的 friend ≠ 反过来）；<strong>不传递</strong>（A 是 B 的 friend、B 是 C 的 friend ≠ A 是 C 的 friend）；进阶补充：<strong>不被继承</strong>（friend 的子类拿不到权限）。另一条便利：<strong>friend class 声明兼作前置声明</strong>——friend 前不用再写 <code>class Display;</code>（对比：friend 非成员函数用到未定义类型时需要前置声明）。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "A 是 B 的 friend，B 是 C 的 friend，所以 A 能访问 C 的 private 成员。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="friendship 不传递——每份授权都是类亲自签发的，二手转授不存在。A 能访问的只有 B（B 授的），C 与 A 无关。" >对 —— 朋友的朋友也是朋友</button>
+    <button data-k="b" data-ok="1" data-why="正确！不互惠、不传递（进阶：也不被继承）。这条'不扩散'纪律正是 friend 没有破坏数据隐藏的原因——权限始终由数据的主人类单点控制。" >
+      不对 —— friendship 不传递</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>友元成员函数：精确到单个函数的授权</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：friend member function 与顺序难题</div>
+  <p>只想发一把钥匙而不是整个钥匙串？把<strong>单个成员函数</strong>设为 friend：<code>friend void Display::displayStorage(const Storage&amp; storage);</code>。代价是一个顺序难题——编译器解析这条 friend 声明时，必须<strong>先见过 Display 的完整类定义</strong>（要知道 displayStorage 确实是它的成员）；而 Display 的函数定义又要访问 Storage 的成员，必须见过 Storage 的完整定义。官方解法（单文件四步）：</p>
+  <pre class="code">class Storage;                    // ① 前置声明 Storage（Display 里要用 const Storage&amp;）
+
+class Display
+{
+public:
+    void displayStorage(const Storage&amp; storage); // ② 只声明，不定义
+};
+
+class Storage
+{
+    // ...
+    friend void Display::displayStorage(const Storage&amp; storage); // ③ friend 声明
+};
+
+void Display::displayStorage(const Storage&amp; storage)  // ④ 定义放最后
+{ /* 访问 storage.m_nValue ... */ }</pre>
+  <p>口诀：<strong>类的前置声明满足"引用这个类"；访问成员需要完整定义</strong>。多文件工程里每类一对 .h/.cpp，顺序自然解开（15.1 课的组织方式）。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>③ 写 <code>friend void Display::displayStorage(...)</code> 之前，编译器必须已经见过什么？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="前置声明不够：只知 Display 存在，不知 displayStorage 是不是它的成员。friend 成员函数需要所属类的完整定义（这是 friend 非成员函数不需要的额外条件）。" >
+      Display 的前置声明</button>
+    <button data-k="b" data-ok="1" data-why="正确！friend 声明引用的是'成员函数'，编译器必须核实它确实属于 Display——需要完整类定义。顺序：Storage 前置声明 → Display 声明该函数 → Storage 内 friend → 函数定义放最后。" >
+      Display 的完整类定义</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>ref 限定符（ref qualifiers）：选修</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：&amp; / &amp;&amp; 限定的成员函数重载（C++11）</div>
+  <p>14 章留过一个尾巴：返回 <code>const std::string&amp;</code> 的 getter，隐式对象是 <strong>rvalue</strong> 时引用会悬垂（<code>const std::string&amp; ref { createEmployee("Garbo").getName() };</code> 之后用 ref 是 UB——rvalue Employee 已销毁）。ref 限定符允许按"隐式对象是 lvalue 还是 rvalue"重载成员函数：</p>
+  <pre class="code">const std::string&amp; getName() const &amp;  { return m_name; } // 只匹配 lvalue 对象
+std::string        getName() const &amp;&amp; { return m_name; } // 只匹配 rvalue 对象（拷贝走）
+
+joe.getName();                     // joe 是 lvalue → 走 &amp; 版（返回引用，零拷贝）
+createEmployee("Frank").getName(); // 临时对象是 rvalue → 走 &amp;&amp; 版（返回拷贝，不悬垂）</pre>
+  <p>规则：同一函数的无限定版本与限定版本<strong>不能共存</strong>（二选一）；只有 <code>const &amp;</code> 版时 lvalue/rvalue 都能调（const 左值引用可绑 rvalue，12 课）；限定版本可 <code>= delete</code>。<strong>官方立场：不推荐日常使用</strong>——为每个 getter 加 rvalue 版太啰嗦，防的是靠"立即使用返回值"就能避免的误用。了解即可，见到不慌。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>④ "ref 限定符是官方推荐的最佳实践，每个返回引用的 getter 都应该配上 &amp; 和 &amp;&amp; 两个版本。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="原文立场相反：可选课程、明确'不推荐'。防的误用靠习惯（立即使用返回值、别把引用存下来）就能避免；两个版本徒增代码量。" >对 —— 官方强烈推荐</button>
+    <button data-k="b" data-ok="1" data-why="正确！ref 限定符是理解性内容（官方指出标准库通常也不用这个特性——真正的用例如 std::optional::value()），日常代码靠'立即使用返回值'这条纪律更划算。" >
+      不对 —— 可选特性，官方不推荐日常使用</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 第 15 章收官：类是作用域，也是权限的主人</div>
+  <p>三课连起来看，第 15 章讲的其实是同一件事——<strong>类是一个作用域，作用域的主人掌握一切授权</strong>：this 指针揭示成员函数通过作用域找到对象；Date::、嵌套类型、静态成员都是"作用域里的居民"；friend 则是作用域主人签发的访问许可证（不互惠、不传递、不被继承——授权永不扩散）。下一章终于回到"用"的层面：标准库的动态数组 <code>std::vector</code>——你已经具备读懂它实现（类模板 + 静态成员 + 嵌套类型）的全部知识。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter15/03-friend/</code> 的 <code>friend_demo.cpp</code>（friend 版 vs 接口版 print 对照）、<code>exercises/point_vector_friend.cpp</code>（把公开成员的 Vector3d 封装起来 + 发 friend 证——官方 15.9 quiz 原型）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="02-lifetime-static.html"><span class="dir">← 上一页</span>15.2 析构函数与静态成员</a>
+  <a class="next" href="quiz.html"><span class="dir">下一页 →</span>第 15 章综合测验</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/friend-non-member-functions/">LearnCpp 15.8–15.10</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

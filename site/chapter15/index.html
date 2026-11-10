@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnCpp 交互式教程 · 第 15 章：More on Classes</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter15/index.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / 第 15 章</div>
+<article>
+<h1>第 15 章 · More on Classes：类的进阶部件</h1>
+
+<p>14 章造出了类，本章给它装上"机关"：<strong>this 指针</strong>（成员函数的隐秘机制）、<strong>析构函数</strong>（对象的终点）、<strong>静态成员</strong>（全类共享）、<strong>友元</strong>（受控的开门）、<strong>嵌套类型与类模板成员</strong>。学完这章，你就具备了读懂标准库容器实现的全部知识。（原文 15.1–15.10）</p>
+
+<ul class="lesson-list">
+  <li><a data-page="/chapter15/01-this-headers.html" href="01-this-headers.html"><span>15.1 · this 指针、头文件与嵌套类型（原文 15.1–15.3）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter15/02-lifetime-static.html" href="02-lifetime-static.html"><span>15.2 · 析构函数与静态成员（原文 15.4–15.7）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter15/03-friend.html" href="03-friend.html"><span>15.3 · 友元与进阶（原文 15.8–15.10）</span><span class="mark todo">未开始</span></a></li>
+  <li><a data-page="/chapter15/quiz.html" href="quiz.html"><span>15.x · 章综合测验（10 题）</span><span class="mark todo">未开始</span></a></li>
+</ul>
+
+<div class="box story">
+  <div class="box-t">🧭 本章主线</div>
+  <p>一条线索：<strong>类是一个作用域，作用域的主人掌握一切授权</strong>。this 指针揭示成员函数如何通过作用域找到对象；Date:: 前缀、嵌套类型、静态成员都是"作用域里的居民"；friend 是主人签发的访问许可证（不互惠、不传递、不被继承）。14 章问"怎么造一个类型"，本章问"类型内部怎么运转"。</p>
+</div>
+
+<div class="pager">
+  <a class="prev" href="../chapter14/quiz.html"><span class="dir">← 上一章</span>第 14 章</a>
+  <a class="next" href="01-this-headers.html"><span class="dir">本章开始 →</span>15.1 this 指针、头文件与嵌套类型</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/chapter-15-summary-and-quiz/">LearnCpp Chapter 15</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

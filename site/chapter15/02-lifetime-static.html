@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>15.2 析构函数与静态成员 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter15/02-lifetime-static.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 15 章</a> / 析构函数与静态成员</div>
+<article>
+<h1>15.2 析构函数与静态成员：对象的终点与"全体共享"</h1>
+
+<p>构造函数管出生（14.2 课），本课补上终点——<strong>析构函数</strong>；再给类装上"不属于任何对象"的成员——<strong>静态成员</strong>（变量与函数），顺带让类模板长出成员函数。（原文 15.4–15.7）</p>
+
+<h2>析构函数（destructor）：销毁前的最后机会</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：destructor</div>
+  <p>非 aggregate 类对象<strong>销毁时自动调用</strong>的成员函数，用于清理（释放资源、发数据、写日志）。规则：名字 = 类名前加波浪号 <code>~</code>；<strong>不能带参数、无返回类型；一个类只能有一个</strong>：</p>
+  <pre class="code">class Simple
+{
+    int m_id{};
+
+public:
+    Simple(int id) : m_id{ id }
+    {
+        std::cout &lt;&lt; "Constructing Simple " &lt;&lt; m_id &lt;&lt; '\n';
+    }
+
+    ~Simple()   // 析构函数
+    {
+        std::cout &lt;&lt; "Destructing Simple " &lt;&lt; m_id &lt;&lt; '\n';
+    }
+};</pre>
+  <p>价值：把"清理"从使用者的责任里拿走。15.4 课的动机案例——网络缓冲类要在退出前把数据发出去，靠使用者记得调 <code>sendData()</code> 不可靠（提前 <code>return</code> 的路径就漏了）；放进析构函数，<strong>每条退出路径都自动清理</strong>。析构函数可以安全调用其他成员函数——对象在析构函数执行完之后才被销毁。一般不要显式调用析构函数（自动的、也几乎不存在"清理两次"的合理场景）。</p>
+</div>
+
+<div class="predict" data-answer="Destructing Simple 2" data-hint="内层块结束时谁被销毁？析构顺序和构造顺序是什么关系？" data-explain="第 3 行是 Destructing Simple 2！内层作用域结束，simple2 先死（构造 1、2 → 析构 2 → main body → 析构 1）。析构顺序与构造顺序相反——后生的先走，和栈的行为一致（7 课生命周期）。">
+  <p class="quiz-q"><span class="qtag">预测</span>① 程序如下。<code>Simple simple1{1}</code> 在 main 顶层，<code>Simple simple2{2}</code> 在内层块。输出的第 3 行是什么？</p>
+  <pre class="code">int main()
+{
+    Simple simple1{ 1 };
+    {
+        Simple simple2{ 2 };
+    } // ← 这里
+    std::cout &lt;&lt; "...main body...\n";
+    return 0;
+}</pre>
+  <div class="prow"><input type="text" placeholder="输入程序打印的第 3 行"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>② "<code>std::exit()</code> 退出程序前会先调用所有局部对象的析构函数。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="std::exit() 立即终止，不清理局部对象——依赖析构函数做清理（发数据、关文件）的程序，走 exit 路径就漏了。原文明确警告这一点。" >对 —— 优雅退出</button>
+    <button data-k="b" data-ok="1" data-why="正确！std::exit() 不运行局部对象的析构函数（未处理异常终止也可能不做栈展开）。清理逻辑若放在析构里，就要避免 exit 这类'跳过析构'的退出方式。" >
+      不对 —— exit 直接终止，跳过析构</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>类模板的成员函数</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：模板参数进入类</div>
+  <p>11 章的函数模板升级成类模板：<code>typename T</code> 既能当数据成员类型，也能当成员函数的参数/返回类型。类内定义的成员函数<strong>自动继承</strong>类的模板参数声明：</p>
+  <pre class="code">template &lt;typename T&gt;
+class Pair
+{
+    T m_first{};
+    T m_second{};
+
+public:
+    Pair(const T&amp; first, const T&amp; second)   // 类内：直接用 T
+        : m_first{ first }, m_second{ second } {}
+
+    bool isEqual(const Pair&lt;T&gt;&amp; pair);      // 只声明
+};
+
+// 类外定义：必须重新提供 template 声明 + 全模板名 Pair&lt;T&gt;::
+template &lt;typename T&gt;
+bool Pair&lt;T&gt;::isEqual(const Pair&lt;T&gt;&amp; pair)
+{
+    return m_first == pair.m_first &amp;&amp; m_second == pair.m_second;
+}
+
+Pair p1{ 5, 6 };  // CTAD：非 aggregate 类不需要推导指引，构造函数就够了</pre>
+  <ul>
+    <li><strong>injected class name</strong>：类作用域内，<code>Pair</code> 就是 <code>Pair&lt;T&gt;</code> 的简写——所以构造函数叫 <code>Pair</code> 不带 &lt;T&gt;；类外定义的参数也可以写 <code>const Pair&amp;</code>；</li>
+    <li>模板隐式实例化的函数<strong>隐式 inline</strong> → 模板成员函数定义放 header（类定义正下方）不违反 ODR（15.1 课规则的模板版）；</li>
+    <li>对照 11 章：struct 版 Pair 聚合初始化 + 手写推导指引；class 版（非 aggregate）靠构造函数，CTAD 自动工作。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>③ 模板类 <code>Pair&lt;T&gt;</code> 的成员函数 <code>isEqual</code> 在<strong>类外</strong>定义，正确写法是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="类外定义模板成员函数必须重新提供 template 声明——类内那条声明不覆盖类外的作用域。且函数名要用全模板名 Pair&lt;T&gt;::，不是 Pair::。" >
+      bool Pair::isEqual(const Pair&amp; pair) { ... }</button>
+    <button data-k="b" data-ok="1" data-why="正确！两件套：template &lt;typename T&gt; 重新声明 + Pair&lt;T&gt;:: 全模板名前缀。定义就放在类模板定义正下方（同一文件），实例化时编译器要同时看到两者。" >
+      template &lt;typename T&gt; bool Pair&lt;T&gt;::isEqual(const Pair&lt;T&gt;&amp; pair) { ... }</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>静态成员变量：全体对象共享一份</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：static member variable</div>
+  <p><strong>static 成员变量</strong>被类的所有对象共享，而且<strong>没有任何对象时也存在</strong>（程序启动创建、结束销毁）。Key insight：<strong>静态成员 = 住在类作用域里的全局变量</strong>（7.3 课"全局之恶"的受控版——至少有访问控制和类命名空间）：</p>
+  <pre class="code">class Something
+{
+    // C++17 首选：static inline 让静态成员直接在类内定义+初始化
+    static inline int s_idGenerator{ 1 };
+    int m_id{};
+
+public:
+    Something() : m_id{ s_idGenerator++ } {}  // 每个对象领一个唯一 ID
+    int getID() const { return m_id; }
+};
+
+Something a{}; Something b{};
+// a.getID() == 1, b.getID() == 2 —— 共享的生成器在起作用</pre>
+  <ul>
+    <li><strong>访问</strong>：最佳实践用 <code>Something::s_value</code>（经对象也能访问，但不推荐——看不出是共享的）；</li>
+    <li>不用 <code>inline</code>/<code>constexpr</code> 的旧写法：类内声明 ≠ 定义，要在类外全局作用域补 <code>int Something::s_value{ 1 };</code>（<strong>定义不受访问控制约束</strong>——private 的也能在类外定义，"定义"不算"访问"；定义放同名 .cpp，别放 header，否则多次包含 = 多个定义 = 链接错误）；</li>
+    <li>类内直接初始化的三种合法姿势：<code>static const int</code>（仅整型/枚举）、<strong><code>static inline</code>（C++17，任意类型，首选）</strong>、<code>static constexpr</code>（隐式 inline）；</li>
+    <li>冷知识：只有<strong>静态成员</strong>允许 <code>auto</code> 推导和 CTAD——非静态成员不允许。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>④ "private 的静态成员变量不能在类外定义（毕竟外面访问不了它）。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="静态成员的类外定义是'给声明配一个实体'，不是访问——访问控制管的是访问，不管定义。int Something::s_value{ 1 }; 写 private 静态成员完全合法。" >对 —— private 就是铁门</button>
+    <button data-k="b" data-ok="1" data-why="正确！定义不受访问控制约束——private 静态成员照样在类外定义（当然，读写的访问仍被拦截）。这是静态成员和普通成员的一大区别。" >
+      不对 —— 定义不算访问，合法</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>静态成员函数：不属于任何对象</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：static member function</div>
+  <p>不关联任何对象、直接用类名调用的成员函数（经对象调用也合法但不推荐）。两个特性：</p>
+  <pre class="code">class IDGenerator
+{
+    static inline int s_nextID{ 1 };
+
+public:
+    static int getNextID() { return s_nextID++; }  // 无 this、只碰静态成员
+};
+
+int IDGenerator::getNextID() ... // 类外定义：不重复写 static</pre>
+  <ul>
+    <li><strong>没有 this 指针</strong>（没有隐式对象——15.1 课机制的必然结果）；</li>
+    <li>能直接访问静态成员（变量/函数），<strong>不能访问非静态成员</strong>（非静态成员必须属于某个对象）；</li>
+    <li>类外定义的写法同普通成员函数（<code>IDGenerator::getNextID()</code>），定义处<strong>不重复 static</strong>；放 header 要标 inline。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>⑤ "静态成员函数里既没有 <code>this</code>，也不能访问类的非静态数据成员。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！两条互为因果：没有隐式对象 → 没有 this → 非静态成员（必须属于对象）无处安放。静态成员全类共享一份，不需要对象，所以静态函数碰得到。" >
+      对 —— 没 this，只能碰静态成员</button>
+    <button data-k="b" data-why="如果能访问非静态成员，改的是哪个对象的？静态函数没有隐式对象，这个问题没有答案——所以标准直接禁止。" >不对 —— 只是建议别用</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ 全静态类（monostate）：慎用，以及"没有静态构造函数"</div>
+  <p>成员全 static 的类叫 <strong>pure static class</strong>——本质是把全局变量/全局函数包了个名字，7.3 课的坏处全带上（无法造两个独立实例、隐式耦合）。和 namespace 的区别只有一条：<strong>类有访问控制</strong>。有静态数据 + 需要访问控制 → 用类；否则 → namespace。另外 C++ <strong>没有静态构造函数</strong>：能直接初始化就在定义点初始化；需要执行代码才能初始化的，用一个（static）函数造好对象再拷给静态成员。</p>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：从"对象的一生"到"类型的一生"</div>
+  <p>构造/析构函数管住单个对象的生与死；静态成员是<strong>类型级</strong>的存在——不随对象生灭，全体共享。前者是"每个员工一张工牌"（成员），后者是"公司共用一部总机"（静态）。14 章的 class invariant 是"每个对象各自合法"；静态成员提醒你还有另一类不变式："全体对象合计合法"（如 ID 不重复）。下一课：friend——给封装开一扇受控的门。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter15/02-lifetime-static/</code> 的 <code>destructor_demo.cpp</code>（构造/析构顺序）、<code>static_demo.cpp</code>（共享性 + 唯一 ID）、<code>exercises/id_generator.cpp</code>（给 Widget 发唯一工牌）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="01-this-headers.html"><span class="dir">← 上一页</span>15.1 this 指针、头文件与嵌套类型</a>
+  <a class="next" href="03-friend.html"><span class="dir">下一页 →</span>15.3 友元与进阶</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/introduction-to-destructors/">LearnCpp 15.4–15.7</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>

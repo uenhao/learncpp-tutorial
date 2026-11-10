@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>15.1 this 指针、头文件与嵌套类型 · LearnCpp 交互式教程</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="/chapter15/01-this-headers.html">
+<div class="topbar">
+  <a class="home" href="../index.html">← 目录</a>
+  <span class="lesson-progress"></span>
+</div>
+<div class="page">
+<div class="crumbs"><a href="../index.html">目录</a> / <a href="index.html">第 15 章</a> / this 指针、头文件与嵌套类型</div>
+<article>
+<h1>15.1 this 指针、头文件与嵌套类型：类的骨架</h1>
+
+<p>14 章你造出了类。本课给类装上三个"骨架件"：<strong>this 指针</strong>（成员函数怎么知道在操作谁）、<strong>头文件组织</strong>（类怎么跨文件生长）、<strong>嵌套类型</strong>（类型也是类的成员）。（原文 15.1–15.3）</p>
+
+<h2>隐藏的 this 指针</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：this = 指向隐式对象的 const 指针</div>
+  <p>每个非静态成员函数内部都有关键字 <code>this</code>——一个 <strong>const 指针</strong>（指针本身不可改指向），保存着隐式对象的地址。编译器把调用和定义都做了改写：</p>
+  <pre class="code">simple.setID(2);
+// 编译器改写成：
+Simple::setID(&amp;simple, 2);          // 对象变成按地址传递的实参！
+
+// 成员函数定义被改写成：
+static void setID(Simple* const this, int id)
+{
+    this-&gt;m_id = id;   // 裸写的 m_id 是 this-&gt;m_id 的简写
+}</pre>
+  <p>Key insight：<strong>所有非静态成员函数都有 this</strong>。两个推论：① <code>this</code> 是<strong>函数参数</strong>而非成员——<strong>不占对象的内存</strong>，也不存在"每个对象各一份"；② const 成员函数的 <code>this</code> 是"指向 const 的 const 指针"——14.1 课"const 对象不能调非 const 成员函数"的底层原因：那需要把 pointer-to-const 转成 pointer-to-non-const，丢 const，拒绝。另外 <code>this</code> 永远指向隐式对象，解引用前<strong>不需要判空</strong>。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>① "this 指针是对象的一部分，所以含成员函数的类比 struct 更占内存。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="成员函数（含 this）都不占对象内存——对象只装数据成员。this 在每次调用时作为隐藏参数传入，一个函数一份参数，不是每个对象一份。" >对 —— 函数指针存在对象里</button>
+    <button data-k="b" data-ok="1" data-why="正确！this 是函数参数不是成员——对象大小只由数据成员决定。这也是'成员函数不增加对象大小'的原文结论。" >
+      不对 —— this 是函数参数</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：显式 this 的两个正经用途</div>
+  <pre class="code">// 用途一：参数遮蔽成员时消歧（struct 没用 m_ 前缀的场合）
+void setData(int data)
+{
+    this-&gt;data = data;  // this-&gt;data 是成员，data 是参数
+}
+
+// 用途二：链式调用——返回 *this 的引用
+Calc&amp; add(int value) { m_value += value; return *this; }
+Calc&amp; sub(int value) { m_value -= value; return *this; }
+
+// 于是：
+calc.add(5).sub(3).mult(4);   // 每次返回 calc 自己，继续点下去</pre>
+  <p>链式调用的原理与 <code>std::cout &lt;&lt; "a" &lt;&lt; "b"</code> 完全相同（operator&lt;&lt; 返回流对象本身；若返回 void，<code>void{} &lt;&lt; "b"</code> 就点不下去了）。重置对象到默认状态也别直接"调用构造函数"（14.2 课的临时对象陷阱）：用 <code>void reset() { *this = {}; }</code>——造一个默认对象整体赋值过来。</p>
+</div>
+
+<div class="predict" data-answer="8" data-hint="每一步返回的是谁？链式调用连续修改的是同一个对象。" data-explain="8！add(5) → 5，sub(3) → 2，mult(4) → 8。每一步返回的都是 calc 本身的引用（*this），所以链式调用就是连续修改同一个对象。">
+  <p class="quiz-q"><span class="qtag">预测</span>② <code>Calc calc{};</code>，成员初值 0。执行 <code>calc.add(5).sub(3).mult(4);</code> 后 <code>calc.getValue()</code> 是多少？</p>
+  <div class="prow"><input type="text" placeholder="数值"><button class="check">检查</button></div>
+  <div class="predict-fb"></div>
+</div>
+
+<div class="box best">
+  <div class="box-t">✅ 最佳实践（原文）</div>
+  <p><strong>不要</strong>给所有成员显式加 <code>this-&gt;</code>——降低可读性。private 成员用 <code>m_</code> 前缀区分（14 章的约定）比到处写 <code>this-&gt;</code> 干净；显式 <code>this</code> 只留给"参数遮蔽成员"和"返回 *this"两个场景。</p>
+</div>
+
+<h2>类与头文件：类的多文件组织</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：类内声明，类外定义</div>
+  <p>类变大后，<strong>成员函数在类内只留声明（原型）</strong>，实现放到类外，定义时用 <code>Date::</code> 前缀（作用域解析符）标明归属：</p>
+  <pre class="code">class Date
+{
+    int m_year{}; int m_month{}; int m_day{};
+
+public:
+    Date(int year, int month, int day); // 声明
+    void print() const;                 // 声明
+    int getYear() const { return m_year; } // trivial 函数留在类内
+};
+
+Date::Date(int year, int month, int day)   // 定义：Date:: 前缀
+    : m_year{ year }, m_month{ month }, m_day{ day }
+{
+}
+
+void Date::print() const
+{
+    std::cout &lt;&lt; "Date(" &lt;&lt; m_year &lt;&lt; ", " &lt;&lt; m_month &lt;&lt; ", " &lt;&lt; m_day &lt;&lt; ")\n";
+}</pre>
+  <p>组织方式（与 2.5 课函数的拆分一脉相承）：类定义放<strong>同名 header</strong>，非 trivial 成员函数放<strong>同名 .cpp</strong>（必须参与编译，链接器才能接上）。为什么 header 里放<strong>完整类定义</strong>而不是前置声明？——编译器要用类型就得知道成员和对象大小，类的"前置声明"不够用。</p>
+</div>
+
+<div class="box warn">
+  <div class="box-t">⚠️ ODR 与类：类型豁免，但同一文件两次包含不豁免</div>
+  <p>2 章讲过 ODR（每程序一个定义）。对类有一条特殊豁免：<strong>类定义本身可以出现在多个 .cpp 里</strong>（不然谁都写不了多文件程序）。但<strong>同一个 .cpp 里包含两次类定义</strong>仍是违规——所以 header 还是要有 header guard（2.6 课）。Key insight：<strong>类内定义的成员函数隐式 inline</strong>（7.4 课），被多个文件包含不违反 ODR；<strong>类外定义的不隐式 inline</strong>，要放 header 就得手动标 <code>inline</code>。默认实参永远写在类定义里（成员函数总随类定义一起声明）。</p>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>③ 在类外定义成员函数 <code>print</code>，正确的写法是？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-ok="1" data-why="正确！类外定义必须用 类名:: 函数名 前缀表明归属；const 后缀、参数类型都要与声明一致。没有前缀就成了普通全局函数（链接时找不到成员函数定义）。" >
+      void Date::print() const { /* ... */ }</button>
+    <button data-k="b" data-why="没有 Date:: 前缀的 print 是与类无关的全局函数——编译器会报'类里声明了 print 却没定义'。" >
+      void print() const { /* ... */ }</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">判断</span>④ "Date.h 在<strong>同一个</strong> .cpp 里被 #include 两次（忘了 header guard），类定义出现 2 次——反正类型豁免 ODR，不算违规。"</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="方向记反了：类型豁免是'每个 translation unit 一份类定义'合法——10 个不同 .cpp 各包含一次没问题；但同一个 .cpp 里出现两次类定义仍是 ODR 违规，header guard 拦的正是这种情况。" >对 —— 类定义完全不受 ODR 约束</button>
+    <button data-k="b" data-ok="1" data-why="正确！ODR 的类型豁免是'每个 TU 一份类定义'合法；同一 TU 内两次类定义违规——header guard 拦的正是这种情况。类内定义的函数靠隐式 inline 在多 TU 里共存。" >
+      不对 —— 豁免是"每个 TU 一份"，同 TU 两次仍违规</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<h2>嵌套类型（nested types）：类里的第三种成员</h2>
+
+<div class="box concept">
+  <div class="box-t">📐 概念：成员类型 / 别名 / 嵌套类</div>
+  <p>类里除了数据成员和成员函数，还能定义<strong>类型</strong>（enum、别名、类都行）——它们同样受访问控制，完全限定名是 <code>Fruit::Type</code>：</p>
+  <pre class="code">class Fruit
+{
+public:
+    enum Type            // 嵌套【非限定】enum：类已是作用域，
+    {                    // 再写 enum class 就 Fruit::Type::apple 冗余了
+        apple, banana, cherry,
+    };
+
+private:
+    Type m_type{};
+    int m_percentageEaten{ 0 };
+
+public:
+    Fruit(Type type) : m_type{ type } {}
+    Type getType() const { return m_type; }
+    bool isCherry() { return m_type == cherry; } // 类内：裸写 cherry
+};
+
+// 类外：必须带 Fruit:: 前缀
+Fruit apple { Fruit::apple };
+if (apple.getType() == Fruit::apple) { /* ... */ }</pre>
+  <ul>
+    <li><strong>类型别名</strong>也能嵌套：<code>using IDType = int;</code> 类内裸用、类外 <code>Employee::IDType</code>（标准库大量使用——<code>std::string</code> 定义了十来个）；</li>
+    <li><strong>嵌套类</strong>没有外部类的 <code>this</code>，不能直接摸外部类成员；但作为外部类的成员，可以访问外部类作用域的 private（通过传入的对象）——标准库容器的 <code>iterator</code> 通常是嵌套类；</li>
+    <li>嵌套类型必须<strong>先完整定义再使用</strong> → 定义在类顶部。</li>
+  </ul>
+</div>
+
+<div class="quiz">
+  <p class="quiz-q"><span class="qtag">选择</span>⑤ <code>Type</code> 是 Fruit 里嵌套的非限定 enum，类外怎么判断"是不是苹果"？</p>
+  <div class="quiz-opts">
+    <button data-k="a" data-why="类外访问枚举器必须带类前缀。枚举器在 Fruit 的作用域里（非限定 enum 的枚举器直接进了类作用域），写法是 Fruit::apple。" >apple == fruit.getType()</button>
+    <button data-k="b" data-why="类型作用域隔了一层：Fruit::Type::apple 是 scoped enum 的写法；嵌套非限定 enum 的枚举器直接挂在 Fruit 下——Fruit::apple。" >Fruit::Type::apple == fruit.getType()</button>
+    <button data-k="c" data-ok="1" data-why="正确！非限定 enum 的枚举器直接进入所在类的作用域——类外写 Fruit::apple。类已经是作用域，这就是'嵌套 enum 不必再 enum class'的理由（少一层前缀）。" >
+      Fruit::apple == fruit.getType()</button>
+  </div>
+  <div class="quiz-fb"></div>
+</div>
+
+<div class="box think">
+  <div class="box-t">💭 思维转变：成员函数"属于类"的三层含义</div>
+  <p>本课把"成员函数属于类"讲透了：<strong>调用层</strong>——隐式对象被编译器转成 <code>&amp;object</code> 实参（this 的秘密）；<strong>组织层</strong>——类是作用域（Date:: 前缀、嵌套类型、嵌套枚举器）；<strong>链接层</strong>——类内定义隐式 inline、类外定义要 Date:: 标归属（ODR 的类型豁免撑起多文件工程）。下一课处理对象的生命周期终点与"全体共享"的静态成员。</p>
+</div>
+
+<div class="practice-note">💻 动手验证：<code>chapter15/01-this-headers/</code> 的 <code>this_demo.cpp</code>（this 改写原理注释 + 链式调用 + reset）、<code>exercises/calc_chain.cpp</code>（把三个散装调用改成链式）。</div>
+
+<div class="done-banner" hidden>🎉 本节互动练习全部完成！</div>
+
+<div class="pager">
+  <a class="prev" href="index.html"><span class="dir">← 上一页</span>第 15 章</a>
+  <a class="next" href="02-lifetime-static.html"><span class="dir">下一页 →</span>15.2 析构函数与静态成员</a>
+</div>
+</article>
+<footer class="site">基于 <a href="https://www.learncpp.com/cpp-tutorial/the-hidden-this-pointer-and-member-function-chaining/">LearnCpp 15.1–15.3</a> 改编 · 交互式中文教程</footer>
+</div>
+<script src="../assets/tutorial.js"></script>
+</body>
+</html>
